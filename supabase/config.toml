@@ -75,7 +75,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.academy-graph]
-verify_jwt = true
+verify_jwt = false
 
 [functions.academy-skill-event]
 verify_jwt = true

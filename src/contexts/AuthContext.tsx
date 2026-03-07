@@ -48,9 +48,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(refreshed.session);
         setUser(refreshed.session.user);
       } else {
-        // Keep current state and let protected calls handle auth errors explicitly.
-        setSession(session);
-        setUser(session.user);
+        // Fail-safe: avoid stale "logged-in" state that causes repeated 401 calls.
+        setSession(null);
+        setUser(null);
       }
       setLoading(false);
     })();
