@@ -82,3 +82,6 @@ verify_jwt = true
 
 [functions.academy-review-due]
 verify_jwt = true
+
+[functions.academy-lesson-nodes]
+verify_jwt = false

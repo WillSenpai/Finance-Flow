@@ -27,6 +27,11 @@ type AcademyLessonRow = {
   card_image_url?: string | null;
 };
 
+type LessonProgressStats = {
+  completed: number;
+  total: number;
+};
+
 const imageFallbacks = [
   "from-emerald-200/60 to-cyan-100/60",
   "from-amber-200/60 to-rose-100/60",
@@ -39,19 +44,29 @@ const Accademia = () => {
   const { user } = useAuth();
   const { isAdmin } = useUser();
 
-  const { data: completedLessons } = useQuery({
-    queryKey: ["lesson-progress", user?.id],
+  const { data: lessonNodeStats = new Map<string, LessonProgressStats>() } = useQuery({
+    queryKey: ["lesson-node-progress", user?.id],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user) return new Map<string, LessonProgressStats>();
       const { data, error } = await supabase
-        .from("lesson_progress")
-        .select("lesson_id")
+        .from("user_lesson_node_progress" as never)
+        .select("lesson_id,status")
         .eq("user_id", user.id);
+
       if (error) throw error;
-      return data.map((d: { lesson_id: string }) => d.lesson_id);
+
+      const map = new Map<string, LessonProgressStats>();
+      for (const row of (data || []) as Array<{ lesson_id: string; status: string }>) {
+        const current = map.get(row.lesson_id) ?? { completed: 0, total: 0 };
+        current.total += 1;
+        if (row.status === "completed") current.completed += 1;
+        map.set(row.lesson_id, current);
+      }
+
+      return map;
     },
     enabled: !!user,
-    staleTime: 60 * 1000,
+    staleTime: 30 * 1000,
   });
 
   const { data: catalog = { sections: [], lessons: [] } } = useQuery({
@@ -125,8 +140,6 @@ const Accademia = () => {
       }));
   }, [catalog.lessons, catalog.sections]);
 
-  const completedSet = new Set(completedLessons || []);
-
   return (
     <div className="pt-14 pb-4">
       <motion.div
@@ -148,15 +161,18 @@ const Accademia = () => {
             </motion.button>
           )}
         </div>
-        <p className="text-muted-foreground mt-1 text-sm">Impara al tuo ritmo, senza fretta</p>
+        <p className="text-muted-foreground mt-1 text-sm">Avanza nodo dopo nodo, senza poter saltare passaggi (a meno che tu non sia Pro)</p>
       </motion.div>
 
       <div className="mt-6 space-y-8">
         {groupedCourses.map((courseGroup, catIdx) => {
           const { section, lessons } = courseGroup;
           if (lessons.length === 0) return null;
-          const completateCount = lessons.filter((l) => completedSet.has(l.lesson_id)).length;
-          const progressPct = Math.round((completateCount / lessons.length) * 100);
+
+          const completionRows = lessons.map((lesson) => lessonNodeStats.get(lesson.lesson_id) ?? { completed: 0, total: 4 });
+          const totalCompleted = completionRows.reduce((sum, row) => sum + row.completed, 0);
+          const totalNodes = completionRows.reduce((sum, row) => sum + Math.max(row.total, 4), 0);
+          const progressPct = totalNodes > 0 ? Math.round((totalCompleted / totalNodes) * 100) : 0;
 
           return (
             <motion.div
@@ -168,12 +184,15 @@ const Accademia = () => {
               <h2 className="mb-1 px-5 text-base font-semibold">{section.title}</h2>
               <p className="mb-1 px-5 text-xs text-muted-foreground">{section.description}</p>
               <p className="mb-3 px-5 text-[11px] text-muted-foreground">
-                {completateCount}/{lessons.length} completate ({progressPct}%)
+                {totalCompleted}/{totalNodes} nodi completati ({progressPct}%)
               </p>
 
               <div className="scrollbar-hide flex gap-3 overflow-x-auto px-5 pb-2">
                 {lessons.map((lesson, idx) => {
-                  const isCompleted = completedSet.has(lesson.lesson_id);
+                  const stats = lessonNodeStats.get(lesson.lesson_id) ?? { completed: 0, total: 4 };
+                  const total = Math.max(stats.total, 4);
+                  const isCompleted = stats.completed >= total && total > 0;
+                  const lessonProgressPct = Math.round((stats.completed / total) * 100);
                   const imageFallback = imageFallbacks[(catIdx + idx) % imageFallbacks.length];
 
                   return (
@@ -207,17 +226,17 @@ const Accademia = () => {
                         <div className="mr-2 h-1.5 flex-1 rounded-full bg-muted">
                           <div
                             className="h-1.5 rounded-full bg-primary transition-all"
-                            style={{ width: isCompleted ? "100%" : "0%" }}
+                            style={{ width: `${lessonProgressPct}%` }}
                           />
                         </div>
                         {isCompleted ? (
                           <CheckCircle2 size={14} className="flex-shrink-0 text-primary" />
                         ) : (
-                          <span className="whitespace-nowrap text-[10px] text-muted-foreground">0%</span>
+                          <span className="whitespace-nowrap text-[10px] text-muted-foreground">{lessonProgressPct}%</span>
                         )}
                       </div>
                       <div className="mt-3 flex items-center gap-1 text-xs font-medium text-primary">
-                        {isCompleted ? "Rivedi" : "Inizia"} <ChevronRight size={14} />
+                        {isCompleted ? "Rivedi" : "Continua"} <ChevronRight size={14} />
                       </div>
                     </motion.button>
                   );

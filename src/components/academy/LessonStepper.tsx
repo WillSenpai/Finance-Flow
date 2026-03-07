@@ -1,17 +1,29 @@
-import { useMemo, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Send } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Send, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 type StepType = "concept" | "widget" | "challenge" | "feedback";
+type NodeStatus = "locked" | "available" | "completed" | "skipped";
+
+type LessonNode = {
+  node_key: StepType;
+  title: string;
+  description: string;
+  sort_order: number;
+  status: NodeStatus;
+};
 
 type LessonStepperProps = {
   markdown: string;
-  isCompleted: boolean;
-  onComplete: () => Promise<void> | void;
-  onTrackEvent: (eventType: StepType | "review", extra?: Record<string, unknown>) => Promise<void>;
+  nodes: LessonNode[];
+  isLessonCompleted: boolean;
+  isProUser: boolean;
+  onAdvanceNode: (nodeKey: StepType, payload?: Record<string, unknown>) => Promise<void>;
+  onSkipNode: (nodeKey: StepType) => Promise<void>;
+  onSubmitOptionalQuiz: (score: number, passed: boolean) => Promise<void>;
   chatMessages: { role: "user" | "assistant"; content: string }[];
   chatInput: string;
   onChatInputChange: (val: string) => void;
@@ -19,7 +31,7 @@ type LessonStepperProps = {
   isChatLoading: boolean;
 };
 
-const flow: Array<{ key: StepType; title: string }> = [
+const fallbackFlow: Array<{ key: StepType; title: string }> = [
   { key: "concept", title: "Concept" },
   { key: "widget", title: "Widget" },
   { key: "challenge", title: "Challenge" },
@@ -29,7 +41,7 @@ const flow: Array<{ key: StepType; title: string }> = [
 function toWordLimitedConcept(markdown: string, maxWords: number): string {
   const raw = markdown
     .replace(/^###\s+/gm, "")
-    .replace(/[#>*_`\-]/g, " ")
+    .replace(/[#>*_`-]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -44,11 +56,21 @@ function pickSection(markdown: string, index: number): string {
   return markdown.trim();
 }
 
+function statusLabel(status: NodeStatus) {
+  if (status === "completed") return "Completato";
+  if (status === "skipped") return "Skippato";
+  if (status === "available") return "Disponibile";
+  return "Bloccato";
+}
+
 const LessonStepper = ({
   markdown,
-  isCompleted,
-  onComplete,
-  onTrackEvent,
+  nodes,
+  isLessonCompleted,
+  isProUser,
+  onAdvanceNode,
+  onSkipNode,
+  onSubmitOptionalQuiz,
   chatMessages,
   chatInput,
   onChatInputChange,
@@ -59,20 +81,58 @@ const LessonStepper = ({
   const [tracking, setTracking] = useState(false);
   const [challengeResult, setChallengeResult] = useState<"perfect" | "good" | "weak" | null>(null);
   const [reviewOutcome, setReviewOutcome] = useState<"ok" | "ko" | null>(null);
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const conceptText = useMemo(() => toWordLimitedConcept(markdown, 200), [markdown]);
   const widgetText = useMemo(() => pickSection(markdown, 1), [markdown]);
   const challengeText = useMemo(() => pickSection(markdown, 2), [markdown]);
 
-  const canPrev = current > 0;
-  const canNext = current < flow.length - 1;
+  const runtimeFlow = useMemo(() => {
+    if (nodes.length > 0) {
+      return [...nodes].sort((a, b) => a.sort_order - b.sort_order);
+    }
 
-  const trackAndGo = async (eventType: StepType | "review", extra?: Record<string, unknown>, nextIndex?: number) => {
+    return fallbackFlow.map((item, idx) => ({
+      node_key: item.key,
+      title: item.title,
+      description: "",
+      sort_order: idx + 1,
+      status: idx === 0 ? "available" as NodeStatus : "locked" as NodeStatus,
+    }));
+  }, [nodes]);
+
+  const currentNode = runtimeFlow[current];
+  const canPrev = current > 0;
+  const canNext = current < runtimeFlow.length - 1;
+
+  useEffect(() => {
+    if (!currentNode) return;
+    if (currentNode.status !== "locked") return;
+    const firstAvailable = runtimeFlow.findIndex((node) => node.status === "available" || node.status === "skipped");
+    if (firstAvailable >= 0) setCurrent(firstAvailable);
+  }, [currentNode, runtimeFlow]);
+
+  const submitAdvance = async (nodeKey: StepType, payload?: Record<string, unknown>, nextIndex?: number) => {
     setTracking(true);
     try {
-      await onTrackEvent(eventType, extra);
+      await onAdvanceNode(nodeKey, payload);
       if (typeof nextIndex === "number") setCurrent(nextIndex);
+    } catch {
+      // Error feedback is handled by page-level toast handlers.
+    } finally {
+      setTracking(false);
+    }
+  };
+
+  const submitSkip = async () => {
+    if (!currentNode || currentNode.status === "completed" || currentNode.status === "locked") return;
+    setTracking(true);
+    try {
+      await onSkipNode(currentNode.node_key);
+      if (canNext) setCurrent((value) => value + 1);
+    } catch {
+      // Error feedback is handled by page-level toast handlers.
     } finally {
       setTracking(false);
     }
@@ -80,63 +140,89 @@ const LessonStepper = ({
 
   const submitChallenge = async (value: "perfect" | "good" | "weak") => {
     setChallengeResult(value);
-    await trackAndGo("challenge", { challenge_result: value }, 3);
+    await submitAdvance("challenge", { challenge_result: value }, 3);
   };
 
   const submitReview = async (success: boolean) => {
     setReviewOutcome(success ? "ok" : "ko");
-    await trackAndGo("review", { review_success: success });
   };
 
-  const finish = async () => {
-    if (!challengeResult || !reviewOutcome) return;
+  const finishFeedback = async () => {
+    if (!reviewOutcome) return;
+    await submitAdvance("feedback", { review_success: reviewOutcome === "ok" });
+  };
+
+  const submitOptionalQuiz = async (score: number, passed: boolean) => {
     setTracking(true);
     try {
-      await onTrackEvent("feedback");
-      await onComplete();
+      await onSubmitOptionalQuiz(score, passed);
+      setQuizSubmitted(true);
+    } catch {
+      // Error feedback is handled by page-level toast handlers.
     } finally {
       setTracking(false);
     }
   };
 
+  if (!currentNode) return null;
+
+  const canAutoProceed = currentNode.status === "completed" || currentNode.status === "skipped";
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="mb-5 flex gap-1.5 px-1">
-        {flow.map((step, i) => (
+        {runtimeFlow.map((step) => (
           <div
-            key={step.key}
+            key={step.node_key}
             className="h-1 flex-1 rounded-full transition-colors"
-            style={{ backgroundColor: i <= current ? "hsl(var(--primary))" : "hsl(var(--muted))" }}
+            style={{
+              backgroundColor:
+                step.status === "completed" ? "hsl(var(--primary))"
+                : step.status === "skipped" ? "hsl(var(--primary) / 0.45)"
+                : step.status === "available" ? "hsl(var(--muted-foreground) / 0.5)"
+                : "hsl(var(--muted))",
+            }}
           />
         ))}
       </div>
 
-      <p className="mb-3 px-1 text-xs text-muted-foreground">{current + 1} / {flow.length} · {flow[current].title}</p>
+      <div className="mb-3 flex items-center justify-between px-1 text-xs text-muted-foreground">
+        <span>{current + 1} / {runtimeFlow.length} · {currentNode.title}</span>
+        <span>{statusLabel(currentNode.status)}</span>
+      </div>
 
       <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-border/60 bg-card p-5">
-        {flow[current].key === "concept" ? (
+        {currentNode.node_key === "concept" ? (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Capisci il concetto in meno di 200 parole</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">{conceptText}</p>
-            <Button onClick={() => trackAndGo("concept", {}, 1)} disabled={tracking} className="rounded-xl">
-              {tracking ? "Salvo..." : "Ho capito, continua"}
+            <Button
+              onClick={() => submitAdvance("concept", {}, 1)}
+              disabled={tracking || currentNode.status === "completed" || currentNode.status === "locked"}
+              className="rounded-xl"
+            >
+              {currentNode.status === "completed" ? "Nodo completato" : tracking ? "Salvo..." : "Ho capito, continua"}
             </Button>
           </div>
         ) : null}
 
-        {flow[current].key === "widget" ? (
+        {currentNode.node_key === "widget" ? (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Applica subito (Widget)</h2>
             <div className="rounded-xl border border-border/60 bg-muted/40 p-4 text-sm leading-relaxed">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{widgetText}</ReactMarkdown>
             </div>
-            <Button onClick={() => trackAndGo("widget", {}, 2)} disabled={tracking} className="rounded-xl">
-              {tracking ? "Salvo..." : "Widget completato"}
+            <Button
+              onClick={() => submitAdvance("widget", {}, 2)}
+              disabled={tracking || currentNode.status === "completed" || currentNode.status === "locked"}
+              className="rounded-xl"
+            >
+              {currentNode.status === "completed" ? "Nodo completato" : tracking ? "Salvo..." : "Widget completato"}
             </Button>
           </div>
         ) : null}
 
-        {flow[current].key === "challenge" ? (
+        {currentNode.node_key === "challenge" ? (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Challenge</h2>
             <div className="rounded-xl border border-border/60 bg-muted/40 p-4 text-sm leading-relaxed">
@@ -144,17 +230,18 @@ const LessonStepper = ({
             </div>
             <p className="text-sm text-muted-foreground">Come valuti il tuo risultato?</p>
             <div className="grid gap-2 md:grid-cols-3">
-              <Button variant="outline" className="rounded-xl" disabled={tracking} onClick={() => submitChallenge("weak")}>Faticoso</Button>
-              <Button variant="outline" className="rounded-xl" disabled={tracking} onClick={() => submitChallenge("good")}>Buono</Button>
-              <Button className="rounded-xl" disabled={tracking} onClick={() => submitChallenge("perfect")}>Ottimo</Button>
+              <Button variant="outline" className="rounded-xl" disabled={tracking || currentNode.status === "completed" || currentNode.status === "locked"} onClick={() => submitChallenge("weak")}>Faticoso</Button>
+              <Button variant="outline" className="rounded-xl" disabled={tracking || currentNode.status === "completed" || currentNode.status === "locked"} onClick={() => submitChallenge("good")}>Buono</Button>
+              <Button className="rounded-xl" disabled={tracking || currentNode.status === "completed" || currentNode.status === "locked"} onClick={() => submitChallenge("perfect")}>Ottimo</Button>
             </div>
+            {challengeResult && <p className="text-xs text-muted-foreground">Risultato registrato: {challengeResult}</p>}
           </div>
         ) : null}
 
-        {flow[current].key === "feedback" ? (
+        {currentNode.node_key === "feedback" ? (
           <div className="flex h-full flex-col">
             <h2 className="mb-1 text-lg font-semibold">Feedback + tutor</h2>
-            <p className="mb-4 text-xs text-muted-foreground">Chiudi la skill solo dopo il feedback finale.</p>
+            <p className="mb-4 text-xs text-muted-foreground">La lezione si completa solo quando tutti i nodi sono completati.</p>
 
             {chatMessages.length > 0 ? (
               <div className="mb-4 flex-1 space-y-3 overflow-y-auto">
@@ -175,7 +262,7 @@ const LessonStepper = ({
               </div>
             ) : (
               <div className="mb-4 rounded-xl border border-dashed p-3 text-sm text-muted-foreground">
-                Chiedi un esempio pratico o un chiarimento prima di chiudere la skill.
+                Chiedi un esempio pratico o un chiarimento prima di chiudere il nodo feedback.
               </div>
             )}
 
@@ -204,26 +291,60 @@ const LessonStepper = ({
               </div>
 
               <Button
-                onClick={finish}
-                disabled={isCompleted || tracking || !challengeResult || !reviewOutcome}
+                onClick={finishFeedback}
+                disabled={currentNode.status === "completed" || tracking || !reviewOutcome || currentNode.status === "locked"}
                 className="w-full rounded-xl"
-                variant={isCompleted ? "secondary" : "default"}
               >
-                {isCompleted ? <><CheckCircle2 size={18} className="mr-2" /> Già completata</> : "Chiudi skill"}
+                {currentNode.status === "completed" ? "Nodo completato" : "Completa feedback"}
               </Button>
+
+              <div className="rounded-xl border border-border/60 bg-muted/30 p-3">
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Quiz finale facoltativo</p>
+                <div className="grid gap-2 md:grid-cols-2">
+                  <Button variant="outline" className="rounded-xl" disabled={tracking || quizSubmitted} onClick={() => submitOptionalQuiz(45, false)}>
+                    Quiz da ripassare
+                  </Button>
+                  <Button variant="outline" className="rounded-xl" disabled={tracking || quizSubmitted} onClick={() => submitOptionalQuiz(85, true)}>
+                    Quiz superato
+                  </Button>
+                </div>
+              </div>
             </div>
+          </div>
+        ) : null}
+
+        {currentNode.status === "skipped" ? (
+          <div className="mt-4 rounded-xl border border-amber-300/40 bg-amber-100/30 p-3 text-xs text-amber-900">
+            Nodo skippato: devi comunque completarlo per segnare la lezione come conclusa.
           </div>
         ) : null}
       </div>
 
-      <div className="mt-4 flex gap-3 pt-2">
-        <Button variant="outline" onClick={() => canPrev && setCurrent(current - 1)} disabled={!canPrev || tracking} className="h-11 flex-1 rounded-2xl gap-2">
+      <div className="mt-4 grid gap-3 pt-2 md:grid-cols-3">
+        <Button variant="outline" onClick={() => canPrev && setCurrent(current - 1)} disabled={!canPrev || tracking} className="h-11 rounded-2xl gap-2">
           <ArrowLeft size={16} /> Indietro
         </Button>
-        <Button onClick={() => canNext && setCurrent(current + 1)} disabled={!canNext || tracking} className="h-11 flex-1 rounded-2xl gap-2">
+
+        <Button
+          variant="outline"
+          onClick={submitSkip}
+          disabled={tracking || currentNode.status === "locked" || currentNode.status === "completed"}
+          className="h-11 rounded-2xl gap-2"
+        >
+          <SkipForward size={16} />
+          {isProUser ? "Skippa nodo" : "Skip (solo Pro)"}
+        </Button>
+
+        <Button onClick={() => canNext && setCurrent(current + 1)} disabled={!canNext || tracking || !canAutoProceed} className="h-11 rounded-2xl gap-2">
           Avanti <ArrowRight size={16} />
         </Button>
       </div>
+
+      {isLessonCompleted ? (
+        <div className="mt-3 inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-sm font-medium text-primary">
+          <CheckCircle2 size={16} /> Lezione completata
+        </div>
+      ) : null}
     </div>
   );
 };
