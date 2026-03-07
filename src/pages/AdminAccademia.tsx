@@ -196,6 +196,7 @@ const AdminAccademia = () => {
     () => lessons.find((lesson) => lesson.lesson_id === selectedLessonId) || null,
     [lessons, selectedLessonId],
   );
+  const selectedLessonSectionId = selectedLesson?.section_id ?? "";
 
   const lessonsBySection = useMemo(() => {
     const map = new Map<string, AcademyLesson[]>();
@@ -239,9 +240,9 @@ const AdminAccademia = () => {
     return (
       titolo.trim() !== selectedLesson.titolo ||
       content.trim() !== selectedLesson.content ||
-      sectionIdForLesson !== selectedLesson.section_id
+      sectionIdForLesson !== selectedLessonSectionId
     );
-  }, [content, sectionIdForLesson, selectedLesson, titolo]);
+  }, [content, sectionIdForLesson, selectedLesson, selectedLessonSectionId, titolo]);
 
   const getAuthHeaders = async () => {
     const session = await supabase.auth.getSession();
@@ -571,12 +572,12 @@ const AdminAccademia = () => {
       const draft = JSON.parse(raw) as { titolo: string; content: string; sectionId: string };
       setTitolo(draft.titolo || selectedLesson.titolo);
       setContent(draft.content || selectedLesson.content);
-      setSectionIdForLesson(draft.sectionId || selectedLesson.section_id);
+      setSectionIdForLesson(draft.sectionId || selectedLessonSectionId);
       setHasDraftLoaded(true);
     } catch {
       localStorage.removeItem(`academy-lesson-draft:${selectedLessonId}`);
     }
-  }, [selectedLesson, selectedLessonId]);
+  }, [selectedLesson, selectedLessonId, selectedLessonSectionId]);
 
   useEffect(() => {
     if (!selectedLessonId) return;
@@ -1001,7 +1002,7 @@ const AdminAccademia = () => {
                     if (!selectedLesson) return;
                     setTitolo(selectedLesson.titolo);
                     setContent(selectedLesson.content);
-                    setSectionIdForLesson(selectedLesson.section_id);
+                    setSectionIdForLesson(selectedLessonSectionId);
                     if (selectedLessonId) localStorage.removeItem(`academy-lesson-draft:${selectedLessonId}`);
                     setHasDraftLoaded(false);
                   }}
