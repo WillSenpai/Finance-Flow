@@ -9,7 +9,9 @@
   - `D7 retention` >= 45% entro 3 mesi dal lancio GA.
   - Conversione a piano premium (quando attivo) >= 4% dei MAU entro 90 giorni dal lancio premium.
   - Completamento onboarding >= 80% degli utenti che iniziano la registrazione.
-  - >= 60% degli utenti attivi completa almeno 1 lezione Accademia nei primi 14 giorni.
+  - >= 60% degli utenti attivi completa almeno 1 skill Accademia nei primi 14 giorni.
+  - >= 70% utenti nuovi completa assessment iniziale (12 domande) al primo accesso Accademia.
+  - >= 50% skill completate entra almeno una volta nel ciclo review `1-3-7-14`.
 
 ## 2. User Experience & Functionality
 
@@ -35,8 +37,10 @@
     - Selezione obiettivi e livello esperienza obbligatoria prima dell'accesso completo.
     - Salvataggio profilo in `profiles` con flag `has_completed_onboarding=true`.
   - Per `US-02`:
-    - Catalogo lezioni suddivise per categorie didattiche.
-    - Lezione dettagliata con contenuto markdown strutturato e tracciamento completamento (`lesson_progress`).
+    - Accesso Accademia gated da assessment iniziale obbligatorio (12 domande adattive).
+    - Navigazione `graph-first` con stati skill `locked | available | mastered | fading`.
+    - Lezione skill con runtime obbligatorio `Concept -> Widget -> Challenge -> Feedback`.
+    - Progressione mastery per skill (`0-100`) e review queue con step `1-3-7-14`.
     - Chat tutor in-lesson disponibile con risposta in streaming.
   - Per `US-03`:
     - Inserimento spesa da form tradizionale (importo, categoria, ricorrenza, data, nota, tag).
@@ -77,6 +81,10 @@
     - `chat`: coach finanziario contestuale con output streaming.
     - `parse-spesa`: estrazione strutturata spese da testo naturale via tool-calling.
     - `academy-lesson`: tutor lezione + generazione spiegazioni lunghe.
+    - `academy-assessment`: start/answer/complete assessment adattivo.
+    - `academy-graph`: stato grafo skill utente + unlock deterministico.
+    - `academy-skill-event`: scoring deterministico eventi runtime (concept/widget/challenge/review/feedback).
+    - `academy-review-due`: inbox ripassi in scadenza.
     - `academy-generate-cache`: pre-generazione contenuti lezioni.
     - `news-generate-cache` e `news-summary`: pipeline notizie + riassunti.
     - `generate-lesson-illustrations`: immagini didattiche per lezioni.
@@ -111,11 +119,12 @@
     - Edge Functions Deno per logica AI e automazioni contenuto.
   - Data flow principale:
     - Utente autenticato -> fetch profilo e dataset personali (`profiles`, `patrimonio`, `spese`, ecc.) -> rendering dashboard.
-    - Eventi utente (aggiunta spesa, update investimenti, progress lezione) -> persistenza su Supabase.
+    - Eventi utente (aggiunta spesa, update investimenti, progress skill) -> persistenza su Supabase.
     - Richieste AI (coach/parsing/news/lesson) -> Edge Function -> AI Gateway -> risposta streaming/non-streaming -> aggiornamento UI.
 
 - **Integration Points**:
-  - Database tabelle core: `profiles`, `patrimonio`, `salvadanai`, `investimenti`, `categorie_spese`, `spese`, `lesson_progress`, `academy_lessons_cache`, `lesson_illustrations`, `news_cache`, `admin_posts`, `explore_articles`, `post_likes`, `post_views`, `user_roles`.
+  - Database tabelle core: `profiles`, `patrimonio`, `salvadanai`, `investimenti`, `categorie_spese`, `spese`, `academy_lessons_cache`, `lesson_illustrations`, `news_cache`, `admin_posts`, `explore_articles`, `post_likes`, `post_views`, `user_roles`.
+  - Nuovo dominio Accademia skill-graph: `academy_skills`, `academy_skill_edges`, `academy_assessment_questions`, `user_assessment_runs`, `user_assessment_answers`, `user_skill_mastery`, `user_skill_events`, `user_review_queue`.
   - Auth: Supabase Auth + trigger `handle_new_user()` per bootstrap profilo.
   - Storage: bucket `admin-posts-images`, `lesson-illustrations`.
   - External data: feed RSS economici italiani (ANSA, Il Sole 24 Ore, Milano Finanza, ecc.).
@@ -127,7 +136,7 @@
   - PII trattata: nome, email, telefono, data nascita; requisito GDPR: informativa privacy esplicita e policy retention dati.
   - Requirement tecnico: eliminare wildcard CORS in produzione e restringere origin consentiti.
 
-## 5. Stato Implementazione (Aggiornato al 4 marzo 2026)
+## 5. Stato Implementazione (Aggiornato al 7 marzo 2026)
 
 - **Implementato**
   - Autenticazione e onboarding:
@@ -141,10 +150,15 @@
     - Simulatore what-if disponibile nel flusso patrimonio.
   - Accademia:
     - Catalogo lezioni da cache (`academy_lessons_cache`) e pagina dettaglio.
-    - Tracciamento progressi (`lesson_progress`).
     - Tutor in-lesson via Edge Function `academy-lesson` (anche streaming).
     - Pipeline immagini lezioni (`lesson_illustrations`, `generate-lesson-illustrations`).
     - Area admin Accademia con policy write dedicate.
+    - Skill Graph V1 implementato lato codice:
+      - assessment obbligatorio (`academy-assessment`),
+      - endpoint stato grafo (`academy-graph`),
+      - scoring eventi deterministico (`academy-skill-event`),
+      - queue review (`academy-review-due`),
+      - nuove migration tabelle/RLS per mastery e unlock.
   - Coach AI:
     - Chat contestuale con storico persistente (`coach_conversations`, `coach_messages`).
     - Suggerimenti automatici follow-up.
@@ -166,10 +180,10 @@
     - Integrazione Capacitor iOS presente e funzionante nel progetto (`ios/`).
 
 - **Parzialmente implementato / da completare**
-  - Android: dipendenze Capacitor Android presenti, ma progetto nativo `android/` non ancora materializzato nel repository.
+  - Android: dipendenze Capacitor Android presenti e progetto `android/` nel repository; rimangono da validare test real-device completi.
   - Premium: supporto editoriale a visibilita premium nei contenuti, ma non esiste ancora pipeline completa entitlement/billing lato utente.
   - Notifiche: presenti notifiche in-app, non risulta ancora un sistema push end-to-end.
-  - Telemetria prodotto: non e ancora formalizzato un layer analytics completo per monitorare KPI PRD (D7/D30, funnel onboarding, conversion premium).
+  - Telemetria prodotto: non e ancora formalizzato un layer analytics completo per monitorare KPI PRD (D7/D30, funnel onboarding, conversion premium, unlock velocity review).
   - Distribuzione beta: processo documentato (TestFlight + Play Closed Testing), ma non ancora automatizzato in CI/CD.
 
 - **Non implementato (in perimetro roadmap)**
@@ -193,7 +207,7 @@
 
 - **Phased Rollout**:
   - `MVP (0-3 mesi)`:
-    - Onboarding personalizzato, patrimonio/spese/salvadanai, Accademia base, coach AI, gamification base.
+    - Onboarding personalizzato, patrimonio/spese/salvadanai, Accademia skill-graph V1, coach AI, gamification base.
     - Dashboard con news cache e comunicazioni admin.
     - Event instrumentation per funnel onboarding-retention.
   - `v1.1 (3-6 mesi)`:

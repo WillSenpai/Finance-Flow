@@ -70,3 +70,15 @@ verify_jwt = true
 
 [functions.post-generate]
 verify_jwt = true
+
+[functions.academy-assessment]
+verify_jwt = true
+
+[functions.academy-graph]
+verify_jwt = true
+
+[functions.academy-skill-event]
+verify_jwt = true
+
+[functions.academy-review-due]
+verify_jwt = true

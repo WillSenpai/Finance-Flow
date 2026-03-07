@@ -2,6 +2,9 @@ const DEFAULT_ALLOWED_ORIGINS = [
   "capacitor://localhost",
   "ionic://localhost",
   "http://localhost",
+  "http://127.0.0.1",
+  "https://localhost",
+  "https://127.0.0.1",
 ];
 
 function getAllowedOrigins(): Set<string> {
@@ -13,10 +16,26 @@ function getAllowedOrigins(): Set<string> {
   return new Set(configured.length > 0 ? configured : DEFAULT_ALLOWED_ORIGINS);
 }
 
+function isAllowedOrigin(origin: string, allowedOrigins: Set<string>): boolean {
+  if (allowedOrigins.has(origin)) return true;
+
+  // Dev convenience: if localhost/127.0.0.1 base origin is allowed, accept any port.
+  try {
+    const parsed = new URL(origin);
+    const host = parsed.hostname;
+    if (host !== "localhost" && host !== "127.0.0.1") return false;
+
+    const normalizedBase = `${parsed.protocol}//${host}`;
+    return allowedOrigins.has(normalizedBase);
+  } catch {
+    return false;
+  }
+}
+
 export function buildCorsHeaders(req: Request): HeadersInit {
   const allowedOrigins = getAllowedOrigins();
   const origin = req.headers.get("Origin");
-  const allowOrigin = origin && allowedOrigins.has(origin) ? origin : "*";
+  const allowOrigin = origin && isAllowedOrigin(origin, allowedOrigins) ? origin : "*";
 
   return {
     "Access-Control-Allow-Origin": allowOrigin,
@@ -32,7 +51,7 @@ export function rejectDisallowedOrigin(req: Request, corsHeaders: HeadersInit): 
   if (!origin) return null;
 
   const allowedOrigins = getAllowedOrigins();
-  if (allowedOrigins.has(origin)) return null;
+  if (isAllowedOrigin(origin, allowedOrigins)) return null;
 
   return new Response(JSON.stringify({ error: "Origin not allowed" }), {
     status: 403,

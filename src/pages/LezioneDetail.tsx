@@ -1,12 +1,13 @@
-import { useState, useRef, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
 import { usePoints } from "@/contexts/PointsContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithAuth } from "@/lib/invokeWithAuth";
 import { toast } from "@/hooks/use-toast";
 import LessonStepper from "@/components/academy/LessonStepper";
 import LessonIntro from "@/components/academy/LessonIntro";
@@ -21,7 +22,6 @@ function parseStepTitles(markdown: string): { title: string; description: string
   return sections.map((section) => {
     const match = section.match(/^###\s+(.+)/);
     const title = match ? match[1].trim() : "Sezione";
-    // Take first sentence as description
     const content = match ? section.replace(/^###\s+.+\n?/, "").trim() : section.trim();
     const firstSentence = content.split(/[.!?]\s/)[0];
     return { title, description: firstSentence ? firstSentence.slice(0, 120) : "" };
@@ -30,17 +30,22 @@ function parseStepTitles(markdown: string): { title: string; description: string
 
 const LezioneDetail = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { awardPoints } = usePoints();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  const lessonId = id || "1";
+  const lessonMeta = getAcademyLessonMeta(lessonId);
+  const skillIdFromUrl = searchParams.get("skill");
+
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
+  const [localCompleted, setLocalCompleted] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const lessonId = id || "1";
-  const lessonMeta = getAcademyLessonMeta(lessonId);
 
   const getAccessToken = async () => {
     const { data, error } = await supabase.auth.getSession();
@@ -50,20 +55,41 @@ const LezioneDetail = () => {
     return data.session.access_token;
   };
 
-  const { data: isCompleted } = useQuery({
-    queryKey: ["lesson-progress", user?.id, lessonId],
+  const { data: lessonSkill } = useQuery({
+    queryKey: ["academy-skill-for-lesson", lessonId, skillIdFromUrl],
     queryFn: async () => {
-      if (!user) return false;
-      const { data } = await supabase
-        .from("lesson_progress")
+      if (skillIdFromUrl) return { id: skillIdFromUrl };
+      const { data, error } = await supabase
+        .from("academy_skills" as any)
         .select("id")
-        .eq("user_id", user.id)
         .eq("lesson_id", lessonId)
+        .eq("is_active", true)
+        .limit(1)
         .maybeSingle();
-      return !!data;
+      if (error) throw error;
+      return (data as { id: string } | null) ?? null;
     },
-    enabled: !!user,
   });
+
+  const skillId = lessonSkill?.id ?? null;
+
+  const { data: masteryData } = useQuery({
+    queryKey: ["user-skill-mastery", user?.id, skillId],
+    queryFn: async () => {
+      if (!user || !skillId) return null;
+      const { data, error } = await supabase
+        .from("user_skill_mastery" as any)
+        .select("mastery_score")
+        .eq("user_id", user.id)
+        .eq("skill_id", skillId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { mastery_score: number } | null;
+    },
+    enabled: !!user && !!skillId,
+  });
+
+  const isCompleted = localCompleted || (masteryData?.mastery_score ?? 0) >= 80;
 
   const { data: lessonData, isLoading: explanationLoading } = useQuery({
     queryKey: ["academy-lesson-cache", lessonId],
@@ -78,10 +104,10 @@ const LezioneDetail = () => {
     },
     staleTime: 30 * 60 * 1000,
   });
+
   const lessonTitle = lessonData?.titolo || getDefaultLessonTitle(lessonId);
   const explanation = lessonData?.content || null;
 
-  // Query illustrations from DB
   const { data: illustrations, isLoading: illustrationsLoading } = useQuery({
     queryKey: ["lesson-illustrations", lessonId],
     queryFn: async () => {
@@ -96,7 +122,6 @@ const LezioneDetail = () => {
     enabled: !!user,
   });
 
-  // Mutation to generate illustrations if they don't exist
   const generateMutation = useMutation({
     mutationFn: async () => {
       if (!explanation) throw new Error("No lesson content");
@@ -116,14 +141,12 @@ const LezioneDetail = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["lesson-illustrations", lessonId] });
     },
-    onError: (e) => {
-      console.error("Illustration generation error:", e);
+    onError: () => {
       toast({ title: "Errore", description: "Impossibile generare le illustrazioni.", variant: "destructive" });
-      setShowIntro(false); // Skip intro on error
+      setShowIntro(false);
     },
   });
 
-  // Trigger generation if no illustrations exist and we have content
   useEffect(() => {
     const shouldGenerate =
       !illustrationsLoading &&
@@ -132,25 +155,50 @@ const LezioneDetail = () => {
       !generateMutation.isPending &&
       !generateMutation.isSuccess &&
       showIntro;
-    if (shouldGenerate) {
-      generateMutation.mutate();
-    }
+    if (shouldGenerate) generateMutation.mutate();
   }, [illustrationsLoading, illustrations, explanation, generateMutation.isPending, generateMutation.isSuccess, showIntro]);
 
+  const trackSkillEvent = async (eventType: "concept" | "widget" | "challenge" | "review" | "feedback", extra?: Record<string, unknown>) => {
+    if (!skillId) return;
+
+    const suffix = eventType === "review"
+      ? new Date().toISOString().slice(0, 10)
+      : "v1";
+
+    const eventId = `${lessonId}:${skillId}:${eventType}:${suffix}`;
+    const payload = {
+      event_type: eventType,
+      skill_id: skillId,
+      event_id: eventId,
+      ...(extra || {}),
+    };
+
+    await invokeWithAuth("academy-skill-event", { body: payload });
+
+    queryClient.invalidateQueries({ queryKey: ["user-skill-mastery", user?.id, skillId] });
+    queryClient.invalidateQueries({ queryKey: ["academy-graph-v1"] });
+  };
+
   const handleComplete = async () => {
-    if (!user || isCompleted) return;
+    if (!user || !skillId) return;
+
     try {
-      const { error } = await supabase.from("lesson_progress").insert({
+      const legacyInsert = await supabase.from("lesson_progress").insert({
         user_id: user.id,
         lesson_id: lessonId,
       });
-      if (error) throw error;
+
+      if (legacyInsert.error && !legacyInsert.error.message.toLowerCase().includes("duplicate")) {
+        console.warn("lesson_progress fallback insert warning:", legacyInsert.error.message);
+      }
+
       awardPoints("complete_lesson");
       awardPoints("view_lesson");
       queryClient.invalidateQueries({ queryKey: ["lesson-progress"] });
-      toast({ title: "Lezione completata! 🎉", description: "Hai guadagnato stelline bonus." });
+      setLocalCompleted(true);
+      toast({ title: "Skill completata", description: "Mastery aggiornata e review pianificata." });
     } catch (e) {
-      console.error("Error completing lesson:", e);
+      console.error("Error completing skill:", e);
       toast({ title: "Errore", description: "Non è stato possibile salvare il progresso.", variant: "destructive" });
     }
   };
@@ -208,7 +256,9 @@ const LezioneDetail = () => {
               assistantContent += delta;
               setChatMessages([...allMessages, { role: "assistant", content: assistantContent }]);
             }
-          } catch {}
+          } catch {
+            // Ignore malformed stream chunk.
+          }
         }
       }
 
@@ -228,14 +278,13 @@ const LezioneDetail = () => {
   const isGenerating = generateMutation.isPending;
 
   return (
-    <div className="px-5 pt-10 pb-4 flex flex-col h-screen overflow-hidden">
-      {/* Header - only show when not in intro */}
+    <div className="flex h-screen flex-col overflow-hidden px-5 pt-10 pb-4">
       {!(showIntro && (hasIllustrations || isGenerating)) && (
         <>
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-primary text-sm font-medium mb-2">
-            <ArrowLeft size={18} /> Torna ai corsi
+          <button onClick={() => navigate(-1)} className="mb-2 flex items-center gap-1 text-sm font-medium text-primary">
+            <ArrowLeft size={18} /> Torna al graph
           </button>
-          <div className="flex items-center gap-3 mb-3">
+          <div className="mb-3 flex items-center gap-3">
             <motion.span initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }} className="text-3xl">
               {lessonMeta.emoji}
             </motion.span>
@@ -259,38 +308,30 @@ const LezioneDetail = () => {
           onSkip={() => setShowIntro(false)}
         />
       ) : showIntro && isGenerating ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-4">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          >
+        <div className="flex flex-1 flex-col items-center justify-center gap-4">
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}>
             <Loader2 size={32} className="text-primary" />
           </motion.div>
           <p className="text-sm text-muted-foreground">Preparo le vignette della lezione...</p>
-          <button
-            onClick={() => setShowIntro(false)}
-            className="text-xs text-muted-foreground underline mt-2"
-          >
+          <button onClick={() => setShowIntro(false)} className="mt-2 text-xs text-muted-foreground underline">
             Salta e vai alla lezione
           </button>
         </div>
       ) : (
         <>
           {explanationLoading ? (
-            <div className="space-y-3 flex-1">
+            <div className="flex-1 space-y-3">
               <Skeleton className="h-5 w-3/4" />
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-[90%]" />
-              <Skeleton className="h-5 w-2/3 mt-4" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-[85%]" />
             </div>
           ) : explanation ? (
             <LessonStepper
               markdown={explanation}
-              isCompleted={!!isCompleted}
+              isCompleted={isCompleted}
               onComplete={handleComplete}
+              onTrackEvent={trackSkillEvent}
               chatMessages={chatMessages}
               chatInput={chatInput}
               onChatInputChange={setChatInput}
@@ -298,7 +339,7 @@ const LezioneDetail = () => {
               isChatLoading={isChatLoading}
             />
           ) : (
-            <p className="text-sm text-muted-foreground italic">Contenuto della lezione non ancora disponibile.</p>
+            <p className="text-sm italic text-muted-foreground">Contenuto della lezione non ancora disponibile.</p>
           )}
         </>
       )}

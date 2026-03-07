@@ -1,201 +1,226 @@
-import { useState, useRef } from "react";
-import { motion, AnimatePresence, type PanInfo } from "framer-motion";
-import { ArrowLeft, ArrowRight, CheckCircle2, Send, Loader2 } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-interface Step {
-  title: string;
-  content: string;
-}
+type StepType = "concept" | "widget" | "challenge" | "feedback";
 
-interface LessonStepperProps {
+type LessonStepperProps = {
   markdown: string;
   isCompleted: boolean;
-  onComplete: () => void;
+  onComplete: () => Promise<void> | void;
+  onTrackEvent: (eventType: StepType | "review", extra?: Record<string, unknown>) => Promise<void>;
   chatMessages: { role: "user" | "assistant"; content: string }[];
   chatInput: string;
   onChatInputChange: (val: string) => void;
   onSendChat: () => void;
   isChatLoading: boolean;
-}
-
-function parseSteps(markdown: string): Step[] {
-  const sections = markdown.split(/(?=^###\s)/m).filter((s) => s.trim());
-  if (sections.length === 0) return [{ title: "Lezione", content: markdown }];
-
-  return sections.map((section) => {
-    const match = section.match(/^###\s+(.+)/);
-    const title = match ? match[1].trim() : "Sezione";
-    const content = match ? section.replace(/^###\s+.+\n?/, "").trim() : section.trim();
-    return { title, content };
-  });
-}
-
-const swipeThreshold = 50;
-
-const slideVariants = {
-  enter: (dir: number) => ({ x: dir > 0 ? "100%" : "-100%", opacity: 0 }),
-  center: { x: 0, opacity: 1 },
-  exit: (dir: number) => ({ x: dir > 0 ? "-100%" : "100%", opacity: 0 }),
 };
+
+const flow: Array<{ key: StepType; title: string }> = [
+  { key: "concept", title: "Concept" },
+  { key: "widget", title: "Widget" },
+  { key: "challenge", title: "Challenge" },
+  { key: "feedback", title: "Feedback" },
+];
+
+function toWordLimitedConcept(markdown: string, maxWords: number): string {
+  const raw = markdown
+    .replace(/^###\s+/gm, "")
+    .replace(/[#>*_`\-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const words = raw.split(" ");
+  if (words.length <= maxWords) return words.join(" ");
+  return `${words.slice(0, maxWords).join(" ")}...`;
+}
+
+function pickSection(markdown: string, index: number): string {
+  const sections = markdown.split(/(?=^###\s)/m).filter((s) => s.trim());
+  if (sections[index]) return sections[index].replace(/^###\s+.+\n?/, "").trim();
+  return markdown.trim();
+}
 
 const LessonStepper = ({
   markdown,
   isCompleted,
   onComplete,
+  onTrackEvent,
   chatMessages,
   chatInput,
   onChatInputChange,
   onSendChat,
   isChatLoading,
 }: LessonStepperProps) => {
-  const steps = parseSteps(markdown);
-  const totalSteps = steps.length + 1; // +1 for chat/complete step
   const [current, setCurrent] = useState(0);
-  const [direction, setDirection] = useState(0);
+  const [tracking, setTracking] = useState(false);
+  const [challengeResult, setChallengeResult] = useState<"perfect" | "good" | "weak" | null>(null);
+  const [reviewOutcome, setReviewOutcome] = useState<"ok" | "ko" | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const isLastContent = current === steps.length - 1;
-  const isChatStep = current === steps.length;
+  const conceptText = useMemo(() => toWordLimitedConcept(markdown, 200), [markdown]);
+  const widgetText = useMemo(() => pickSection(markdown, 1), [markdown]);
+  const challengeText = useMemo(() => pickSection(markdown, 2), [markdown]);
 
-  const go = (next: number) => {
-    if (next < 0 || next >= totalSteps) return;
-    setDirection(next > current ? 1 : -1);
-    setCurrent(next);
+  const canPrev = current > 0;
+  const canNext = current < flow.length - 1;
+
+  const trackAndGo = async (eventType: StepType | "review", extra?: Record<string, unknown>, nextIndex?: number) => {
+    setTracking(true);
+    try {
+      await onTrackEvent(eventType, extra);
+      if (typeof nextIndex === "number") setCurrent(nextIndex);
+    } finally {
+      setTracking(false);
+    }
   };
 
-  const handleDragEnd = (_: unknown, info: PanInfo) => {
-    if (info.offset.x < -swipeThreshold) go(current + 1);
-    else if (info.offset.x > swipeThreshold) go(current - 1);
+  const submitChallenge = async (value: "perfect" | "good" | "weak") => {
+    setChallengeResult(value);
+    await trackAndGo("challenge", { challenge_result: value }, 3);
+  };
+
+  const submitReview = async (success: boolean) => {
+    setReviewOutcome(success ? "ok" : "ko");
+    await trackAndGo("review", { review_success: success });
+  };
+
+  const finish = async () => {
+    if (!challengeResult || !reviewOutcome) return;
+    setTracking(true);
+    try {
+      await onTrackEvent("feedback");
+      await onComplete();
+    } finally {
+      setTracking(false);
+    }
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      {/* Progress bar */}
-      <div className="flex gap-1.5 mb-5 px-1">
-        {Array.from({ length: totalSteps }).map((_, i) => (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="mb-5 flex gap-1.5 px-1">
+        {flow.map((step, i) => (
           <div
-            key={i}
-            className="h-1 flex-1 rounded-full transition-colors duration-300"
-            style={{
-              backgroundColor: i <= current
-                ? "hsl(var(--primary))"
-                : "hsl(var(--muted))",
-            }}
+            key={step.key}
+            className="h-1 flex-1 rounded-full transition-colors"
+            style={{ backgroundColor: i <= current ? "hsl(var(--primary))" : "hsl(var(--muted))" }}
           />
         ))}
       </div>
 
-      {/* Step counter */}
-      <p className="text-xs text-muted-foreground mb-3 px-1">
-        {current + 1} / {totalSteps}
-      </p>
+      <p className="mb-3 px-1 text-xs text-muted-foreground">{current + 1} / {flow.length} · {flow[current].title}</p>
 
-      {/* Card area */}
-      <div className="flex-1 min-h-0 relative overflow-hidden">
-        <AnimatePresence initial={false} custom={direction} mode="wait">
-          <motion.div
-            key={current}
-            custom={direction}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.15}
-            onDragEnd={handleDragEnd}
-            className="absolute inset-0 overflow-y-auto"
-          >
-            {isChatStep ? (
-              /* ---- Chat & Complete step ---- */
-              <div className="bg-card border border-border/50 rounded-2xl p-5 h-full flex flex-col">
-                <h2 className="text-lg font-semibold mb-1">💬 Hai domande?</h2>
-                <p className="text-xs text-muted-foreground mb-4">
-                  Se qualcosa non è chiaro, chiedi e ti verrà spiegato in modo semplice.
-                </p>
+      <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-border/60 bg-card p-5">
+        {flow[current].key === "concept" ? (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold">Capisci il concetto in meno di 200 parole</h2>
+            <p className="text-sm leading-relaxed text-muted-foreground">{conceptText}</p>
+            <Button onClick={() => trackAndGo("concept", {}, 1)} disabled={tracking} className="rounded-xl">
+              {tracking ? "Salvo..." : "Ho capito, continua"}
+            </Button>
+          </div>
+        ) : null}
 
-                {chatMessages.length > 0 && (
-                  <div className="space-y-3 mb-4 flex-1 overflow-y-auto">
-                    {chatMessages.map((msg, i) => (
-                      <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                        <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
-                          msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
-                        }`}>
-                          {msg.role === "assistant" ? (
-                            <div className="prose prose-sm dark:prose-invert max-w-none">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-                            </div>
-                          ) : msg.content}
+        {flow[current].key === "widget" ? (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold">Applica subito (Widget)</h2>
+            <div className="rounded-xl border border-border/60 bg-muted/40 p-4 text-sm leading-relaxed">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{widgetText}</ReactMarkdown>
+            </div>
+            <Button onClick={() => trackAndGo("widget", {}, 2)} disabled={tracking} className="rounded-xl">
+              {tracking ? "Salvo..." : "Widget completato"}
+            </Button>
+          </div>
+        ) : null}
+
+        {flow[current].key === "challenge" ? (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold">Challenge</h2>
+            <div className="rounded-xl border border-border/60 bg-muted/40 p-4 text-sm leading-relaxed">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{challengeText}</ReactMarkdown>
+            </div>
+            <p className="text-sm text-muted-foreground">Come valuti il tuo risultato?</p>
+            <div className="grid gap-2 md:grid-cols-3">
+              <Button variant="outline" className="rounded-xl" disabled={tracking} onClick={() => submitChallenge("weak")}>Faticoso</Button>
+              <Button variant="outline" className="rounded-xl" disabled={tracking} onClick={() => submitChallenge("good")}>Buono</Button>
+              <Button className="rounded-xl" disabled={tracking} onClick={() => submitChallenge("perfect")}>Ottimo</Button>
+            </div>
+          </div>
+        ) : null}
+
+        {flow[current].key === "feedback" ? (
+          <div className="flex h-full flex-col">
+            <h2 className="mb-1 text-lg font-semibold">Feedback + tutor</h2>
+            <p className="mb-4 text-xs text-muted-foreground">Chiudi la skill solo dopo il feedback finale.</p>
+
+            {chatMessages.length > 0 ? (
+              <div className="mb-4 flex-1 space-y-3 overflow-y-auto">
+                {chatMessages.map((msg, i) => (
+                  <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                      {msg.role === "assistant" ? (
+                        <div className="prose prose-sm max-w-none dark:prose-invert">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                         </div>
-                      </div>
-                    ))}
-                    <div ref={chatEndRef} />
+                      ) : (
+                        msg.content
+                      )}
+                    </div>
                   </div>
-                )}
-
-                <div className="flex gap-2 mt-auto">
-                  <Input
-                    value={chatInput}
-                    onChange={(e) => onChatInputChange(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && onSendChat()}
-                    placeholder="Es: Puoi farmi un esempio pratico?"
-                    className="flex-1 rounded-xl"
-                    disabled={isChatLoading}
-                  />
-                  <Button
-                    size="icon"
-                    onClick={onSendChat}
-                    disabled={!chatInput.trim() || isChatLoading}
-                    className="rounded-xl h-10 w-10 flex-shrink-0"
-                  >
-                    {isChatLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-                  </Button>
-                </div>
-
-                <motion.div whileTap={{ scale: 0.97 }} className="mt-4">
-                  <Button
-                    onClick={onComplete}
-                    disabled={!!isCompleted}
-                    className="w-full rounded-2xl h-12 text-base gap-2"
-                    variant={isCompleted ? "secondary" : "default"}
-                  >
-                    {isCompleted ? <><CheckCircle2 size={20} /> Completata!</> : "Segna come completata ✅"}
-                  </Button>
-                </motion.div>
+                ))}
+                <div ref={chatEndRef} />
               </div>
             ) : (
-              /* ---- Content step ---- */
-              <div className="bg-card border border-border/50 rounded-2xl p-5 min-h-full">
-                <h2 className="text-lg font-semibold mb-4">{steps[current].title}</h2>
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{steps[current].content}</ReactMarkdown>
-                </div>
+              <div className="mb-4 rounded-xl border border-dashed p-3 text-sm text-muted-foreground">
+                Chiedi un esempio pratico o un chiarimento prima di chiudere la skill.
               </div>
             )}
-          </motion.div>
-        </AnimatePresence>
+
+            <div className="mt-auto space-y-3">
+              <div className="flex gap-2">
+                <Input
+                  value={chatInput}
+                  onChange={(e) => onChatInputChange(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && onSendChat()}
+                  placeholder="Es: fammi un esempio concreto"
+                  disabled={isChatLoading || tracking}
+                  className="rounded-xl"
+                />
+                <Button size="icon" onClick={onSendChat} disabled={!chatInput.trim() || isChatLoading || tracking} className="h-10 w-10 rounded-xl">
+                  {isChatLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                </Button>
+              </div>
+
+              <div className="grid gap-2 md:grid-cols-2">
+                <Button variant="outline" className="rounded-xl" disabled={tracking} onClick={() => submitReview(false)}>
+                  Ripasso necessario
+                </Button>
+                <Button variant="outline" className="rounded-xl" disabled={tracking} onClick={() => submitReview(true)}>
+                  Ho consolidato
+                </Button>
+              </div>
+
+              <Button
+                onClick={finish}
+                disabled={isCompleted || tracking || !challengeResult || !reviewOutcome}
+                className="w-full rounded-xl"
+                variant={isCompleted ? "secondary" : "default"}
+              >
+                {isCompleted ? <><CheckCircle2 size={18} className="mr-2" /> Già completata</> : "Chiudi skill"}
+              </Button>
+            </div>
+          </div>
+        ) : null}
       </div>
 
-      {/* Navigation buttons */}
-      <div className="flex gap-3 mt-4 pt-2">
-        <Button
-          variant="outline"
-          onClick={() => go(current - 1)}
-          disabled={current === 0}
-          className="flex-1 rounded-2xl h-11 gap-2"
-        >
+      <div className="mt-4 flex gap-3 pt-2">
+        <Button variant="outline" onClick={() => canPrev && setCurrent(current - 1)} disabled={!canPrev || tracking} className="h-11 flex-1 rounded-2xl gap-2">
           <ArrowLeft size={16} /> Indietro
         </Button>
-        <Button
-          onClick={() => go(current + 1)}
-          disabled={current === totalSteps - 1}
-          className="flex-1 rounded-2xl h-11 gap-2"
-        >
+        <Button onClick={() => canNext && setCurrent(current + 1)} disabled={!canNext || tracking} className="h-11 flex-1 rounded-2xl gap-2">
           Avanti <ArrowRight size={16} />
         </Button>
       </div>
