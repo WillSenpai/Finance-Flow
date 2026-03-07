@@ -49,11 +49,22 @@ const DESIGN = openingDesign as {
 
 const OpeningLoader = () => {
   const [phase, setPhase] = useState(0);
+  const [isTextRevealComplete, setIsTextRevealComplete] = useState(false);
 
   useEffect(() => {
     const img = new Image();
     img.src = openingLogo;
   }, []);
+
+  useEffect(() => {
+    if (phase < 4) {
+      setIsTextRevealComplete(false);
+      return;
+    }
+
+    const timer = window.setTimeout(() => setIsTextRevealComplete(true), 3600);
+    return () => window.clearTimeout(timer);
+  }, [phase]);
 
   useEffect(() => {
     const estimateSpringDurationMs = (mass: number, stiffness: number, damping: number) => {
@@ -112,13 +123,15 @@ const OpeningLoader = () => {
   const showLogo = phase >= 1;
   const showText = phase >= 3;
   const showShadow = Boolean(shadowFrame);
-  const textClipWidth = textFrame ? (phase >= 4 ? textFrame.width : textFrame.clipWidth ?? textFrame.width) : 0;
-  const phaseTransition = DESIGN.animation.phaseTransitions?.[phase];
-
   const frameToPercent = (value: number, axis: "x" | "y") => {
     const size = axis === "x" ? DESIGN.artboard.width : DESIGN.artboard.height;
     return `${(value / size) * 100}%`;
   };
+  const textClipWidth = textFrame ? (phase >= 4 ? textFrame.width : textFrame.clipWidth ?? textFrame.width) : 0;
+  const textContainerWidth = phase >= 4 ? `calc(${frameToPercent(textClipWidth, "x")} + 20px)` : frameToPercent(textClipWidth, "x");
+  const phaseTransition = DESIGN.animation.phaseTransitions?.[phase];
+
+
 
   const buildTransition = () => {
     if (!phaseTransition) {
@@ -141,7 +154,7 @@ const OpeningLoader = () => {
   const elementTransition = buildTransition();
   const finalTextTransition =
     phase === 4
-      ? { duration: 2.5, ease: [0.2, 0, 0.1, 1] as const }
+      ? { duration: 1.5, ease: [0.16, 0, 0.08, 1] as const }
       : elementTransition;
 
   return (
@@ -216,18 +229,17 @@ const OpeningLoader = () => {
               opacity: showText ? 1 : 0,
               left: frameToPercent(textFrame.x, "x"),
               top: frameToPercent(textFrame.y, "y"),
-              width: phase >= 4 ? `calc(${frameToPercent(textClipWidth, "x")} + 4px)` : frameToPercent(textClipWidth, "x"),
+              width: textContainerWidth,
               height: frameToPercent(textFrame.height, "y"),
             }}
             transition={{
-              opacity: { duration: 0.18 },
+              opacity: { duration: phase >= 4 ? 0.55 : 0.22 },
               width: finalTextTransition,
               left: finalTextTransition,
               top: finalTextTransition,
             }}
             style={{
-              overflow: phase >= 4 ? "visible" : "hidden",
-              paddingRight: phase >= 4 ? "4px" : 0,
+              overflow: isTextRevealComplete ? "visible" : "hidden",
             }}
           >
             <p
@@ -235,7 +247,6 @@ const OpeningLoader = () => {
               style={{
                 width: `${(textFrame.width / textClipWidth) * 100}%`,
                 height: "100%",
-                paddingRight: phase >= 4 ? "4px" : 0,
                 fontFamily: DESIGN.textStyle.fontFamily,
                 fontSize: DESIGN.textStyle.fontSize,
                 lineHeight: `${DESIGN.textStyle.lineHeight}px`,
