@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef } from "react";
 import { Calculator, TrendingUp, PiggyBank, Clock, Zap } from "lucide-react";
 import { motion } from "framer-motion";
-import { useUser } from "@/contexts/UserContext";
+import { useUser } from "@/hooks/useUser";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";

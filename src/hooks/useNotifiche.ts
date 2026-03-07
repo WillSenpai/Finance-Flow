@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect, useContext } from "react";
-import { useUser } from "@/contexts/UserContext";
+import { useUser } from "@/hooks/useUser";
 import { PointsContext } from "@/contexts/PointsContext";
 import { supabase } from "@/integrations/supabase/client";
 

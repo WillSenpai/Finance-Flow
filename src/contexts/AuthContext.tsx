@@ -17,7 +17,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
@@ -26,12 +25,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     );
 
-    // Then get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    // Validate persisted session on startup to avoid stale "logged-in" states.
+    void (async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error || !session) {
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      const { data: userData, error: userError } = await supabase.auth.getUser(session.access_token);
+      if (!userError && userData.user) {
+        setSession(session);
+        setUser(userData.user);
+        setLoading(false);
+        return;
+      }
+
+      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+      if (!refreshError && refreshed.session?.access_token && refreshed.session.user) {
+        setSession(refreshed.session);
+        setUser(refreshed.session.user);
+      } else {
+        // Keep current state and let protected calls handle auth errors explicitly.
+        setSession(session);
+        setUser(session.user);
+      }
       setLoading(false);
-    });
+    })();
 
     return () => subscription.unsubscribe();
   }, []);

@@ -11,7 +11,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { useUser } from "@/contexts/UserContext";
+import { useUser } from "@/hooks/useUser";
 import { useAuth } from "@/contexts/AuthContext";
 import type { UserData } from "@/contexts/UserContext";
 

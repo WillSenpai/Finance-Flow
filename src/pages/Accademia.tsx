@@ -7,7 +7,7 @@ import SkillGraph from "@/components/academy/SkillGraph";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { invokeWithAuth } from "@/lib/invokeWithAuth";
-import { useUser } from "@/contexts/UserContext";
+import { useUser } from "@/hooks/useUser";
 import { useAuth } from "@/contexts/AuthContext";
 
 type GraphNode = {
@@ -48,6 +48,7 @@ const Accademia = () => {
     },
     enabled: !authLoading && !!user,
     staleTime: 45_000,
+    retry: false,
   });
 
   const payload = graphQuery.data;
@@ -63,11 +64,13 @@ const Accademia = () => {
   }
 
   if (graphQuery.isError || !payload) {
+    const message = graphQuery.error instanceof Error ? graphQuery.error.message : "Errore sconosciuto";
     return (
       <div className="px-5 pt-16 pb-6 space-y-3">
         <Card>
           <CardContent className="py-6 text-sm text-destructive">
             Non riesco a caricare l'Accademia adesso.
+            <div className="mt-2 text-xs text-muted-foreground">{message}</div>
           </CardContent>
         </Card>
         <Button onClick={() => graphQuery.refetch()} className="rounded-xl">

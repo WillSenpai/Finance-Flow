@@ -3,7 +3,8 @@ import { ArrowLeft, Plus, Trash2, PieChart as PieChartIcon } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { useUser, Investimento } from "@/contexts/UserContext";
+import type { Investimento } from "@/contexts/UserContext";
+import { useUser } from "@/hooks/useUser";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";

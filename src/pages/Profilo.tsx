@@ -1,6 +1,6 @@
 import { Bell, Palette, Shield, Info, Flame, BookOpen, LogOut, Star, ArrowUpRight, X, CheckCheck, Lock, FileText, Gamepad2, Compass, GraduationCap, Trash2, Loader2, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useUser } from "@/contexts/UserContext";
+import { useUser } from "@/hooks/useUser";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePoints } from "@/contexts/PointsContext";
 import { useNavigate } from "react-router-dom";
