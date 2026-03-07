@@ -38,7 +38,7 @@ const fallbackFlow: Array<{ key: StepType; title: string }> = [
   { key: "feedback", title: "Feedback" },
 ];
 
-function toWordLimitedConcept(markdown: string, maxWords: number): string {
+function toWordLimitedText(markdown: string, maxWords: number): string {
   const raw = markdown
     .replace(/^###\s+/gm, "")
     .replace(/[#>*_`-]/g, " ")
@@ -54,6 +54,12 @@ function pickSection(markdown: string, index: number): string {
   const sections = markdown.split(/(?=^###\s)/m).filter((s) => s.trim());
   if (sections[index]) return sections[index].replace(/^###\s+.+\n?/, "").trim();
   return markdown.trim();
+}
+
+function pickSectionTitle(markdown: string, index: number): string {
+  const sections = markdown.split(/(?=^###\s)/m).filter((s) => s.trim());
+  const heading = sections[index]?.match(/^###\s+(.+)$/m)?.[1]?.trim();
+  return heading || "Focus del nodo";
 }
 
 function statusLabel(status: NodeStatus) {
@@ -84,9 +90,12 @@ const LessonStepper = ({
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const conceptText = useMemo(() => toWordLimitedConcept(markdown, 200), [markdown]);
-  const widgetText = useMemo(() => pickSection(markdown, 1), [markdown]);
-  const challengeText = useMemo(() => pickSection(markdown, 2), [markdown]);
+  const conceptTitle = useMemo(() => pickSectionTitle(markdown, 0), [markdown]);
+  const widgetTitle = useMemo(() => pickSectionTitle(markdown, 1), [markdown]);
+  const challengeTitle = useMemo(() => pickSectionTitle(markdown, 2), [markdown]);
+  const conceptText = useMemo(() => toWordLimitedText(pickSection(markdown, 0), 55), [markdown]);
+  const widgetText = useMemo(() => toWordLimitedText(pickSection(markdown, 1), 45), [markdown]);
+  const challengeText = useMemo(() => toWordLimitedText(pickSection(markdown, 2), 45), [markdown]);
 
   const runtimeFlow = useMemo(() => {
     if (nodes.length > 0) {
@@ -194,8 +203,11 @@ const LessonStepper = ({
       <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-border/60 bg-card p-5">
         {currentNode.node_key === "concept" ? (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Capisci il concetto in meno di 200 parole</h2>
-            <p className="text-sm leading-relaxed text-muted-foreground">{conceptText}</p>
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Nodo 1 · Capisci</p>
+              <h2 className="mt-1 text-base font-semibold">{conceptTitle}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{conceptText}</p>
+            </div>
             <Button
               onClick={() => submitAdvance("concept", {}, 1)}
               disabled={tracking || currentNode.status === "completed" || currentNode.status === "locked"}
@@ -208,9 +220,10 @@ const LessonStepper = ({
 
         {currentNode.node_key === "widget" ? (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Applica subito (Widget)</h2>
-            <div className="rounded-xl border border-border/60 bg-muted/40 p-4 text-sm leading-relaxed">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{widgetText}</ReactMarkdown>
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Nodo 2 · Applica</p>
+              <h2 className="mt-1 text-base font-semibold">{widgetTitle}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{widgetText}</p>
             </div>
             <Button
               onClick={() => submitAdvance("widget", {}, 2)}
@@ -224,11 +237,12 @@ const LessonStepper = ({
 
         {currentNode.node_key === "challenge" ? (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Challenge</h2>
-            <div className="rounded-xl border border-border/60 bg-muted/40 p-4 text-sm leading-relaxed">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{challengeText}</ReactMarkdown>
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Nodo 3 · Verifica</p>
+              <h2 className="mt-1 text-base font-semibold">{challengeTitle}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{challengeText}</p>
             </div>
-            <p className="text-sm text-muted-foreground">Come valuti il tuo risultato?</p>
+            <p className="text-sm text-muted-foreground">Valuta in modo rapido come e andata.</p>
             <div className="grid gap-2 md:grid-cols-3">
               <Button variant="outline" className="rounded-xl" disabled={tracking || currentNode.status === "completed" || currentNode.status === "locked"} onClick={() => submitChallenge("weak")}>Faticoso</Button>
               <Button variant="outline" className="rounded-xl" disabled={tracking || currentNode.status === "completed" || currentNode.status === "locked"} onClick={() => submitChallenge("good")}>Buono</Button>
