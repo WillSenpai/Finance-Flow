@@ -1,0 +1,72 @@
+project_id = "ilmodaqjpjuldwtkbeyd"
+
+[auth]
+site_url = "http://localhost:5173"
+additional_redirect_urls = [
+  "http://localhost:5173/auth/callback",
+  "http://localhost:5173/reset-password",
+  "my-money-compass://auth/callback",
+  "my-money-compass://reset-password"
+]
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+secure_password_change = true
+max_frequency = "1m0s"
+otp_length = 6
+otp_expiry = 3600
+
+[auth.email.template.recovery]
+subject = "Reimposta la password su Finance Flow"
+content_path = "./supabase/templates/auth/recovery.html"
+
+[auth.email.template.confirmation]
+subject = "Conferma il tuo account Finance Flow"
+content_path = "./supabase/templates/auth/confirmation.html"
+
+[auth.email.template.magic_link]
+subject = "Il tuo accesso rapido a Finance Flow"
+content_path = "./supabase/templates/auth/magic_link.html"
+
+[auth.email.template.invite]
+subject = "Sei stato invitato su Finance Flow"
+content_path = "./supabase/templates/auth/invite.html"
+
+[auth.email.template.email_change]
+subject = "Conferma il cambio email su Finance Flow"
+content_path = "./supabase/templates/auth/email_change.html"
+
+[functions.chat]
+verify_jwt = true
+
+[functions.parse-spesa]
+verify_jwt = true
+
+[functions.report]
+verify_jwt = true
+
+[functions.news-summary]
+verify_jwt = true
+
+[functions.academy-lesson]
+verify_jwt = true
+
+[functions.news-rss]
+verify_jwt = true
+
+[functions.news-generate-cache]
+verify_jwt = false
+
+[functions.academy-generate-cache]
+verify_jwt = true
+
+[functions.generate-lesson-illustrations]
+verify_jwt = true
+
+[functions.delete-account]
+verify_jwt = true
+
+[functions.post-generate]
+verify_jwt = true

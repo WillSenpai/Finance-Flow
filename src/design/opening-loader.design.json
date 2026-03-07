@@ -1,0 +1,162 @@
+{
+  "meta": {
+    "name": "Finance Flow Opening Loader",
+    "sourceFileKey": "sdJsVxpdedh91yUgGnQZNV",
+    "nodes": ["4311:2", "4312:11", "4312:18", "4312:25", "4312:35"],
+    "updatedAt": "2026-03-06"
+  },
+  "artboard": {
+    "width": 393,
+    "height": 852,
+    "background": "#d8ccb6"
+  },
+  "animation": {
+    "phaseTimestampsMs": [0, 500, 2001, 2700, 3050],
+    "frameFadeMs": 320,
+    "overlayExitMs": 450,
+    "phaseTransitions": [
+      null,
+      {
+        "kind": "bezier",
+        "delayMs": 460,
+        "durationMs": 1460,
+        "ease": [0, 0, 0.1, 1]
+      },
+      {
+        "kind": "spring",
+        "delayMs": 1,
+        "mass": 1,
+        "stiffness": 100,
+        "damping": 7
+      },
+      {
+        "kind": "spring",
+        "delayMs": 1,
+        "mass": 1,
+        "stiffness": 300,
+        "damping": 20
+      },
+      {
+        "kind": "spring",
+        "delayMs": 1,
+        "mass": 10.24,
+        "stiffness": 100,
+        "damping": 4.8
+      }
+    ]
+  },
+  "textStyle": {
+    "fontFamily": "'Jomhuria', 'Arial Narrow', sans-serif",
+    "fontSize": 48,
+    "lineHeight": 38,
+    "fontWeight": 400,
+    "color": "#ffffff"
+  },
+  "frames": [
+    {
+      "id": "4311:2",
+      "shadow": {
+        "x": 77,
+        "y": 462,
+        "width": 240,
+        "height": 65,
+        "color": "#d9d9d9",
+        "borderRadius": 120
+      },
+      "logo": {
+        "x": 156,
+        "y": 480,
+        "width": 82,
+        "height": 66,
+        "borderRadius": 33
+      }
+    },
+    {
+      "id": "4312:11",
+      "shadow": {
+        "x": 195.8,
+        "y": 454.175,
+        "width": 2.4,
+        "height": 0.65,
+        "color": "#d9d9d9",
+        "borderRadius": 1
+      },
+      "logo": {
+        "x": 156,
+        "y": 259,
+        "width": 82,
+        "height": 66,
+        "borderRadius": 33
+      }
+    },
+    {
+      "id": "4312:18",
+      "shadow": {
+        "x": 195.8,
+        "y": 454.175,
+        "width": 2.4,
+        "height": 0.65,
+        "color": "#d9d9d9",
+        "borderRadius": 1
+      },
+      "logo": {
+        "x": 163,
+        "y": 399,
+        "width": 67,
+        "height": 53.7763,
+        "borderRadius": 26.8882
+      }
+    },
+    {
+      "id": "4312:25",
+      "shadow": {
+        "x": 195.8,
+        "y": 454.18,
+        "width": 2.4,
+        "height": 0.65,
+        "color": "#d9d9d9",
+        "borderRadius": 1
+      },
+      "logo": {
+        "x": 87,
+        "y": 398,
+        "width": 67,
+        "height": 53.7763,
+        "borderRadius": 26.8882
+      },
+      "text": {
+        "content": "INANCE FLOW",
+        "x": 156,
+        "y": 415,
+        "width": 169,
+        "height": 38,
+        "clipWidth": 1
+      }
+    },
+    {
+      "id": "4312:35",
+      "shadow": {
+        "x": 195.8,
+        "y": 454.18,
+        "width": 2.4,
+        "height": 0.65,
+        "color": "#d9d9d9",
+        "borderRadius": 1
+      },
+      "logo": {
+        "x": 87,
+        "y": 398,
+        "width": 67,
+        "height": 53.7763,
+        "borderRadius": 26.8882
+      },
+      "text": {
+        "content": "INANCE FLOW",
+        "x": 156,
+        "y": 415,
+        "width": 169,
+        "height": 38
+      }
+    }
+  ]
+}
