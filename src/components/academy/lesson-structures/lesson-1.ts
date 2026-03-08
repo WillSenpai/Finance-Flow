@@ -6,7 +6,7 @@ const content: StructuredLessonContent = {
     nodeKey: "concept",
     criteria: ["foundational", "integration"],
     blocks: [
-      { kind: "focus", title: "Focus", content: "Un budget e il piano dei tuoi soldi: quanto entra, quanto esce e dove vuoi arrivare." },
+      { kind: "focus", title: "Focus", content: "Il budget è un documento previsionale che pianifica entrate, uscite, costi e ricavi per un periodo futuro, che solitamente è di un anno.🗓️ \nServe come strumento di controllo per gestire risorse limitate, fissando obiettivi economici e finanziari per aziende, progetti, gestione familiare o la propria gestione personale delle spese. \nQuindi, in parole povere, **il budget** è uno strumento che ti aiuta a pianificare e controllare le tue finanze, in modo da poter raggiungere i tuoi obiettivi economici e finanziari.😁" },
       { kind: "explain", title: "Spiegazione rapida", content: "Pensalo come una mappa di viaggio. Senza mappa spendi a caso; con una mappa scegli prima limiti, priorita e margine." },
       { kind: "question", title: "Domanda guida", content: "Quale spesa ti sorprende di piu a fine mese e vuoi mettere sotto controllo?" },
       { kind: "exercise", title: "Micro-azione", content: "Scegli una categoria (spesa casa, trasporti o svago) e definisci un tetto semplice per 7 giorni." },

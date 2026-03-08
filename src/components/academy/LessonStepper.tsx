@@ -514,7 +514,6 @@ const LessonStepper = ({
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [conceptChoice, setConceptChoice] = useState<string | null>(null);
   const [widgetChoice, setWidgetChoice] = useState<string | null>(null);
-  const [activeConceptBlock, setActiveConceptBlock] = useState<number | null>(null);
   const [openedBlockPage, setOpenedBlockPage] = useState<OpenedBlockPage | null>(null);
   const [explainProgress, setExplainProgress] = useState<Record<string, ExplainProgressEntry>>({});
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -552,12 +551,6 @@ const LessonStepper = ({
     const firstAvailable = runtimeFlow.findIndex((node) => node.status === "available" || node.status === "skipped");
     if (firstAvailable >= 0) setCurrent(firstAvailable);
   }, [currentNode, runtimeFlow]);
-
-  useEffect(() => {
-    if (!currentNode) return;
-    if (currentNode.node_key !== "concept") return;
-    setActiveConceptBlock((prev) => (prev === null ? 0 : prev));
-  }, [currentNode]);
 
   const submitAdvance = async (nodeKey: StepType, payload?: Record<string, unknown>, nextIndex?: number) => {
     setTracking(true);
@@ -611,98 +604,56 @@ const LessonStepper = ({
   };
 
   const renderNodeBlocks = (content: StructuredNodeContent) => {
-    if (content.nodeKey === "concept") {
-      return (
-        <div className="relative space-y-3 py-1">
-          <div className="pointer-events-none absolute bottom-0 left-1/2 top-0 w-px -translate-x-1/2 bg-border/60" />
-          <div className="space-y-2">
-            {content.blocks.map((block, index) => (
-              <div key={`concept-prompt-${block.kind}-${index}`} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3">
-                {index % 2 === 0 ? (
-                  <div className="flex justify-end">
-                    <Button
-                      variant={activeConceptBlock === index ? "default" : "outline"}
-                      aria-pressed={activeConceptBlock === index}
-                      className="aspect-square h-[106px] w-[106px] whitespace-normal rounded-xl p-2 text-center text-[11px] leading-tight sm:h-[118px] sm:w-[118px] sm:text-xs"
-                      onClick={() => {
-                        setActiveConceptBlock(index);
-                        setOpenedBlockPage({ nodeKey: "concept", index });
-                      }}
-                    >
-                      <span className="flex h-full w-full flex-col items-center justify-center">
-                        <span className="text-base leading-none">{getBlockLabel("concept", block.kind).emoji}</span>
-                        <span className="mt-1 text-[11px] font-semibold leading-tight sm:text-xs">
-                          {getBlockLabel("concept", block.kind).title}
-                        </span>
-                      </span>
-                    </Button>
-                  </div>
-                ) : (
-                  <div />
-                )}
-
-                <div className="pointer-events-none h-3.5 w-3.5 rounded-full border border-border/70 bg-background" />
-
-                {index % 2 !== 0 ? (
-                  <div className="flex justify-start">
-                    <Button
-                      variant={activeConceptBlock === index ? "default" : "outline"}
-                      aria-pressed={activeConceptBlock === index}
-                      className="aspect-square h-[106px] w-[106px] whitespace-normal rounded-xl p-2 text-center text-[11px] leading-tight sm:h-[118px] sm:w-[118px] sm:text-xs"
-                      onClick={() => {
-                        setActiveConceptBlock(index);
-                        setOpenedBlockPage({ nodeKey: "concept", index });
-                      }}
-                    >
-                      <span className="flex h-full w-full flex-col items-center justify-center">
-                        <span className="text-base leading-none">{getBlockLabel("concept", block.kind).emoji}</span>
-                        <span className="mt-1 text-[11px] font-semibold leading-tight sm:text-xs">
-                          {getBlockLabel("concept", block.kind).title}
-                        </span>
-                      </span>
-                    </Button>
-                  </div>
-                ) : (
-                  <div />
-                )}
-              </div>
-            ))} 
-          </div>
-        </div>
-      );
-    }
-
+    const activeIndex = openedBlockPage?.nodeKey === content.nodeKey ? openedBlockPage.index : -1;
     return (
-      <div className="space-y-3">
-        <div className="space-y-3">
-          {content.blocks.map((block, index) => {
-            const isLeft = index % 2 === 0;
-
-            return (
-              <div key={`${content.nodeKey}-${block.kind}`} className="relative">
-                {index < content.blocks.length - 1 ? (
-                  <div className="pointer-events-none absolute left-1/2 top-8 h-[calc(100%+0.75rem)] w-px -translate-x-1/2 bg-border/60" />
-                ) : null}
-
-                <div className={`flex ${isLeft ? "justify-start" : "justify-end"} items-start`}>
-                  <div className="pointer-events-none absolute left-1/2 top-4 h-3.5 w-3.5 -translate-x-1/2 rounded-full border border-border/70 bg-background" />
-                  <motion.button
-                    type="button"
-                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ duration: 0.35, ease: "easeOut" }}
-                    className="w-[84%] rounded-xl border border-primary/30 bg-primary/5 p-3.5 text-left"
+      <div className="relative space-y-3 py-1">
+        <div className="pointer-events-none absolute bottom-0 left-1/2 top-0 w-px -translate-x-1/2 bg-border/60" />
+        <div className="space-y-2">
+          {content.blocks.map((block, index) => (
+            <div key={`${content.nodeKey}-${block.kind}`} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3">
+              {index % 2 === 0 ? (
+                <div className="flex justify-end">
+                  <Button
+                    variant={activeIndex === index ? "default" : "outline"}
+                    aria-pressed={activeIndex === index}
+                    className="aspect-square h-[106px] w-[106px] whitespace-normal rounded-xl p-2 text-center text-[11px] leading-tight sm:h-[118px] sm:w-[118px] sm:text-xs"
                     onClick={() => setOpenedBlockPage({ nodeKey: content.nodeKey, index })}
                   >
-                    <p className="text-sm font-semibold text-foreground/95">
-                      {getBlockLabel(content.nodeKey, block.kind).emoji} {getBlockLabel(content.nodeKey, block.kind).title}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">{getBlockLabel(content.nodeKey, block.kind).subtitle}</p>
-                  </motion.button>
+                    <span className="flex h-full w-full flex-col items-center justify-center">
+                      <span className="text-base leading-none">{getBlockLabel(content.nodeKey, block.kind).emoji}</span>
+                      <span className="mt-1 text-[11px] font-semibold leading-tight sm:text-xs">
+                        {getBlockLabel(content.nodeKey, block.kind).title}
+                      </span>
+                    </span>
+                  </Button>
                 </div>
-              </div>
-            );
-          })}
+              ) : (
+                <div />
+              )}
+
+              <div className="pointer-events-none h-3.5 w-3.5 rounded-full border border-border/70 bg-background" />
+
+              {index % 2 !== 0 ? (
+                <div className="flex justify-start">
+                  <Button
+                    variant={activeIndex === index ? "default" : "outline"}
+                    aria-pressed={activeIndex === index}
+                    className="aspect-square h-[106px] w-[106px] whitespace-normal rounded-xl p-2 text-center text-[11px] leading-tight sm:h-[118px] sm:w-[118px] sm:text-xs"
+                    onClick={() => setOpenedBlockPage({ nodeKey: content.nodeKey, index })}
+                  >
+                    <span className="flex h-full w-full flex-col items-center justify-center">
+                      <span className="text-base leading-none">{getBlockLabel(content.nodeKey, block.kind).emoji}</span>
+                      <span className="mt-1 text-[11px] font-semibold leading-tight sm:text-xs">
+                        {getBlockLabel(content.nodeKey, block.kind).title}
+                      </span>
+                    </span>
+                  </Button>
+                </div>
+              ) : (
+                <div />
+              )}
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -751,6 +702,25 @@ const LessonStepper = ({
     });
   };
 
+  const goBackInOpenedBlock = () => {
+    if (!openedBlockPage) return;
+    if (openedBlockPage.index === 0) {
+      setOpenedBlockPage(null);
+      return;
+    }
+    setOpenedBlockPage({ nodeKey: openedBlockPage.nodeKey, index: openedBlockPage.index - 1 });
+  };
+
+  const goNextInOpenedBlock = () => {
+    if (!openedBlockPage || !openedContent) return;
+    const nextIndex = openedBlockPage.index + 1;
+    if (nextIndex >= openedContent.blocks.length) {
+      setOpenedBlockPage(null);
+      return;
+    }
+    setOpenedBlockPage({ nodeKey: openedBlockPage.nodeKey, index: nextIndex });
+  };
+
   if (!currentNode) return null;
 
   if (openedBlockPage && openedContent && openedBlock) {
@@ -768,16 +738,10 @@ const LessonStepper = ({
 
     return (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="mb-3 flex items-center justify-between gap-2 border-b border-border/60 pb-3">
-          <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setOpenedBlockPage(null)}>
-            <ArrowLeft size={15} /> Torna al percorso
-          </Button>
+        <div className="min-h-0 flex-1 overflow-y-auto px-2">
           <p className="text-xs text-muted-foreground">
             Nodo {openedBlockPage.index + 1} · {openedContent.nodeKey}
           </p>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-border/60 bg-card p-4">
           <p className="text-lg font-semibold">
             {meta.emoji} {meta.title}
           </p>
@@ -785,7 +749,9 @@ const LessonStepper = ({
 
           {openedBlock.kind === "explain" ? (
             <div className="mt-4 space-y-4">
-              <p className="text-sm leading-relaxed text-foreground/95">{openedBlock.content}</p>
+              <div className="prose prose-sm max-w-none whitespace-pre-line text-foreground/95 dark:prose-invert">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{openedBlock.content}</ReactMarkdown>
+              </div>
 
               {explainFlow.map((step, idx) => {
                 const answered = interactive?.trail?.[idx];
@@ -798,9 +764,13 @@ const LessonStepper = ({
                 if (!isUnlocked) return null;
 
                 return (
-                  <div key={`${openedKey}-${step.id}`} className="space-y-3 rounded-xl border border-border/60 bg-muted/10 p-3.5">
+                  <div key={`${openedKey}-${step.id}`} className="space-y-2 border-b border-border/40 py-3">
                     <p className="text-xs font-medium text-muted-foreground">Passo {idx + 1}</p>
-                    {anchorText ? <p className="text-sm text-foreground/90">{anchorText}</p> : null}
+                    {anchorText ? (
+                      <div className="prose prose-sm max-w-none whitespace-pre-line text-foreground/90 dark:prose-invert">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{anchorText}</ReactMarkdown>
+                      </div>
+                    ) : null}
                     <p className="text-sm font-semibold text-foreground">{step.prompt}</p>
 
                     {answered ? (
@@ -809,7 +779,7 @@ const LessonStepper = ({
                         <p className="text-sm text-foreground">{answered.answer}</p>
                         <p className="text-sm text-foreground/90">{answered.followup}</p>
                         {idx < explainFlow.length - 1 ? (
-                          <p className="text-xs text-muted-foreground">{step.nextHint}</p>
+                          <p className="whitespace-pre-line text-xs text-muted-foreground">{step.nextHint}</p>
                         ) : null}
                       </>
                     ) : null}
@@ -833,7 +803,7 @@ const LessonStepper = ({
               })}
 
               {explainDone ? (
-                <div className="rounded-xl border border-emerald-300/50 bg-emerald-500/10 p-3.5">
+                <div className="border-l-2 border-emerald-500/60 pl-3">
                   <p className="text-sm font-semibold text-foreground">✅ Passaggio pratico completato</p>
                   <p className="mt-1 text-sm text-foreground/90">Hai completato il percorso guidato. Ora puoi passare al prossimo blocco.</p>
                   <Button
@@ -853,8 +823,24 @@ const LessonStepper = ({
               ) : null}
             </div>
           ) : (
-            <p className="mt-4 text-sm leading-relaxed text-foreground/95">{openedBlock.content}</p>
+            <div className="prose prose-sm mt-4 max-w-none whitespace-pre-line text-foreground/95 dark:prose-invert">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{openedBlock.content}</ReactMarkdown>
+            </div>
           )}
+        </div>
+        <div className="mt-auto border-t border-border/70 px-1 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-3">
+          <div className="grid grid-cols-2 gap-3">
+            <Button variant="outline" onClick={goBackInOpenedBlock} className="h-11 gap-2 rounded-2xl">
+              <ArrowLeft size={16} /> Indietro
+            </Button>
+            <Button
+              onClick={goNextInOpenedBlock}
+              disabled={openedBlock.kind === "explain" && explainFlow.length > 0 && !explainDone}
+              className="h-11 gap-2 rounded-2xl"
+            >
+              Avanti <ArrowRight size={16} />
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -914,8 +900,7 @@ const LessonStepper = ({
                 tracking ||
                 currentNode.status === "completed" ||
                 currentNode.status === "locked" ||
-                !conceptChoice ||
-                activeConceptBlock === null
+                !conceptChoice
               }
               className="rounded-xl"
             >

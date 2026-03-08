@@ -24,6 +24,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUser } from "@/hooks/useUser";
 import { toast } from "@/hooks/use-toast";
 import { slugifySection } from "@/lib/academy";
+import { resolveLessonDefinition } from "@/components/academy/lesson-structures";
+import type { NodeBlockKind, StepType, StructuredLessonContent } from "@/components/academy/lesson-structures/types";
 
 type AcademySection = {
   id: string;
@@ -44,6 +46,10 @@ type AcademyLesson = {
 };
 
 type DeleteMode = "move" | "delete_lessons";
+type EditorMode = "structured" | "preview";
+
+const NODE_ORDER: StepType[] = ["concept", "widget", "challenge", "feedback"];
+const BLOCK_ORDER: NodeBlockKind[] = ["focus", "explain", "question", "exercise"];
 
 const requiredSections = [
   "Introduzione",
@@ -111,6 +117,48 @@ function normalizeSections(markdown: string): string {
   return markdown.trim();
 }
 
+function cloneStructuredContent(value: StructuredLessonContent): StructuredLessonContent {
+  return JSON.parse(JSON.stringify(value)) as StructuredLessonContent;
+}
+
+function lessonPlaceholderContent(lessonId: string): string {
+  return [
+    "### Concept",
+    `Contenuto lezione gestito da file locale: src/components/academy/lesson-structures/lesson-${lessonId}.ts`,
+    "### Widget",
+    `Contenuto lezione gestito da file locale: src/components/academy/lesson-structures/lesson-${lessonId}.ts`,
+    "### Challenge",
+    `Contenuto lezione gestito da file locale: src/components/academy/lesson-structures/lesson-${lessonId}.ts`,
+    "### Feedback",
+    `Contenuto lezione gestito da file locale: src/components/academy/lesson-structures/lesson-${lessonId}.ts`,
+  ].join("\n");
+}
+
+function buildLessonPatch(lessonId: string, content: StructuredLessonContent): string {
+  const json = JSON.stringify(content, null, 2);
+  return [
+    `import { createStaticLessonDefinition } from "./defaultLessonDefinition";`,
+    `import type { StructuredLessonContent } from "./types";`,
+    "",
+    `const content: StructuredLessonContent = ${json};`,
+    "",
+    `const lesson${lessonId}Definition = createStaticLessonDefinition("${lessonId}", content);`,
+    "",
+    `export default lesson${lessonId}Definition;`,
+  ].join("\n");
+}
+
+function structuredContentToPreview(content: StructuredLessonContent): string {
+  return NODE_ORDER.map((nodeKey, idx) => {
+    const section = content[nodeKey];
+    const title = `### ${idx + 1}. ${nodeKey.toUpperCase()}`;
+    const blocks = section.blocks
+      .map((block) => `#### ${block.title}\n${block.content}`)
+      .join("\n\n");
+    return `${title}\n${blocks}`;
+  }).join("\n\n");
+}
+
 const AdminAccademia = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -124,13 +172,16 @@ const AdminAccademia = () => {
   const [isSectionDropdownOpen, setIsSectionDropdownOpen] = useState(false);
   const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
   const [isSectionsManagerOpen, setIsSectionsManagerOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"editor" | "preview">("editor");
+  const [activeTab, setActiveTab] = useState<EditorMode>("structured");
   const [hasDraftLoaded, setHasDraftLoaded] = useState(false);
   const [editorVersion, setEditorVersion] = useState(0);
 
   const [titolo, setTitolo] = useState("");
   const [content, setContent] = useState("");
   const [sectionIdForLesson, setSectionIdForLesson] = useState("");
+  const [structuredContent, setStructuredContent] = useState<StructuredLessonContent | null>(null);
+  const [structuredInitialHash, setStructuredInitialHash] = useState("");
+  const [activeNode, setActiveNode] = useState<StepType>("concept");
 
   const [newSectionTitle, setNewSectionTitle] = useState("");
   const [newSectionDescription, setNewSectionDescription] = useState("");
@@ -174,6 +225,21 @@ const AdminAccademia = () => {
       return (next.data || []) as AcademyLesson[];
     },
     enabled: isAdmin,
+  });
+
+  const { data: lessonNodeDraft } = useQuery({
+    queryKey: ["academy-lesson-node-draft", selectedLessonId],
+    queryFn: async () => {
+      if (!selectedLessonId) return null;
+      const { data, error } = await supabase
+        .from("academy_lesson_node_drafts" as any)
+        .select("payload, updated_at")
+        .eq("lesson_id", selectedLessonId)
+        .maybeSingle();
+      if (error) return null;
+      return data as { payload?: StructuredLessonContent; updated_at?: string } | null;
+    },
+    enabled: isAdmin && !!selectedLessonId,
   });
 
   useEffect(() => {
@@ -221,28 +287,39 @@ const AdminAccademia = () => {
     );
   }, [lessonsBySection, searchInModal, selectedSectionId]);
 
-  const previewSections = useMemo(() => splitMarkdownByH3(content), [content]);
+  const previewMarkdown = useMemo(
+    () => (structuredContent ? structuredContentToPreview(structuredContent) : content),
+    [structuredContent, content],
+  );
+  const previewSections = useMemo(() => splitMarkdownByH3(previewMarkdown), [previewMarkdown]);
 
-  const words = useMemo(() => (content.trim() ? content.trim().split(/\s+/).length : 0), [content]);
+  const words = useMemo(() => (previewMarkdown.trim() ? previewMarkdown.trim().split(/\s+/).length : 0), [previewMarkdown]);
   const estimatedMinutes = Math.max(1, Math.round(words / 180));
 
   const sectionStatus = useMemo(() => {
-    const source = content.toLowerCase();
-    return requiredSections.map((section) => ({
+    const done =
+      structuredContent &&
+      NODE_ORDER.every((nodeKey) =>
+        BLOCK_ORDER.every((blockKind) =>
+          Boolean(structuredContent[nodeKey].blocks.find((block) => block.kind === blockKind)?.content?.trim()),
+        ),
+      );
+    return requiredSections.map((section, index) => ({
       section,
-      ok: source.includes(`### ${section}`.toLowerCase()),
+      ok: done ? true : index === 0,
     }));
-  }, [content]);
+  }, [structuredContent]);
   const completedSections = sectionStatus.filter((section) => section.ok).length;
 
   const isDirty = useMemo(() => {
     if (!selectedLesson) return false;
+    const structuredHash = structuredContent ? JSON.stringify(structuredContent) : "";
     return (
       titolo.trim() !== selectedLesson.titolo ||
-      content.trim() !== selectedLesson.content ||
+      structuredHash !== structuredInitialHash ||
       sectionIdForLesson !== selectedLessonSectionId
     );
-  }, [content, sectionIdForLesson, selectedLesson, selectedLessonSectionId, titolo]);
+  }, [sectionIdForLesson, selectedLesson, selectedLessonSectionId, structuredContent, structuredInitialHash, titolo]);
 
   const getAuthHeaders = async () => {
     const session = await supabase.auth.getSession();
@@ -264,9 +341,10 @@ const AdminAccademia = () => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!selectedLesson) throw new Error("Seleziona una lezione");
+      if (!structuredContent) throw new Error("Contenuto nodi non disponibile");
       const payload: Record<string, unknown> = {
         titolo: titolo.trim(),
-        content: content.trim(),
+        content: lessonPlaceholderContent(selectedLesson.lesson_id),
         updated_at: new Date().toISOString(),
       };
       if (sectionIdForLesson) {
@@ -284,21 +362,37 @@ const AdminAccademia = () => {
           .from("academy_lessons_cache")
           .update({
             titolo: titolo.trim(),
-            content: content.trim(),
+            content: lessonPlaceholderContent(selectedLesson.lesson_id),
             updated_at: new Date().toISOString(),
           } as any)
           .eq("id", selectedLesson.id);
         if (legacy.error) throw legacy.error;
-        return;
+      } else {
+        throw attempt.error;
       }
-      throw attempt.error;
+
+      const { error: draftError } = await supabase
+        .from("academy_lesson_node_drafts" as any)
+        .upsert(
+          {
+            lesson_id: selectedLesson.lesson_id,
+            payload: structuredContent,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "lesson_id" },
+        );
+      if (draftError) throw draftError;
     },
     onSuccess: () => {
       if (selectedLessonId) {
         localStorage.removeItem(`academy-lesson-draft:${selectedLessonId}`);
       }
+      if (structuredContent) {
+        setStructuredInitialHash(JSON.stringify(structuredContent));
+      }
       setHasDraftLoaded(false);
       refreshAcademyData();
+      queryClient.invalidateQueries({ queryKey: ["academy-lesson-node-draft", selectedLessonId] });
       toast({ title: "Lezione aggiornata" });
     },
     onError: (error) => {
@@ -520,10 +614,14 @@ const AdminAccademia = () => {
     setSelectedSectionId(sectionForFilter);
     setSelectedLessonId(lesson.lesson_id);
     setTitolo(lesson.titolo);
-    setContent(lesson.content);
+    setContent(lessonPlaceholderContent(lesson.lesson_id));
     setSectionIdForLesson(sectionForEditor);
+    const fromFile = cloneStructuredContent(resolveLessonDefinition(lesson.lesson_id).buildStructuredContent());
+    setStructuredContent(fromFile);
+    setStructuredInitialHash(JSON.stringify(fromFile));
+    setActiveNode("concept");
     setHasDraftLoaded(false);
-    setActiveTab("editor");
+    setActiveTab("structured");
     setEditorVersion((value) => value + 1);
     localStorage.setItem(LAST_SELECTED_LESSON_KEY, lesson.lesson_id);
     localStorage.setItem(LAST_SELECTED_SECTION_KEY, sectionForFilter);
@@ -566,26 +664,46 @@ const AdminAccademia = () => {
 
   useEffect(() => {
     if (!selectedLessonId || !selectedLesson) return;
+    if (lessonNodeDraft?.payload) {
+      const dbHash = JSON.stringify(lessonNodeDraft.payload);
+      if (dbHash !== structuredInitialHash) {
+        const dbDraft = cloneStructuredContent(lessonNodeDraft.payload);
+        setStructuredContent(dbDraft);
+        setStructuredInitialHash(dbHash);
+      }
+      setHasDraftLoaded(true);
+      return;
+    }
     const raw = localStorage.getItem(`academy-lesson-draft:${selectedLessonId}`);
     if (!raw) return;
     try {
-      const draft = JSON.parse(raw) as { titolo: string; content: string; sectionId: string };
+      const draft = JSON.parse(raw) as {
+        titolo: string;
+        sectionId: string;
+        structuredContent?: StructuredLessonContent;
+      };
       setTitolo(draft.titolo || selectedLesson.titolo);
-      setContent(draft.content || selectedLesson.content);
       setSectionIdForLesson(draft.sectionId || selectedLessonSectionId);
+      if (draft.structuredContent) {
+        const localHash = JSON.stringify(draft.structuredContent);
+        if (localHash !== structuredInitialHash) {
+          setStructuredContent(cloneStructuredContent(draft.structuredContent));
+          setStructuredInitialHash(localHash);
+        }
+      }
       setHasDraftLoaded(true);
     } catch {
       localStorage.removeItem(`academy-lesson-draft:${selectedLessonId}`);
     }
-  }, [selectedLesson, selectedLessonId, selectedLessonSectionId]);
+  }, [lessonNodeDraft, selectedLesson, selectedLessonId, selectedLessonSectionId, structuredInitialHash]);
 
   useEffect(() => {
-    if (!selectedLessonId) return;
+    if (!selectedLessonId || !structuredContent) return;
     localStorage.setItem(
       `academy-lesson-draft:${selectedLessonId}`,
-      JSON.stringify({ titolo, content, sectionId: sectionIdForLesson }),
+      JSON.stringify({ titolo, sectionId: sectionIdForLesson, structuredContent }),
     );
-  }, [selectedLessonId, titolo, content, sectionIdForLesson]);
+  }, [selectedLessonId, titolo, sectionIdForLesson, structuredContent]);
 
   useEffect(() => {
     const onSave = (event: KeyboardEvent) => {
@@ -593,18 +711,52 @@ const AdminAccademia = () => {
       if (!isSave) return;
       event.preventDefault();
       if (!selectedLesson || !isDirty || saveMutation.isPending) return;
-      if (!titolo.trim() || !content.trim()) return;
+      if (!titolo.trim() || !structuredContent) return;
       saveMutation.mutate();
     };
     window.addEventListener("keydown", onSave);
     return () => window.removeEventListener("keydown", onSave);
-  }, [selectedLesson, isDirty, saveMutation, titolo, content]);
+  }, [selectedLesson, isDirty, saveMutation, titolo, structuredContent]);
 
   const onUploadChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
     uploadImageMutation.mutate(file);
+  };
+
+  const updateNodeBlock = (nodeKey: StepType, blockKind: NodeBlockKind, value: string) => {
+    setStructuredContent((prev) => {
+      if (!prev) return prev;
+      const next = cloneStructuredContent(prev);
+      const block = next[nodeKey].blocks.find((entry) => entry.kind === blockKind);
+      if (block) block.content = value;
+      return next;
+    });
+  };
+
+  const updateNodeOptions = (nodeKey: StepType, value: string) => {
+    setStructuredContent((prev) => {
+      if (!prev) return prev;
+      const next = cloneStructuredContent(prev);
+      next[nodeKey].options = value
+        .split("\n")
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+      return next;
+    });
+  };
+
+  const updateSuggestedPrompts = (nodeKey: StepType, value: string) => {
+    setStructuredContent((prev) => {
+      if (!prev) return prev;
+      const next = cloneStructuredContent(prev);
+      next[nodeKey].suggestedPrompts = value
+        .split("\n")
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+      return next;
+    });
   };
 
   if (loadingData) {
@@ -860,10 +1012,10 @@ const AdminAccademia = () => {
                 <div className="flex flex-col gap-2 p-2">
                   <div className="inline-flex rounded-lg bg-muted/50 p-0.5">
                     <button
-                      onClick={() => setActiveTab("editor")}
-                      className={`flex-1 rounded-md py-1.5 text-xs font-medium transition-all ${activeTab === "editor" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                      onClick={() => setActiveTab("structured")}
+                      className={`flex-1 rounded-md py-1.5 text-xs font-medium transition-all ${activeTab === "structured" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                     >
-                      Editor
+                      Editor nodi
                     </button>
                     <button
                       onClick={() => setActiveTab("preview")}
@@ -875,22 +1027,12 @@ const AdminAccademia = () => {
 
                   <div className="flex flex-wrap items-center gap-1.5">
                     <button
-                      onClick={() => setContent(getMarkdownTemplate(titolo || selectedLesson.titolo))}
-                      className="rounded-lg border border-border/60 bg-background px-2 py-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    >
-                      Template base
-                    </button>
-                    <button
-                      onClick={() => setContent((prev) => normalizeSections(prev))}
-                      className="rounded-lg border border-border/60 bg-background px-2 py-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    >
-                      Normalizza sezioni
-                    </button>
-                    <button
                       onClick={async () => {
+                        if (!structuredContent || !selectedLesson) return;
+                        const patch = buildLessonPatch(selectedLesson.lesson_id, structuredContent);
                         try {
-                          await navigator.clipboard.writeText(content);
-                          toast({ title: "Markdown copiato" });
+                          await navigator.clipboard.writeText(patch);
+                          toast({ title: "Patch TypeScript copiata" });
                         } catch {
                           toast({ title: "Impossibile copiare", variant: "destructive" });
                         }
@@ -898,19 +1040,64 @@ const AdminAccademia = () => {
                       className="inline-flex items-center gap-1 rounded-lg border border-border/60 bg-background px-2 py-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     >
                       <Clipboard size={12} />
-                      Copia
+                      Esporta patch TS
                     </button>
                   </div>
                 </div>
 
                 <div className="px-1 pb-1">
-                  {activeTab === "editor" ? (
-                    <textarea
-                      value={content}
-                      onChange={(event) => setContent(event.target.value)}
-                      className="min-h-[360px] w-full rounded-xl border border-border/60 bg-background p-4 text-sm leading-relaxed outline-none transition-colors focus:border-primary"
-                      placeholder="Scrivi qui il contenuto della lezione in markdown..."
-                    />
+                  {activeTab === "structured" ? (
+                    <div className="grid min-h-[460px] gap-3 rounded-xl border border-border/60 bg-background p-3 md:grid-cols-[170px_1fr]">
+                      <div className="space-y-2">
+                        {NODE_ORDER.map((nodeKey) => (
+                          <button
+                            key={nodeKey}
+                            onClick={() => setActiveNode(nodeKey)}
+                            className={`w-full rounded-xl border px-3 py-2 text-left text-xs font-semibold transition-colors ${
+                              activeNode === nodeKey ? "border-primary bg-primary/10 text-primary" : "border-border/60 bg-card hover:bg-muted"
+                            }`}
+                          >
+                            {nodeKey.toUpperCase()}
+                          </button>
+                        ))}
+                      </div>
+
+                      {structuredContent ? (
+                        <div className="space-y-3">
+                          {BLOCK_ORDER.map((blockKind) => {
+                            const block = structuredContent[activeNode].blocks.find((entry) => entry.kind === blockKind);
+                            return (
+                              <div key={`${activeNode}-${blockKind}`} className="space-y-1">
+                                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{blockKind}</p>
+                                <textarea
+                                  value={block?.content || ""}
+                                  onChange={(event) => updateNodeBlock(activeNode, blockKind, event.target.value)}
+                                  className="min-h-[92px] w-full rounded-xl border border-border/60 bg-background p-3 text-sm leading-relaxed outline-none transition-colors focus:border-primary"
+                                />
+                              </div>
+                            );
+                          })}
+
+                          <div className="space-y-1">
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">options (una per riga)</p>
+                            <textarea
+                              value={(structuredContent[activeNode].options || []).join("\n")}
+                              onChange={(event) => updateNodeOptions(activeNode, event.target.value)}
+                              className="min-h-[80px] w-full rounded-xl border border-border/60 bg-background p-3 text-xs leading-relaxed outline-none transition-colors focus:border-primary"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">suggested prompts (una per riga)</p>
+                            <textarea
+                              value={(structuredContent[activeNode].suggestedPrompts || []).join("\n")}
+                              onChange={(event) => updateSuggestedPrompts(activeNode, event.target.value)}
+                              className="min-h-[80px] w-full rounded-xl border border-border/60 bg-background p-3 text-xs leading-relaxed outline-none transition-colors focus:border-primary"
+                            />
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
                   ) : (
                     <div className="min-h-[360px] space-y-3 rounded-xl border border-border/60 bg-background p-4">
                       {previewSections.map((section) => (
@@ -992,7 +1179,7 @@ const AdminAccademia = () => {
               <div className="flex flex-col gap-2 pt-2">
                 <button
                   onClick={() => saveMutation.mutate()}
-                  disabled={saveMutation.isPending || !titolo.trim() || !content.trim() || !isDirty}
+                  disabled={saveMutation.isPending || !titolo.trim() || !structuredContent || !isDirty}
                   className="rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
                 >
                   {saveMutation.isPending ? "Salvataggio..." : "Salva modifiche"}
@@ -1001,7 +1188,10 @@ const AdminAccademia = () => {
                   onClick={() => {
                     if (!selectedLesson) return;
                     setTitolo(selectedLesson.titolo);
-                    setContent(selectedLesson.content);
+                    const fromFile = cloneStructuredContent(resolveLessonDefinition(selectedLesson.lesson_id).buildStructuredContent());
+                    setStructuredContent(fromFile);
+                    setStructuredInitialHash(JSON.stringify(fromFile));
+                    setContent(lessonPlaceholderContent(selectedLesson.lesson_id));
                     setSectionIdForLesson(selectedLessonSectionId);
                     if (selectedLessonId) localStorage.removeItem(`academy-lesson-draft:${selectedLessonId}`);
                     setHasDraftLoaded(false);
