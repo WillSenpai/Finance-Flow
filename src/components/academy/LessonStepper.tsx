@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { resolveLessonDefinition, resolveLessonVisualConfig } from "@/components/academy/lesson-structures";
 
 type StepType = "concept" | "widget" | "challenge" | "feedback";
 type NodeStatus = "locked" | "available" | "completed" | "skipped";
@@ -25,7 +26,7 @@ type LessonNode = {
 };
 
 type LessonStepperProps = {
-  markdown: string;
+  lessonId: string;
   nodes: LessonNode[];
   isLessonCompleted: boolean;
   isProUser: boolean;
@@ -493,7 +494,7 @@ function blockLabel(nodeKey: StepType, kind: NodeBlock["kind"]): { emoji: string
 }
 
 const LessonStepper = ({
-  markdown,
+  lessonId,
   nodes,
   isLessonCompleted,
   isProUser,
@@ -532,24 +533,14 @@ const LessonStepper = ({
     }));
   }, [nodes]);
 
+  const lessonDefinition = useMemo(() => resolveLessonDefinition(lessonId), [lessonId]);
+  const visualConfig = useMemo(() => resolveLessonVisualConfig(lessonDefinition), [lessonDefinition]);
+
   const structuredContent = useMemo(() => {
-    const sections = splitSections(markdown);
-    const byNode: Record<StepType, SectionData> = {
-      concept: sections[0] || sections[sections.length - 1] || { title: "Concept", body: markdown },
-      widget: sections[1] || sections[0] || { title: "Widget", body: markdown },
-      challenge: sections[2] || sections[1] || sections[0] || { title: "Challenge", body: markdown },
-      feedback: sections[3] || sections[2] || sections[0] || { title: "Feedback", body: markdown },
-    };
+    return lessonDefinition.buildStructuredContent();
+  }, [lessonDefinition]);
 
-    const criteriaByNode = assignCriteriaByNode(byNode);
-
-    return {
-      concept: buildStructuredNode("concept", byNode.concept, criteriaByNode.concept),
-      widget: buildStructuredNode("widget", byNode.widget, criteriaByNode.widget),
-      challenge: buildStructuredNode("challenge", byNode.challenge, criteriaByNode.challenge),
-      feedback: buildStructuredNode("feedback", byNode.feedback, criteriaByNode.feedback),
-    };
-  }, [markdown]);
+  const getBlockLabel = (nodeKey: StepType, kind: NodeBlock["kind"]) => visualConfig.blockLabels[nodeKey][kind];
 
   const currentNode = runtimeFlow[current];
   const canPrev = current > 0;
@@ -639,9 +630,9 @@ const LessonStepper = ({
                       }}
                     >
                       <span className="flex h-full w-full flex-col items-center justify-center">
-                        <span className="text-base leading-none">{blockLabel("concept", block.kind).emoji}</span>
+                        <span className="text-base leading-none">{getBlockLabel("concept", block.kind).emoji}</span>
                         <span className="mt-1 text-[11px] font-semibold leading-tight sm:text-xs">
-                          {blockLabel("concept", block.kind).title}
+                          {getBlockLabel("concept", block.kind).title}
                         </span>
                       </span>
                     </Button>
@@ -664,9 +655,9 @@ const LessonStepper = ({
                       }}
                     >
                       <span className="flex h-full w-full flex-col items-center justify-center">
-                        <span className="text-base leading-none">{blockLabel("concept", block.kind).emoji}</span>
+                        <span className="text-base leading-none">{getBlockLabel("concept", block.kind).emoji}</span>
                         <span className="mt-1 text-[11px] font-semibold leading-tight sm:text-xs">
-                          {blockLabel("concept", block.kind).title}
+                          {getBlockLabel("concept", block.kind).title}
                         </span>
                       </span>
                     </Button>
@@ -704,9 +695,9 @@ const LessonStepper = ({
                     onClick={() => setOpenedBlockPage({ nodeKey: content.nodeKey, index })}
                   >
                     <p className="text-sm font-semibold text-foreground/95">
-                      {blockLabel(content.nodeKey, block.kind).emoji} {blockLabel(content.nodeKey, block.kind).title}
+                      {getBlockLabel(content.nodeKey, block.kind).emoji} {getBlockLabel(content.nodeKey, block.kind).title}
                     </p>
-                    <p className="mt-1 text-xs text-muted-foreground">{blockLabel(content.nodeKey, block.kind).subtitle}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{getBlockLabel(content.nodeKey, block.kind).subtitle}</p>
                   </motion.button>
                 </div>
               </div>
@@ -716,8 +707,6 @@ const LessonStepper = ({
       </div>
     );
   };
-
-  if (!currentNode) return null;
 
   const openedContent = openedBlockPage ? structuredContent[openedBlockPage.nodeKey] : null;
   const openedBlock = openedContent?.blocks?.[openedBlockPage?.index ?? -1];
@@ -762,8 +751,10 @@ const LessonStepper = ({
     });
   };
 
+  if (!currentNode) return null;
+
   if (openedBlockPage && openedContent && openedBlock) {
-    const meta = blockLabel(openedBlockPage.nodeKey, openedBlock.kind);
+    const meta = getBlockLabel(openedBlockPage.nodeKey, openedBlock.kind);
     const explainFlow = openedContent.explainFlow ?? [];
     const currentExplainStep = interactive ? explainFlow[interactive.step] : undefined;
     const explainDone = interactive ? interactive.step >= explainFlow.length : false;
@@ -902,7 +893,7 @@ const LessonStepper = ({
       <div className="relative min-h-0 flex-1 overflow-y-auto pr-1">
         {currentNode.node_key === "concept" ? (
           <div className="space-y-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Nodo 1 · Capisci</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{visualConfig.nodeBadgeTitles.concept}</p>
             {renderNodeBlocks(structuredContent.concept)}
             <div className="grid gap-2">
               {structuredContent.concept.options?.map((option) => (
@@ -935,7 +926,7 @@ const LessonStepper = ({
 
         {currentNode.node_key === "widget" ? (
           <div className="space-y-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Nodo 2 · Applica</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{visualConfig.nodeBadgeTitles.widget}</p>
             {renderNodeBlocks(structuredContent.widget)}
             <div className="grid gap-2">
               {structuredContent.widget.options?.map((option) => (
@@ -967,7 +958,7 @@ const LessonStepper = ({
 
         {currentNode.node_key === "challenge" ? (
           <div className="space-y-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Nodo 3 · Verifica</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{visualConfig.nodeBadgeTitles.challenge}</p>
             {renderNodeBlocks(structuredContent.challenge)}
             <p className="text-sm text-muted-foreground">Come e andata davvero? Scegli senza pensarci troppo.</p>
             <div className="grid gap-2 md:grid-cols-3">
@@ -1001,7 +992,7 @@ const LessonStepper = ({
 
         {currentNode.node_key === "feedback" ? (
           <div className="flex h-full flex-col">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Nodo 4 · Chiudi il cerchio</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{visualConfig.nodeBadgeTitles.feedback}</p>
             <h2 className="mb-1 mt-1 text-lg font-semibold">Feedback + tutor</h2>
             <p className="mb-4 text-xs text-muted-foreground">La lezione si completa solo quando tutti i nodi sono completati.</p>
 

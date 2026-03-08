@@ -114,7 +114,9 @@ const LezioneDetail = () => {
   });
 
   const lessonTitle = lessonData?.titolo || getDefaultLessonTitle(lessonId);
-  const explanation = lessonData?.content || null;
+  const explanation =
+    lessonData?.content ||
+    "### Concept\nContenuto gestito da file locale.\n### Widget\nContenuto gestito da file locale.\n### Challenge\nContenuto gestito da file locale.\n### Feedback\nContenuto gestito da file locale.";
 
   const { data: nodeRuntime, isLoading: nodesLoading } = useQuery({
     queryKey: ["academy-lesson-nodes", user?.id, lessonId],
@@ -411,9 +413,9 @@ const LezioneDetail = () => {
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-[90%]" />
             </div>
-          ) : explanation ? (
+          ) : (
             <LessonStepper
-              markdown={explanation}
+              lessonId={lessonId}
               nodes={nodeRuntime?.nodes || []}
               isLessonCompleted={isLessonCompleted}
               isProUser={planData?.plan === "pro"}
@@ -462,8 +464,6 @@ const LezioneDetail = () => {
               onSendChat={sendChatMessage}
               isChatLoading={isChatLoading}
             />
-          ) : (
-            <p className="text-sm italic text-muted-foreground">Contenuto della lezione non ancora disponibile.</p>
           )}
         </>
       )}
