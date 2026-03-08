@@ -49,13 +49,36 @@ type StructuredNodeContent = {
   nodeKey: StepType;
   criteria: CriterionKey[];
   blocks: NodeBlock[];
+  explainFlow?: ExplainFlowStep[];
   options?: string[];
   suggestedPrompts?: string[];
+};
+
+type ExplainFlowOption = {
+  label: string;
+  followup: string;
+};
+
+type ExplainFlowStep = {
+  id: string;
+  prompt: string;
+  options: ExplainFlowOption[];
+  nextHint: string;
 };
 
 type SectionData = {
   title: string;
   body: string;
+};
+
+type OpenedBlockPage = {
+  nodeKey: StepType;
+  index: number;
+};
+
+type ExplainProgressEntry = {
+  step: number;
+  trail: Array<{ question: string; answer: string; followup: string }>;
 };
 type FinanceContext = {
   topic: string;
@@ -158,6 +181,25 @@ function toColloquial(text: string): string {
     .replace(/\boccorre\b/gi, "serve")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function removeRepeatedOpening(text: string, reference: string): string {
+  const sentences = text
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (sentences.length <= 1) return text;
+
+  const firstSentence = cleanText(sentences[0]).toLowerCase();
+  const referenceText = cleanText(reference).toLowerCase();
+  if (!firstSentence || !referenceText) return text;
+
+  const isRepeatedStart =
+    firstSentence === referenceText ||
+    firstSentence.includes(referenceText) ||
+    referenceText.includes(firstSentence);
+
+  return isRepeatedStart ? sentences.slice(1).join(" ") : text;
 }
 
 function detectFinanceContext(text: string): FinanceContext {
@@ -287,6 +329,69 @@ function buildExerciseOptions(step: StepType, criteria: CriterionKey[]): string[
   ];
 }
 
+function buildExplainFlow(section: SectionData, finance: FinanceContext): ExplainFlowStep[] {
+  const anchor = shortText(section.body || section.title, 16);
+  return [
+    {
+      id: "start",
+      prompt: "Prima di partire, a cosa ti fermeresti a pensare per non andare alla cieca?",
+      options: [
+        {
+          label: "A dove voglio arrivare",
+          followup: `Perfetto: senza meta chiara, ogni scelta sembra urgente ma non fa avanzare.`,
+        },
+        {
+          label: "Quanto posso sostenere ogni mese",
+          followup: "Ottimo punto: la regola deve reggere nei mesi normali, non solo quando va tutto bene.",
+        },
+        {
+          label: "Quale rischio non voglio correre",
+          followup: "Scelta matura: chiarire il rischio evita decisioni impulsive quando arriva pressione.",
+        },
+      ],
+      nextHint: "Adesso trasformiamo questa idea in un criterio pratico da usare subito.",
+    },
+    {
+      id: "criteria",
+      prompt: "Quale criterio semplice useresti per decidere in modo coerente ogni settimana?",
+      options: [
+        {
+          label: "Regola fissa e ripetibile",
+          followup: "Coerenza vince sul talento: una regola chiara riduce errori e stress decisionale.",
+        },
+        {
+          label: "Soglia minima di sicurezza",
+          followup: "Benissimo: prima metti al sicuro la base, poi spingi sulla crescita.",
+        },
+        {
+          label: "Check rapido domenicale",
+          followup: "Scelta concreta: pochi minuti di revisione tengono il percorso sotto controllo.",
+        },
+      ],
+      nextHint: "Ultimo passo: portiamo tutto su un'azione concreta nel tuo contesto.",
+    },
+    {
+      id: "action",
+      prompt: "Se dovessi fare una sola mossa oggi, quale scegli per iniziare davvero?",
+      options: [
+        {
+          label: "Imposto una mini azione automatica",
+          followup: "Ottimo: l'automatismo elimina attrito e protegge la costanza.",
+        },
+        {
+          label: "Taglio una voce poco utile",
+          followup: "Scelta pragmatica: liberare margine adesso rende possibili le prossime mosse.",
+        },
+        {
+          label: "Definisco il mio limite massimo",
+          followup: "Perfetto: un limite esplicito ti aiuta a dire no nel momento giusto.",
+        },
+      ],
+      nextHint: `${finance.example} ${anchor ? `Riferimento chiave: ${anchor}.` : ""}`,
+    },
+  ];
+}
+
 function buildStructuredNode(
   step: StepType,
   section: SectionData,
@@ -299,17 +404,20 @@ function buildStructuredNode(
 
   const focusLine = `${criterionMeta[criteria[0]].title} + ${criterionMeta[criteria[1]].title}`;
   const questionLine = `${criterionMeta[criteria[0]].question} ${criterionMeta[criteria[1]].question} Come lo applichi al tuo tema: ${finance.topic}?`;
+  const explainFlow = buildExplainFlow(section, finance);
+  const focusCore = shortText(section.body || section.title, 22);
+  const explainText = removeRepeatedOpening(naturalText, focusCore);
 
   const blocks: NodeBlock[] = [
     {
       kind: "focus",
       title: "Focus",
-      content: `${focusLine}. Qui puntiamo a capire il pezzo chiave senza giri lunghi.`,
+      content: `Partiamo da un'idea semplice: ${focusCore}. Il punto non e memorizzare teoria, ma capire il meccanismo che guida la scelta. ${focusLine} diventano la bussola per decidere con piu lucidita, anche quando hai poco tempo.`,
     },
     {
       kind: "explain",
       title: "Spiegazione rapida",
-      content: `${naturalText} ${finance.example}`,
+      content: `${explainText} ${finance.example} Procedi con le domande qui sotto e costruisci la tua versione pratica.`,
     },
     {
       kind: "question",
@@ -333,6 +441,7 @@ function buildStructuredNode(
     nodeKey: step,
     criteria,
     blocks,
+    explainFlow,
     options,
     suggestedPrompts,
   };
@@ -345,11 +454,42 @@ function statusLabel(status: NodeStatus) {
   return "Bloccato";
 }
 
-function conceptPromptFor(block: NodeBlock): string {
-  if (block.kind === "focus") return "Se ignori questo principio, dove paghi il prezzo gia questa settimana?";
-  if (block.kind === "explain") return "Qual e il punto che stai sottovalutando nelle tue scelte di oggi?";
-  if (block.kind === "question") return "Se lo spiegassi in 20 secondi, su cosa ti bloccheresti davvero?";
-  return "Qual e la micro-mossa che puoi fare oggi senza rimandare?";
+function conceptTitleFor(block: NodeBlock): string {
+  if (block.kind === "focus") return "Il principio";
+  if (block.kind === "explain") return "Come funziona";
+  if (block.kind === "question") return "Verifica rapida";
+  return "Azione immediata";
+}
+
+function blockLabel(nodeKey: StepType, kind: NodeBlock["kind"]): { emoji: string; title: string; subtitle: string } {
+  const labels: Record<StepType, Record<NodeBlock["kind"], { emoji: string; title: string; subtitle: string }>> = {
+    concept: {
+      focus: { emoji: "🧭", title: "Idea chiave", subtitle: "Capisci la logica di base" },
+      explain: { emoji: "🧩", title: "Passaggio pratico", subtitle: "Mettila subito in pratica" },
+      question: { emoji: "🧠", title: "Controllo veloce", subtitle: "Verifica se è chiaro" },
+      exercise: { emoji: "⚡", title: "Mossa concreta", subtitle: "Scegli cosa fare ora" },
+    },
+    widget: {
+      focus: { emoji: "🛠️", title: "Strumento utile", subtitle: "A cosa ti serve davvero" },
+      explain: { emoji: "📌", title: "Uso guidato", subtitle: "Come usarlo passo dopo passo" },
+      question: { emoji: "🔍", title: "Controllo pratico", subtitle: "Cosa guardare per non sbagliare" },
+      exercise: { emoji: "✅", title: "Applicazione", subtitle: "Fai la prova sul tuo caso" },
+    },
+    challenge: {
+      focus: { emoji: "🎯", title: "Scenario reale", subtitle: "Dove si gioca la decisione" },
+      explain: { emoji: "🧪", title: "Test rapido", subtitle: "Prova la tua scelta sul campo" },
+      question: { emoji: "⚖️", title: "Scelta migliore", subtitle: "Valuta pro e contro in fretta" },
+      exercise: { emoji: "🔁", title: "Correzione", subtitle: "Aggiusta subito la strategia" },
+    },
+    feedback: {
+      focus: { emoji: "🪞", title: "Sintesi personale", subtitle: "Cosa ti porti via davvero" },
+      explain: { emoji: "💬", title: "Confronto", subtitle: "Chiarisci i dubbi con il tutor" },
+      question: { emoji: "📝", title: "Punto aperto", subtitle: "Segna ciò che vuoi rivedere" },
+      exercise: { emoji: "📅", title: "Piano prossimo", subtitle: "Definisci il prossimo passo" },
+    },
+  };
+
+  return labels[nodeKey][kind];
 }
 
 const LessonStepper = ({
@@ -374,12 +514,8 @@ const LessonStepper = ({
   const [conceptChoice, setConceptChoice] = useState<string | null>(null);
   const [widgetChoice, setWidgetChoice] = useState<string | null>(null);
   const [activeConceptBlock, setActiveConceptBlock] = useState<number | null>(null);
-  const [isNodeOpen, setIsNodeOpen] = useState<Record<StepType, boolean>>({
-    concept: false,
-    widget: false,
-    challenge: false,
-    feedback: false,
-  });
+  const [openedBlockPage, setOpenedBlockPage] = useState<OpenedBlockPage | null>(null);
+  const [explainProgress, setExplainProgress] = useState<Record<string, ExplainProgressEntry>>({});
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const runtimeFlow = useMemo(() => {
@@ -428,10 +564,8 @@ const LessonStepper = ({
 
   useEffect(() => {
     if (!currentNode) return;
-    setIsNodeOpen((prev) => ({
-      ...prev,
-      [currentNode.node_key]: prev[currentNode.node_key] ?? false,
-    }));
+    if (currentNode.node_key !== "concept") return;
+    setActiveConceptBlock((prev) => (prev === null ? 0 : prev));
   }, [currentNode]);
 
   const submitAdvance = async (nodeKey: StepType, payload?: Record<string, unknown>, nextIndex?: number) => {
@@ -485,60 +619,63 @@ const LessonStepper = ({
     }
   };
 
-  const openNode = (nodeKey: StepType) => {
-    setIsNodeOpen((prev) => ({
-      ...prev,
-      [nodeKey]: true,
-    }));
-  };
-
   const renderNodeBlocks = (content: StructuredNodeContent) => {
-    const opened = isNodeOpen[content.nodeKey] ?? false;
-
-    if (!opened) {
-      return (
-        <div className="rounded-xl border border-dashed border-border/70 bg-muted/15 p-2.5">
-          <Button variant="ghost" className="h-9 w-full rounded-lg text-sm" onClick={() => openNode(content.nodeKey)}>
-            Apri nodo
-          </Button>
-        </div>
-      );
-    }
-
     if (content.nodeKey === "concept") {
-      const selected = activeConceptBlock;
-      const activeBlock = selected !== null ? content.blocks[selected] : null;
-
       return (
-        <div className="relative space-y-3">
-          <div className="pointer-events-none absolute left-[7px] top-2 bottom-2 w-px bg-border/60" />
-
-          <div className="space-y-2 pl-6">
+        <div className="relative space-y-3 py-1">
+          <div className="pointer-events-none absolute bottom-0 left-1/2 top-0 w-px -translate-x-1/2 bg-border/60" />
+          <div className="space-y-2">
             {content.blocks.map((block, index) => (
-              <div key={`concept-prompt-${block.kind}-${index}`} className="relative">
-                <div className="pointer-events-none absolute -left-[19px] top-3 h-3.5 w-3.5 rounded-full border border-border/70 bg-background" />
-                <Button
-                  variant={selected === index ? "default" : "outline"}
-                  className="h-auto min-h-9 w-full justify-start whitespace-normal rounded-lg px-2.5 py-2 text-left text-[12px] leading-snug md:rounded-xl md:px-3 md:py-2.5 md:text-sm"
-                  onClick={() => setActiveConceptBlock((prev) => (prev === index ? null : index))}
-                >
-                  {conceptPromptFor(block)}
-                </Button>
-              </div>
-            ))}
+              <div key={`concept-prompt-${block.kind}-${index}`} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3">
+                {index % 2 === 0 ? (
+                  <div className="flex justify-end">
+                    <Button
+                      variant={activeConceptBlock === index ? "default" : "outline"}
+                      aria-pressed={activeConceptBlock === index}
+                      className="aspect-square h-[106px] w-[106px] whitespace-normal rounded-xl p-2 text-center text-[11px] leading-tight sm:h-[118px] sm:w-[118px] sm:text-xs"
+                      onClick={() => {
+                        setActiveConceptBlock(index);
+                        setOpenedBlockPage({ nodeKey: "concept", index });
+                      }}
+                    >
+                      <span className="flex h-full w-full flex-col items-center justify-center">
+                        <span className="text-base leading-none">{blockLabel("concept", block.kind).emoji}</span>
+                        <span className="mt-1 text-[11px] font-semibold leading-tight sm:text-xs">
+                          {blockLabel("concept", block.kind).title}
+                        </span>
+                      </span>
+                    </Button>
+                  </div>
+                ) : (
+                  <div />
+                )}
 
-            {activeBlock ? (
-              <motion.div
-                key={`concept-block-${activeBlock.kind}`}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.22, ease: "easeOut" }}
-                className="rounded-xl border border-primary/30 bg-primary/5 p-3.5"
-              >
-                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{activeBlock.title}</p>
-                <p className="mt-1.5 text-sm leading-relaxed text-foreground/95">{activeBlock.content}</p>
-              </motion.div>
-            ) : null}
+                <div className="pointer-events-none h-3.5 w-3.5 rounded-full border border-border/70 bg-background" />
+
+                {index % 2 !== 0 ? (
+                  <div className="flex justify-start">
+                    <Button
+                      variant={activeConceptBlock === index ? "default" : "outline"}
+                      aria-pressed={activeConceptBlock === index}
+                      className="aspect-square h-[106px] w-[106px] whitespace-normal rounded-xl p-2 text-center text-[11px] leading-tight sm:h-[118px] sm:w-[118px] sm:text-xs"
+                      onClick={() => {
+                        setActiveConceptBlock(index);
+                        setOpenedBlockPage({ nodeKey: "concept", index });
+                      }}
+                    >
+                      <span className="flex h-full w-full flex-col items-center justify-center">
+                        <span className="text-base leading-none">{blockLabel("concept", block.kind).emoji}</span>
+                        <span className="mt-1 text-[11px] font-semibold leading-tight sm:text-xs">
+                          {blockLabel("concept", block.kind).title}
+                        </span>
+                      </span>
+                    </Button>
+                  </div>
+                ) : (
+                  <div />
+                )}
+              </div>
+            ))} 
           </div>
         </div>
       );
@@ -558,20 +695,19 @@ const LessonStepper = ({
 
                 <div className={`flex ${isLeft ? "justify-start" : "justify-end"} items-start`}>
                   <div className="pointer-events-none absolute left-1/2 top-4 h-3.5 w-3.5 -translate-x-1/2 rounded-full border border-border/70 bg-background" />
-
-                  <motion.div
+                  <motion.button
+                    type="button"
                     initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                      scale: 1,
-                    }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ duration: 0.35, ease: "easeOut" }}
-                    className="w-[84%] rounded-xl border border-primary/30 bg-primary/5 p-3.5"
+                    className="w-[84%] rounded-xl border border-primary/30 bg-primary/5 p-3.5 text-left"
+                    onClick={() => setOpenedBlockPage({ nodeKey: content.nodeKey, index })}
                   >
-                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{block.title}</p>
-                    <p className="mt-1.5 text-sm leading-relaxed text-foreground/95">{block.content}</p>
-                  </motion.div>
+                    <p className="text-sm font-semibold text-foreground/95">
+                      {blockLabel(content.nodeKey, block.kind).emoji} {blockLabel(content.nodeKey, block.kind).title}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">{blockLabel(content.nodeKey, block.kind).subtitle}</p>
+                  </motion.button>
                 </div>
               </div>
             );
@@ -582,6 +718,156 @@ const LessonStepper = ({
   };
 
   if (!currentNode) return null;
+
+  const openedContent = openedBlockPage ? structuredContent[openedBlockPage.nodeKey] : null;
+  const openedBlock = openedContent?.blocks?.[openedBlockPage?.index ?? -1];
+  const openedKey = openedBlockPage ? `${openedBlockPage.nodeKey}-${openedBlockPage.index}` : "";
+  const interactive = openedKey ? explainProgress[openedKey] : undefined;
+
+  useEffect(() => {
+    if (!openedBlockPage || !openedContent || !openedBlock) return;
+    if (openedBlock.kind !== "explain") return;
+    if (!openedContent.explainFlow || openedContent.explainFlow.length === 0) return;
+    setExplainProgress((prev) => {
+      if (prev[openedKey]) return prev;
+      return { ...prev, [openedKey]: { step: 0, trail: [] } };
+    });
+  }, [openedBlockPage, openedBlock, openedContent, openedKey]);
+
+  const handleExplainAnswer = (option: ExplainFlowOption) => {
+    if (!openedBlockPage || !openedContent || !openedBlock) return;
+    if (openedBlock.kind !== "explain" || !openedContent.explainFlow) return;
+
+    setExplainProgress((prev) => {
+      const key = `${openedBlockPage.nodeKey}-${openedBlockPage.index}`;
+      const current = prev[key] ?? { step: 0, trail: [] };
+      const stepDef = openedContent.explainFlow?.[current.step];
+      if (!stepDef) return prev;
+
+      const nextStep = Math.min(current.step + 1, openedContent.explainFlow.length);
+      return {
+        ...prev,
+        [key]: {
+          step: nextStep,
+          trail: [
+            ...current.trail,
+            {
+              question: stepDef.prompt,
+              answer: option.label,
+              followup: option.followup,
+            },
+          ],
+        },
+      };
+    });
+  };
+
+  if (openedBlockPage && openedContent && openedBlock) {
+    const meta = blockLabel(openedBlockPage.nodeKey, openedBlock.kind);
+    const explainFlow = openedContent.explainFlow ?? [];
+    const currentExplainStep = interactive ? explainFlow[interactive.step] : undefined;
+    const explainDone = interactive ? interactive.step >= explainFlow.length : false;
+    const explainAnchors =
+      openedBlock.kind === "explain"
+        ? openedBlock.content
+            .split(/(?<=[.!?])\s+/)
+            .map((chunk) => chunk.trim())
+            .filter(Boolean)
+        : [];
+
+    return (
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="mb-3 flex items-center justify-between gap-2 border-b border-border/60 pb-3">
+          <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setOpenedBlockPage(null)}>
+            <ArrowLeft size={15} /> Torna al percorso
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Nodo {openedBlockPage.index + 1} · {openedContent.nodeKey}
+          </p>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-border/60 bg-card p-4">
+          <p className="text-lg font-semibold">
+            {meta.emoji} {meta.title}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">{meta.subtitle}</p>
+
+          {openedBlock.kind === "explain" ? (
+            <div className="mt-4 space-y-4">
+              <p className="text-sm leading-relaxed text-foreground/95">{openedBlock.content}</p>
+
+              {explainFlow.map((step, idx) => {
+                const answered = interactive?.trail?.[idx];
+                const isUnlocked = idx <= (interactive?.step ?? 0);
+                const isCurrentQuestion = !answered && idx === (interactive?.step ?? 0) && !explainDone;
+                const anchorText =
+                  explainAnchors[idx] ??
+                  (idx === 0 ? openedBlock.content : explainAnchors[explainAnchors.length - 1] ?? "");
+
+                if (!isUnlocked) return null;
+
+                return (
+                  <div key={`${openedKey}-${step.id}`} className="space-y-3 rounded-xl border border-border/60 bg-muted/10 p-3.5">
+                    <p className="text-xs font-medium text-muted-foreground">Passo {idx + 1}</p>
+                    {anchorText ? <p className="text-sm text-foreground/90">{anchorText}</p> : null}
+                    <p className="text-sm font-semibold text-foreground">{step.prompt}</p>
+
+                    {answered ? (
+                      <>
+                        <p className="text-xs text-muted-foreground">Hai scelto</p>
+                        <p className="text-sm text-foreground">{answered.answer}</p>
+                        <p className="text-sm text-foreground/90">{answered.followup}</p>
+                        {idx < explainFlow.length - 1 ? (
+                          <p className="text-xs text-muted-foreground">{step.nextHint}</p>
+                        ) : null}
+                      </>
+                    ) : null}
+
+                    {isCurrentQuestion ? (
+                      <div className="grid gap-2">
+                        {step.options.map((option) => (
+                          <Button
+                            key={`${openedKey}-${step.id}-${option.label}`}
+                            variant="outline"
+                            className="justify-start rounded-xl text-left"
+                            onClick={() => handleExplainAnswer(option)}
+                          >
+                            {option.label}
+                          </Button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+
+              {explainDone ? (
+                <div className="rounded-xl border border-emerald-300/50 bg-emerald-500/10 p-3.5">
+                  <p className="text-sm font-semibold text-foreground">✅ Passaggio pratico completato</p>
+                  <p className="mt-1 text-sm text-foreground/90">Hai completato il percorso guidato. Ora puoi passare al prossimo blocco.</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 rounded-lg"
+                    onClick={() =>
+                      setExplainProgress((prev) => ({
+                        ...prev,
+                        [openedKey]: { step: 0, trail: [] },
+                      }))
+                    }
+                  >
+                    Ricomincia il passaggio
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm leading-relaxed text-foreground/95">{openedBlock.content}</p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const canAutoProceed = currentNode.status === "completed" || currentNode.status === "skipped";
 
@@ -638,7 +924,6 @@ const LessonStepper = ({
                 currentNode.status === "completed" ||
                 currentNode.status === "locked" ||
                 !conceptChoice ||
-                !isNodeOpen.concept ||
                 activeConceptBlock === null
               }
               className="rounded-xl"
@@ -671,8 +956,7 @@ const LessonStepper = ({
                 tracking ||
                 currentNode.status === "completed" ||
                 currentNode.status === "locked" ||
-                !widgetChoice ||
-                !isNodeOpen.widget
+                !widgetChoice
               }
               className="rounded-xl"
             >
