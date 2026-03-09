@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-export type StepType = "concept" | "widget" | "challenge" | "feedback";
+export type StepType = string;
 export type NodeStatus = "locked" | "available" | "completed" | "skipped";
 
 export type CriterionKey =
@@ -32,7 +32,7 @@ export type ExplainFlowStep = {
 };
 
 export type StructuredNodeContent = {
-  nodeKey: StepType;
+  nodeKey: string;
   criteria: CriterionKey[];
   blocks: NodeBlock[];
   explainFlow?: ExplainFlowStep[];
@@ -47,11 +47,11 @@ export type BlockVisual = {
 };
 
 export type LessonVisualConfig = {
-  nodeBadgeTitles: Record<StepType, string>;
-  blockLabels: Record<StepType, Record<NodeBlockKind, BlockVisual>>;
+  nodeBadgeTitles: Record<string, string>;
+  blockLabels: Record<string, Record<NodeBlockKind, BlockVisual>>;
 };
 
-export type StructuredLessonContent = Record<StepType, StructuredNodeContent>;
+export type StructuredLessonContent = Record<string, StructuredNodeContent>;
 
 export type LessonDefinition = {
   id: string;

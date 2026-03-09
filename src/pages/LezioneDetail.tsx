@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
-type StepType = "concept" | "widget" | "challenge" | "feedback";
+type StepType = string;
 
 type LessonNodeRuntime = {
   lesson_node_id: string;
@@ -368,10 +368,13 @@ const LezioneDetail = () => {
     <div className="flex h-screen flex-col overflow-hidden px-5 pt-10 pb-4">
       {!(showIntro && (hasIllustrations || isGenerating)) && (
         <>
-          <button onClick={() => navigate(-1)} className="mb-2 flex items-center gap-1 text-sm font-medium text-primary">
-            <ArrowLeft size={18} /> Torna all&apos;Accademia
-          </button>
           <div className="mb-3 flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-medium text-primary"
+            >
+              <ArrowLeft size={18} /> Torna all&apos;Accademia
+            </button>
             <motion.span initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }} className="text-3xl">
               {lessonMeta.emoji}
             </motion.span>

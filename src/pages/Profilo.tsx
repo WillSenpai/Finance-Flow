@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import BillingSection from "@/components/profile/BillingSection";
 
 const impostazioni = [
   { icona: Bell, label: "Notifiche", path: "/profilo/notifiche" },
@@ -157,6 +158,10 @@ const Profilo = () => {
       {/* Badge Livello */}
       <motion.div variants={item} className="mb-6">
         <BadgeLivello points={points} />
+      </motion.div>
+
+      <motion.div variants={item}>
+        <BillingSection />
       </motion.div>
 
       {/* Badge Grid */}

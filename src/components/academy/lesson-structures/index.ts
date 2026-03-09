@@ -36,22 +36,8 @@ export function resolveLessonVisualConfig(definition: LessonDefinition): LessonV
       ...(visual.nodeBadgeTitles || {}),
     },
     blockLabels: {
-      concept: {
-        ...base.blockLabels.concept,
-        ...(visual.blockLabels?.concept || {}),
-      },
-      widget: {
-        ...base.blockLabels.widget,
-        ...(visual.blockLabels?.widget || {}),
-      },
-      challenge: {
-        ...base.blockLabels.challenge,
-        ...(visual.blockLabels?.challenge || {}),
-      },
-      feedback: {
-        ...base.blockLabels.feedback,
-        ...(visual.blockLabels?.feedback || {}),
-      },
+      ...base.blockLabels,
+      ...(visual.blockLabels || {}),
     },
   };
 }

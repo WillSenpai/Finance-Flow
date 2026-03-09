@@ -1,128 +1,97 @@
 # PRD: Native Pro Subscription (StoreKit + Google Play Billing + Apple Submission Gate)
 
-**Document Version**: 1.1  
+**Document Version**: 1.2  
 **Last Updated**: 2026-03-08  
 **Status**: Ready for Implementation
 
 ## 1. Executive Summary
 
-- **Problem Statement**: The previous Stripe-oriented approach is not appropriate for native mobile digital subscriptions and creates App Review risk on iOS.
-- **Proposed Solution**: Implement native subscriptions with StoreKit (iOS) and Google Play Billing (Android) through RevenueCat as billing abstraction, with Supabase as entitlement source of truth (`public.user_ai_plans`).
+- **Problem Statement**: The previous Stripe-oriented setup is not suitable for native mobile digital subscriptions and increases App Review risk on iOS. The product also needs stronger entitlement reliability across purchase lifecycle events.
+- **Proposed Solution**: Implement native subscriptions with StoreKit (iOS) and Google Play Billing (Android) using RevenueCat as billing abstraction, while keeping Supabase (`public.user_ai_plans`) as entitlement source of truth.
 - **Success Criteria**:
-  - Upgrade conversion (free -> pro) reaches **>= 8%** within 30 days.
-  - 30-day paid churn remains **<= 6%**.
-  - Purchase technical failure rate is **<= 1.0%**.
-  - Entitlement mismatch rate is **<= 0.3%** daily.
-  - Event-to-entitlement latency p95 is **<= 60s**.
-  - Apple Submission Gate checklist is **100% PASS** before iOS submission.
+  - Upgrade conversion (free -> pro) >= 8% within 30 days from rollout.
+  - 30-day paid churn <= 6%.
+  - Purchase technical failure rate <= 1.0% across iOS/Android.
+  - Entitlement synchronization mismatch rate <= 0.3% daily.
+  - Event-to-entitlement update latency p95 <= 60 seconds.
 
 ## 2. User Experience & Functionality
 
 - **User Personas**:
-  - Free mobile user reaching AI quota and needing upgrade.
-  - Pro subscriber needing clear billing/renewal state.
-  - Support operator needing deterministic billing diagnostics.
+  - Free mobile user reaching quota and evaluating upgrade.
+  - Active Pro subscriber needing clear billing and renewal visibility.
+  - Support/operator needing deterministic billing diagnostics.
 
 - **User Stories**:
-  - As a free user, I want in-app native purchase so I can unlock Pro immediately.
-  - As a Pro user, I want clear renewal and subscription status visibility.
-  - As a user with renewal failure, I want grace-period messaging and recovery actions.
-  - As a returning user, I want restore purchases to recover entitlement.
-  - As support staff, I want billing event history and entitlement snapshot.
+  - As a free user, I want a native in-app purchase flow so that I can unlock Pro immediately.
+  - As a Pro user, I want clear renewal/cancellation state so that I can trust my subscription status.
+  - As a user with billing issues, I want explicit grace-period messaging so that I can recover without abrupt access loss.
+  - As a returning user, I want Restore Purchases so that my entitlement is recovered after reinstall/device change.
+  - As support staff, I want event history and entitlement snapshot so that billing tickets are resolved quickly.
 
 - **Acceptance Criteria**:
-  - iOS and Android upgrade flows are native; no Stripe checkout in native app.
-  - Purchase/renewal sets `plan=pro` within p95 <= 60s.
-  - Renewal failure sets 3-day grace period with visible UX status.
-  - Grace expiration downgrades to `free` automatically if unresolved.
-  - Restore purchases updates entitlement correctly.
-  - Duplicate/out-of-order events never produce wrong final entitlement.
-  - Profile screen shows plan status, renewal state, and manage/restore actions.
+  - iOS and Android upgrade paths are native only; no Stripe checkout in native app.
+  - Successful purchase/renewal sets `plan=pro` in `user_ai_plans` within p95 <= 60s.
+  - Failed renewal triggers 3-day grace period and visible in-app status.
+  - Grace expiration downgrades entitlement to `free` automatically when unresolved.
+  - Restore Purchases works on supported platforms and updates entitlement correctly.
+  - Duplicate/out-of-order billing events do not produce incorrect final entitlement.
+  - Profile screen exposes plan status, renewal state, and restore/manage actions.
 
 - **Non-Goals**:
-  - No Stripe flow inside native app.
+  - No Stripe payment flow inside native apps.
   - No web/desktop monetization implementation in this PRD.
-  - No redesign of unrelated profile/settings areas.
+  - No redesign of unrelated profile/settings features.
 
 ## 3. AI System Requirements (If Applicable)
 
-- **Tool Requirements**: Not applicable for billing core.
-- **Evaluation Strategy**: Not applicable. Validation is operational and product KPI-based.
+- **Tool Requirements**: Not applicable for billing core; no model decisioning required.
+- **Evaluation Strategy**: Not applicable; quality is measured by billing reliability and entitlement KPIs.
 
 ## 4. Technical Specifications
 
 - **Architecture Overview**:
-  - Client uses RevenueCat Capacitor SDK to load offerings, purchase, restore.
-  - Store lifecycle events are delivered to RevenueCat and forwarded to backend webhook.
-  - Supabase webhook handler maps events to internal subscription state and projects entitlements into `public.user_ai_plans`.
-  - Reconciliation job checks drift and auto-heals safe mismatches.
+  - Mobile app uses RevenueCat Capacitor SDK for offerings, purchase, restore, and customer info sync.
+  - Store lifecycle events are received by RevenueCat and sent to Supabase webhook ingestion.
+  - Supabase projects normalized billing state to `public.user_ai_plans` (`free`, `pro`, grace metadata).
+  - Scheduled reconciliation compares provider state to DB state and fixes safe drift.
 
 - **Integration Points**:
   - **iOS**: StoreKit 2 via RevenueCat.
   - **Android**: Google Play Billing via RevenueCat.
-  - **Backend**: Supabase Edge Functions for webhook ingestion, sync, reconciliation.
-  - **Database**: `public.user_ai_plans` + billing event log + subscription snapshot tables.
-  - **Auth**: Supabase JWT and deterministic mapping `appUserID == auth.user.id`.
+  - **Backend**: Supabase Edge Functions for webhook ingestion, entitlement sync, reconciliation.
+  - **Database**: `public.user_ai_plans` + billing events table + subscription snapshot table.
+  - **Auth**: deterministic identity mapping `appUserID == auth.user.id` via Supabase JWT context.
 
 - **Security & Privacy**:
-  - Verify webhook signature for every provider event.
-  - Enforce idempotency/event deduplication with unique constraints.
-  - Keep secrets server-side only.
-  - Log minimal PII required for support and reconciliation.
-  - Maintain auditable event trail.
+  - Verify webhook signatures for all billing events.
+  - Enforce idempotency and deduplication with unique constraints on provider event IDs.
+  - Keep billing credentials/secrets server-side only.
+  - Store minimum required PII for support and reconciliation workflows.
+  - Maintain auditable billing event history for incident handling.
 
-## 5. Apple Submission Gate (Blocking)
-
-Every iOS billing release is blocked unless all controls are PASS.
-
-| ID | Control | Pass Criteria | Owner |
-|---|---|---|---|
-| ASG-01 | IAP-only digital purchase | All iOS upgrade paths open native StoreKit flow only | Engineering |
-| ASG-02 | No external payment CTA | No in-app link/button/text directing to external purchase | QA |
-| ASG-03 | Restore Purchases | Visible entrypoint + successful restore in TestFlight sandbox | QA |
-| ASG-04 | Subscription disclosure | Price, period, auto-renew, cancellation/manage info shown before purchase | Product |
-| ASG-05 | Metadata parity | App Store Connect text/screenshots match real app behavior | Product |
-| ASG-06 | Submission evidence pack | Video/screenshot evidence attached for iOS review readiness | Engineering |
-
-Release rule: if one control is FAIL, iOS submission is not allowed.
-
-## 6. Testing Strategy (Including Pre-Submit Matrix)
-
-- **Unit Tests**:
-  - Event mapping to internal subscription states.
-  - Grace-period timers and downgrade logic.
-  - Idempotency and out-of-order event handling.
-- **Integration Tests**:
-  - Valid webhook events: purchase, renewal, cancellation, billing issue, expiration.
-  - Invalid signature is rejected.
-  - Reconciliation fixes safe entitlement drift.
-- **E2E Sandbox (iOS/Android)**:
-  - Monthly/annual purchase success.
-  - Restore purchase after reinstall.
-  - Renewal failure -> grace -> downgrade.
-  - User cancellation and expiry behavior.
-- **Compliance Pre-Submit Tests (iOS)**:
-  - External payment CTA scan: zero findings.
-  - Restore flow end-to-end evidence.
-  - Subscription disclosure screenshot verification.
-  - App Store metadata consistency check.
-
-## 7. Risks & Roadmap
+## 5. Risks & Roadmap
 
 - **Phased Rollout**:
-  - **MVP**: Purchase, renewal, cancellation, restore, entitlement projection, profile billing UI.
-  - **v1.1**: Grace UX refinements and ops drift dashboard.
-  - **v2.0**: Advanced reconciliation automation and anomaly alerting.
+  - **MVP**: Native purchase/renewal/cancellation, restore purchases, entitlement projection, profile billing UI.
+  - **v1.1**: Grace-period UX hardening, support tooling, drift dashboard.
+  - **v2.0**: Advanced reconciliation automation and proactive anomaly alerts.
+
 - **Technical Risks**:
-  - Event ordering/retry differences across stores.
-  - Identity mapping mistakes between billing and auth.
-  - Drift between provider truth and local entitlement.
-  - UX confusion around grace timing.
-- **Mitigation**:
-  - Deterministic identity mapping, idempotent ingestion, daily reconciliation, blocking Apple gate.
+  - Event ordering/retry differences between Apple and Google.
+  - Identity-linking errors between billing provider and app user.
+  - Entitlement drift between provider truth and local DB projection.
+  - UX confusion if grace timers are inconsistent client vs backend.
 
-## 8. Implementation Notes
+- **Delivery Constraints**:
+  - Priority is jointly balanced across: time-to-market, Apple compliance, and billing operational stability.
+  - iOS submission date is currently **TBD** (no fixed deadline).
 
-- This document replaces the previous Stripe-oriented plan.
-- Canonical path: `docs/plans/native-subscriptions-prd.md`.
-- Any future web/desktop monetization must be planned in a separate document.
+- **Apple Submission Gate (Blocking)**:
+  - ASG-01: IAP-only digital purchase on iOS (PASS required).
+  - ASG-02: No external payment CTA/link in native app (PASS required).
+  - ASG-03: Restore Purchases visible and validated in TestFlight sandbox (PASS required).
+  - ASG-04: Subscription disclosure present before purchase (price, period, auto-renew, manage/cancel) (PASS required).
+  - ASG-05: App Store Connect metadata/screenshots aligned with real in-app behavior (PASS required).
+  - ASG-06: Submission evidence pack ready (video/screenshots/test log) (PASS required).
+  - Release rule: any FAIL blocks iOS submission.

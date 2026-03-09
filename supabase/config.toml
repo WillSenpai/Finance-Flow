@@ -85,3 +85,9 @@ verify_jwt = true
 
 [functions.academy-lesson-nodes]
 verify_jwt = false
+
+[functions.billing-webhook-revenuecat]
+verify_jwt = false
+
+[functions.billing-sync]
+verify_jwt = true

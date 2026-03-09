@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { buildCorsHeaders, rejectDisallowedOrigin } from "../_shared/cors.ts";
 
 type NodeStatus = "locked" | "available" | "completed" | "skipped";
-type LessonNodeKey = "concept" | "widget" | "challenge" | "feedback";
+type LessonNodeKey = string;
 type Action = "get" | "advance" | "skip" | "submit_optional_quiz";
 
 type NodeRow = {
@@ -66,7 +66,7 @@ serve(async (req) => {
     if (action === "advance") {
       const nodeKey = String(body.node_key ?? "") as LessonNodeKey;
       const eventId = String(body.event_id ?? `advance:${lessonId}:${nodeKey}:${Date.now()}`);
-      if (!isNodeKey(nodeKey)) return json({ error: "Invalid node_key" }, 400, corsHeaders);
+      if (!nodeKey) return json({ error: "Invalid node_key" }, 400, corsHeaders);
 
       const progress = await getProgressMap(admin, userId, lessonId);
       const targetNode = lessonNodes.find((node) => node.node_key === nodeKey);
@@ -103,7 +103,7 @@ serve(async (req) => {
     if (action === "skip") {
       const nodeKey = String(body.node_key ?? "") as LessonNodeKey;
       const eventId = String(body.event_id ?? `skip:${lessonId}:${nodeKey}:${Date.now()}`);
-      if (!isNodeKey(nodeKey)) return json({ error: "Invalid node_key" }, 400, corsHeaders);
+      if (!nodeKey) return json({ error: "Invalid node_key" }, 400, corsHeaders);
 
       if (plan !== "pro") {
         return json({ error: "PRO_REQUIRED_FOR_SKIP", code: "PRO_REQUIRED_FOR_SKIP" }, 403, corsHeaders);
@@ -146,6 +146,7 @@ serve(async (req) => {
       const score = Math.max(0, Math.min(100, Number(body.score ?? 0)));
       const passed = Boolean(body.passed ?? score >= 70);
       const eventId = String(body.event_id ?? `quiz:${lessonId}:${Date.now()}`);
+      const feedbackNodeKey = lessonNodes[lessonNodes.length - 1]?.node_key || "feedback";
 
       const quizInsert = await admin.from("user_lesson_optional_quiz_runs").insert({
         user_id: userId,
@@ -161,7 +162,7 @@ serve(async (req) => {
         .insert({
           user_id: userId,
           lesson_id: lessonId,
-          node_key: "feedback",
+          node_key: feedbackNodeKey,
           event_id: eventId,
           event_type: "optional_quiz",
           payload: { score, passed, ...(body.payload ?? {}) },
@@ -178,10 +179,6 @@ serve(async (req) => {
     return json({ error: error instanceof Error ? error.message : "Unknown error" }, 500, buildCorsHeaders(req));
   }
 });
-
-function isNodeKey(value: string): value is LessonNodeKey {
-  return value === "concept" || value === "widget" || value === "challenge" || value === "feedback";
-}
 
 async function ensureProgressRows(admin: ReturnType<typeof createClient>, userId: string, lessonId: string, lessonNodes: NodeRow[]) {
   const rows = lessonNodes.map((node, index) => ({

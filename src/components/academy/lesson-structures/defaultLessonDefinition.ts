@@ -16,8 +16,8 @@ const defaultVisual: LessonVisualConfig = {
   },
   blockLabels: {
     concept: {
-      focus: { emoji: "🧭", title: "Le basi", subtitle: "Capisci la logica di base" },
-      explain: { emoji: "🤔", title: "Cosa c'è da sapere?", subtitle: "Il denaro è fondamentale" },
+      focus: { emoji: "🎯", title: "Definizione", subtitle: "Capisci la logica di base" },
+      explain: { emoji: "🤔", title: "Tipi di Budget", subtitle: "Budget Operativi" },
       question: { emoji: "🧠", title: "Controllo veloce", subtitle: "Verifica se e chiaro" },
       exercise: { emoji: "⚡", title: "Mossa concreta", subtitle: "Scegli cosa fare ora" },
     },

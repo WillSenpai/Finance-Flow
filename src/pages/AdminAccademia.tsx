@@ -25,7 +25,7 @@ import { useUser } from "@/hooks/useUser";
 import { toast } from "@/hooks/use-toast";
 import { slugifySection } from "@/lib/academy";
 import { resolveLessonDefinition } from "@/components/academy/lesson-structures";
-import type { NodeBlockKind, StepType, StructuredLessonContent } from "@/components/academy/lesson-structures/types";
+import type { NodeBlockKind, StructuredLessonContent, StructuredNodeContent } from "@/components/academy/lesson-structures/types";
 
 type AcademySection = {
   id: string;
@@ -48,7 +48,7 @@ type AcademyLesson = {
 type DeleteMode = "move" | "delete_lessons";
 type EditorMode = "structured" | "preview";
 
-const NODE_ORDER: StepType[] = ["concept", "widget", "challenge", "feedback"];
+const DEFAULT_NODE_ORDER = ["concept", "widget", "challenge", "feedback"];
 const BLOCK_ORDER: NodeBlockKind[] = ["focus", "explain", "question", "exercise"];
 
 const requiredSections = [
@@ -121,6 +121,26 @@ function cloneStructuredContent(value: StructuredLessonContent): StructuredLesso
   return JSON.parse(JSON.stringify(value)) as StructuredLessonContent;
 }
 
+function getNodeOrder(content: StructuredLessonContent): string[] {
+  const keys = Object.keys(content);
+  const preferred = DEFAULT_NODE_ORDER.filter((key) => keys.includes(key));
+  const extra = keys.filter((key) => !DEFAULT_NODE_ORDER.includes(key));
+  return [...preferred, ...extra];
+}
+
+function toNodeTitle(nodeKey: string): string {
+  return nodeKey
+    .replace(/[-_]/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function nodeDescriptionFromContent(node: StructuredNodeContent): string {
+  const focus = node.blocks.find((block) => block.kind === "focus")?.content || "";
+  const firstSentence = focus.split(/[.!?]\s/)[0]?.trim();
+  if (firstSentence) return firstSentence.slice(0, 140);
+  return "Nodo della lezione";
+}
+
 function lessonPlaceholderContent(lessonId: string): string {
   return [
     "### Concept",
@@ -149,7 +169,7 @@ function buildLessonPatch(lessonId: string, content: StructuredLessonContent): s
 }
 
 function structuredContentToPreview(content: StructuredLessonContent): string {
-  return NODE_ORDER.map((nodeKey, idx) => {
+  return getNodeOrder(content).map((nodeKey, idx) => {
     const section = content[nodeKey];
     const title = `### ${idx + 1}. ${nodeKey.toUpperCase()}`;
     const blocks = section.blocks
@@ -181,7 +201,7 @@ const AdminAccademia = () => {
   const [sectionIdForLesson, setSectionIdForLesson] = useState("");
   const [structuredContent, setStructuredContent] = useState<StructuredLessonContent | null>(null);
   const [structuredInitialHash, setStructuredInitialHash] = useState("");
-  const [activeNode, setActiveNode] = useState<StepType>("concept");
+  const [activeNode, setActiveNode] = useState<string>("concept");
 
   const [newSectionTitle, setNewSectionTitle] = useState("");
   const [newSectionDescription, setNewSectionDescription] = useState("");
@@ -291,6 +311,7 @@ const AdminAccademia = () => {
     () => (structuredContent ? structuredContentToPreview(structuredContent) : content),
     [structuredContent, content],
   );
+  const nodeOrder = useMemo(() => (structuredContent ? getNodeOrder(structuredContent) : []), [structuredContent]);
   const previewSections = useMemo(() => splitMarkdownByH3(previewMarkdown), [previewMarkdown]);
 
   const words = useMemo(() => (previewMarkdown.trim() ? previewMarkdown.trim().split(/\s+/).length : 0), [previewMarkdown]);
@@ -299,16 +320,16 @@ const AdminAccademia = () => {
   const sectionStatus = useMemo(() => {
     const done =
       structuredContent &&
-      NODE_ORDER.every((nodeKey) =>
+      nodeOrder.every((nodeKey) =>
         BLOCK_ORDER.every((blockKind) =>
-          Boolean(structuredContent[nodeKey].blocks.find((block) => block.kind === blockKind)?.content?.trim()),
+          Boolean(structuredContent[nodeKey]?.blocks.find((block) => block.kind === blockKind)?.content?.trim()),
         ),
       );
     return requiredSections.map((section, index) => ({
       section,
       ok: done ? true : index === 0,
     }));
-  }, [structuredContent]);
+  }, [nodeOrder, structuredContent]);
   const completedSections = sectionStatus.filter((section) => section.ok).length;
 
   const isDirty = useMemo(() => {
@@ -342,10 +363,11 @@ const AdminAccademia = () => {
     mutationFn: async () => {
       if (!selectedLesson) throw new Error("Seleziona una lezione");
       if (!structuredContent) throw new Error("Contenuto nodi non disponibile");
+      const nowIso = new Date().toISOString();
       const payload: Record<string, unknown> = {
         titolo: titolo.trim(),
         content: lessonPlaceholderContent(selectedLesson.lesson_id),
-        updated_at: new Date().toISOString(),
+        updated_at: nowIso,
       };
       if (sectionIdForLesson) {
         payload.section_id = sectionIdForLesson;
@@ -354,21 +376,21 @@ const AdminAccademia = () => {
         .from("academy_lessons_cache")
         .update(payload as any)
         .eq("id", selectedLesson.id);
-      if (!attempt.error) return;
-
-      // Legacy fallback when section_id column is not yet present.
-      if (String(attempt.error.message || "").toLowerCase().includes("section_id")) {
-        const legacy = await supabase
-          .from("academy_lessons_cache")
-          .update({
-            titolo: titolo.trim(),
-            content: lessonPlaceholderContent(selectedLesson.lesson_id),
-            updated_at: new Date().toISOString(),
-          } as any)
-          .eq("id", selectedLesson.id);
-        if (legacy.error) throw legacy.error;
-      } else {
-        throw attempt.error;
+      if (attempt.error) {
+        // Legacy fallback when section_id column is not yet present.
+        if (String(attempt.error.message || "").toLowerCase().includes("section_id")) {
+          const legacy = await supabase
+            .from("academy_lessons_cache")
+            .update({
+              titolo: titolo.trim(),
+              content: lessonPlaceholderContent(selectedLesson.lesson_id),
+              updated_at: nowIso,
+            } as any)
+            .eq("id", selectedLesson.id);
+          if (legacy.error) throw legacy.error;
+        } else {
+          throw attempt.error;
+        }
       }
 
       const { error: draftError } = await supabase
@@ -377,11 +399,47 @@ const AdminAccademia = () => {
           {
             lesson_id: selectedLesson.lesson_id,
             payload: structuredContent,
-            updated_at: new Date().toISOString(),
+            updated_at: nowIso,
           },
           { onConflict: "lesson_id" },
         );
       if (draftError) throw draftError;
+
+      const orderedNodeKeys = getNodeOrder(structuredContent);
+      const nodeRows = orderedNodeKeys.map((nodeKey, index) => ({
+        lesson_id: selectedLesson.lesson_id,
+        node_key: nodeKey,
+        title: toNodeTitle(nodeKey),
+        description: nodeDescriptionFromContent(structuredContent[nodeKey]),
+        sort_order: index + 1,
+        is_active: true,
+        updated_at: nowIso,
+      }));
+
+      const { error: upsertNodeError } = await supabase
+        .from("academy_lesson_nodes" as any)
+        .upsert(nodeRows as any, { onConflict: "lesson_id,node_key" });
+      if (upsertNodeError) throw upsertNodeError;
+
+      const { data: existingNodes, error: existingNodesError } = await supabase
+        .from("academy_lesson_nodes" as any)
+        .select("node_key")
+        .eq("lesson_id", selectedLesson.lesson_id);
+      if (existingNodesError) throw existingNodesError;
+
+      const activeSet = new Set(orderedNodeKeys);
+      const obsoleteKeys = ((existingNodes || []) as Array<{ node_key: string }>)
+        .map((row) => row.node_key)
+        .filter((key) => !activeSet.has(key));
+
+      if (obsoleteKeys.length > 0) {
+        const { error: deactivateError } = await supabase
+          .from("academy_lesson_nodes" as any)
+          .update({ is_active: false, updated_at: nowIso } as any)
+          .eq("lesson_id", selectedLesson.lesson_id)
+          .in("node_key", obsoleteKeys);
+        if (deactivateError) throw deactivateError;
+      }
     },
     onSuccess: () => {
       if (selectedLessonId) {
@@ -619,7 +677,8 @@ const AdminAccademia = () => {
     const fromFile = cloneStructuredContent(resolveLessonDefinition(lesson.lesson_id).buildStructuredContent());
     setStructuredContent(fromFile);
     setStructuredInitialHash(JSON.stringify(fromFile));
-    setActiveNode("concept");
+    const firstNode = getNodeOrder(fromFile)[0] || "concept";
+    setActiveNode(firstNode);
     setHasDraftLoaded(false);
     setActiveTab("structured");
     setEditorVersion((value) => value + 1);
@@ -706,6 +765,14 @@ const AdminAccademia = () => {
   }, [selectedLessonId, titolo, sectionIdForLesson, structuredContent]);
 
   useEffect(() => {
+    if (!structuredContent) return;
+    if (nodeOrder.length === 0) return;
+    if (!activeNode || !structuredContent[activeNode]) {
+      setActiveNode(nodeOrder[0]);
+    }
+  }, [activeNode, nodeOrder, structuredContent]);
+
+  useEffect(() => {
     const onSave = (event: KeyboardEvent) => {
       const isSave = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s";
       if (!isSave) return;
@@ -725,20 +792,22 @@ const AdminAccademia = () => {
     uploadImageMutation.mutate(file);
   };
 
-  const updateNodeBlock = (nodeKey: StepType, blockKind: NodeBlockKind, value: string) => {
+  const updateNodeBlock = (nodeKey: string, blockKind: NodeBlockKind, value: string) => {
     setStructuredContent((prev) => {
       if (!prev) return prev;
       const next = cloneStructuredContent(prev);
+      if (!next[nodeKey]) return prev;
       const block = next[nodeKey].blocks.find((entry) => entry.kind === blockKind);
       if (block) block.content = value;
       return next;
     });
   };
 
-  const updateNodeOptions = (nodeKey: StepType, value: string) => {
+  const updateNodeOptions = (nodeKey: string, value: string) => {
     setStructuredContent((prev) => {
       if (!prev) return prev;
       const next = cloneStructuredContent(prev);
+      if (!next[nodeKey]) return prev;
       next[nodeKey].options = value
         .split("\n")
         .map((entry) => entry.trim())
@@ -747,14 +816,56 @@ const AdminAccademia = () => {
     });
   };
 
-  const updateSuggestedPrompts = (nodeKey: StepType, value: string) => {
+  const updateSuggestedPrompts = (nodeKey: string, value: string) => {
     setStructuredContent((prev) => {
       if (!prev) return prev;
       const next = cloneStructuredContent(prev);
+      if (!next[nodeKey]) return prev;
       next[nodeKey].suggestedPrompts = value
         .split("\n")
         .map((entry) => entry.trim())
         .filter(Boolean);
+      return next;
+    });
+  };
+
+  const addNode = () => {
+    setStructuredContent((prev) => {
+      if (!prev) return prev;
+      const next = cloneStructuredContent(prev);
+      const existing = new Set(Object.keys(next));
+      let i = 1;
+      let nodeKey = `node-${i}`;
+      while (existing.has(nodeKey)) {
+        i += 1;
+        nodeKey = `node-${i}`;
+      }
+      next[nodeKey] = {
+        nodeKey,
+        criteria: ["foundational", "integration"],
+        blocks: [
+          { kind: "focus", title: "Focus", content: "" },
+          { kind: "explain", title: "Spiegazione rapida", content: "" },
+          { kind: "question", title: "Domanda guida", content: "" },
+          { kind: "exercise", title: "Micro-azione", content: "" },
+        ],
+        options: [],
+        suggestedPrompts: [],
+      };
+      setActiveNode(nodeKey);
+      return next;
+    });
+  };
+
+  const removeNode = (nodeKey: string) => {
+    setStructuredContent((prev) => {
+      if (!prev) return prev;
+      const keys = Object.keys(prev);
+      if (keys.length <= 1) return prev;
+      const next = cloneStructuredContent(prev);
+      delete next[nodeKey];
+      const nextOrder = getNodeOrder(next);
+      setActiveNode(nextOrder[0] || "");
       return next;
     });
   };
@@ -1047,9 +1158,24 @@ const AdminAccademia = () => {
 
                 <div className="px-1 pb-1">
                   {activeTab === "structured" ? (
-                    <div className="grid min-h-[460px] gap-3 rounded-xl border border-border/60 bg-background p-3 md:grid-cols-[170px_1fr]">
+                    <div className="grid min-h-[460px] gap-3 rounded-xl border border-border/60 bg-background p-3 md:grid-cols-[190px_1fr]">
                       <div className="space-y-2">
-                        {NODE_ORDER.map((nodeKey) => (
+                        <div className="flex gap-1">
+                          <button
+                            onClick={addNode}
+                            className="flex-1 rounded-lg border border-border/60 bg-background px-2 py-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                          >
+                            + Nodo
+                          </button>
+                          <button
+                            onClick={() => removeNode(activeNode)}
+                            disabled={nodeOrder.length <= 1 || !activeNode}
+                            className="flex-1 rounded-lg border border-destructive/30 bg-destructive/5 px-2 py-1.5 text-[10px] font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
+                          >
+                            - Nodo
+                          </button>
+                        </div>
+                        {nodeOrder.map((nodeKey) => (
                           <button
                             key={nodeKey}
                             onClick={() => setActiveNode(nodeKey)}
@@ -1057,12 +1183,12 @@ const AdminAccademia = () => {
                               activeNode === nodeKey ? "border-primary bg-primary/10 text-primary" : "border-border/60 bg-card hover:bg-muted"
                             }`}
                           >
-                            {nodeKey.toUpperCase()}
+                            {toNodeTitle(nodeKey)}
                           </button>
                         ))}
                       </div>
 
-                      {structuredContent ? (
+                      {structuredContent && structuredContent[activeNode] ? (
                         <div className="space-y-3">
                           {BLOCK_ORDER.map((blockKind) => {
                             const block = structuredContent[activeNode].blocks.find((entry) => entry.kind === blockKind);
