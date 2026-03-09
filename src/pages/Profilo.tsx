@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import BadgeLivello from "@/components/BadgeLivello";
 import { useNotifiche } from "@/hooks/useNotifiche";
 import AvatarPicker from "@/components/AvatarPicker";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge as BadgeType } from "@/contexts/PointsContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import BillingSection from "@/components/profile/BillingSection";
+import { isOpeningLoaderEnabled, setOpeningLoaderEnabled } from "@/lib/openingLoaderPreference";
 
 const impostazioni = [
   { icona: Bell, label: "Notifiche", path: "/profilo/notifiche" },
@@ -45,6 +46,7 @@ const Profilo = () => {
   const [selectedBadge, setSelectedBadge] = useState<BadgeType | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [openingLoaderEnabled, setOpeningLoaderEnabledState] = useState(true);
 
   const { data: isAdmin } = useQuery({
     queryKey: ["is-admin", user?.id],
@@ -68,6 +70,11 @@ const Profilo = () => {
   const offset = circumference - (profilo.salute / 100) * circumference;
 
   const sbloccati = badges.filter(b => b.sbloccato).length;
+
+  useEffect(() => {
+    if (!user?.id) return;
+    setOpeningLoaderEnabledState(isOpeningLoaderEnabled(user.id));
+  }, [user?.id]);
 
   const handleDeleteAccount = async () => {
     if (deletingAccount) return;
@@ -305,6 +312,34 @@ const Profilo = () => {
             </div>
             <ArrowUpRight size={16} className="text-muted-foreground" />
           </motion.button>
+
+          <div className="w-full bg-card border border-primary/20 rounded-2xl p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold">Opening Loader</p>
+                <p className="text-[11px] text-muted-foreground">Attivo solo per il tuo profilo admin</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!user?.id) return;
+                  const next = !openingLoaderEnabled;
+                  setOpeningLoaderEnabledState(next);
+                  setOpeningLoaderEnabled(user.id, next);
+                }}
+                className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors ${
+                  openingLoaderEnabled ? "bg-primary" : "bg-muted"
+                }`}
+                aria-pressed={openingLoaderEnabled}
+              >
+                <span
+                  className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                    openingLoaderEnabled ? "translate-x-7" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
         </motion.div>
       )}
 

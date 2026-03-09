@@ -6,9 +6,12 @@ import { toast } from "sonner";
 import {
   isNativeBillingPlatform,
   loadBillingOffers,
+  loadBillingOfferingMetadata,
+  presentNativePaywall,
   purchaseBillingOffer,
   restoreBillingPurchases,
   syncBillingCustomerInfo,
+  type BillingOfferingMetadata,
   type BillingOffer,
 } from "@/lib/billing/revenuecat";
 
@@ -74,6 +77,14 @@ export default function BillingSection() {
     },
   });
 
+  const { data: offeringMetadata } = useQuery({
+    queryKey: ["billing-offering-metadata", user?.id],
+    enabled: !!user && nativeBilling,
+    queryFn: async (): Promise<BillingOfferingMetadata> => {
+      return loadBillingOfferingMetadata(user!.id);
+    },
+  });
+
   const syncMutation = useMutation({
     mutationFn: async () => {
       if (!user) return;
@@ -108,6 +119,23 @@ export default function BillingSection() {
     },
   });
 
+  const paywallMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) return;
+      return presentNativePaywall(user.id);
+    },
+    onSuccess: async (result) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["billing-plan", user?.id] }),
+        queryClient.invalidateQueries({ queryKey: ["billing-subscription", user?.id] }),
+      ]);
+      toast.success(`Paywall chiusa (${result ?? "OK"}). Stato abbonamento aggiornato.`);
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Apertura paywall non riuscita.");
+    },
+  });
+
   const restoreMutation = useMutation({
     mutationFn: async () => {
       if (!user) return;
@@ -125,14 +153,21 @@ export default function BillingSection() {
     },
   });
 
-  const isBusy = syncMutation.isPending || purchaseMutation.isPending || restoreMutation.isPending;
+  const isBusy =
+    syncMutation.isPending || purchaseMutation.isPending || restoreMutation.isPending || paywallMutation.isPending;
 
   const sortedOffers = useMemo(() => {
+    const highlightId = offeringMetadata?.highlight_package_identifier?.trim().toLowerCase();
     return [...(offers ?? [])].sort((a, b) => {
+      if (highlightId) {
+        const aHighlight = a.id.toLowerCase() === highlightId ? -1 : 0;
+        const bHighlight = b.id.toLowerCase() === highlightId ? -1 : 0;
+        if (aHighlight !== bHighlight) return aHighlight - bHighlight;
+      }
       const rank = (kind: BillingOffer["kind"]) => (kind === "monthly" ? 0 : kind === "annual" ? 1 : 2);
       return rank(a.kind) - rank(b.kind);
     });
-  }, [offers]);
+  }, [offers, offeringMetadata?.highlight_package_identifier]);
 
   if (!user) return null;
 
@@ -141,6 +176,12 @@ export default function BillingSection() {
       <div className="mb-2 flex items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold">Abbonamento Pro</h2>
+          {offeringMetadata?.paywall_title && (
+            <p className="text-xs text-muted-foreground">{offeringMetadata.paywall_title}</p>
+          )}
+          {offeringMetadata?.paywall_subtitle && (
+            <p className="text-xs text-muted-foreground">{offeringMetadata.paywall_subtitle}</p>
+          )}
           <p className="text-xs text-muted-foreground">
             Piano attuale: <span className="font-medium uppercase">{planData?.plan ?? "free"}</span>
           </p>
@@ -177,6 +218,14 @@ export default function BillingSection() {
         </p>
       ) : (
         <div className="mt-3 space-y-2">
+          <button
+            onClick={() => paywallMutation.mutate()}
+            disabled={isBusy}
+            className="w-full rounded-xl bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+          >
+            {offeringMetadata?.paywall_cta ?? "Apri Paywall"}
+          </button>
+
           {sortedOffers.length === 0 ? (
             <p className="text-xs text-muted-foreground">Nessuna offerta disponibile. Controlla RevenueCat dashboard/config store.</p>
           ) : (

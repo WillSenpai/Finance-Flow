@@ -1,8 +1,11 @@
 import { Capacitor } from "@capacitor/core";
 import { Purchases, type CustomerInfo, type PurchasesOfferings, type PurchasesPackage } from "@revenuecat/purchases-capacitor";
+import { RevenueCatUI } from "@revenuecat/purchases-capacitor-ui";
 import { invokeWithAuth } from "@/lib/invokeWithAuth";
 
 let configuredForUserId: string | null = null;
+let purchasesConfigured = false;
+let configureQueue: Promise<void> = Promise.resolve();
 
 export type BillingOffer = {
   id: string;
@@ -10,6 +13,13 @@ export type BillingOffer = {
   priceString: string;
   kind: "monthly" | "annual" | "other";
   aPackage: PurchasesPackage;
+};
+
+export type BillingOfferingMetadata = {
+  paywall_title?: string;
+  paywall_subtitle?: string;
+  paywall_cta?: string;
+  highlight_package_identifier?: string;
 };
 
 export function isNativeBillingPlatform(): boolean {
@@ -34,14 +44,28 @@ export async function ensureRevenueCatConfigured(appUserId: string): Promise<voi
   if (!isNativeBillingPlatform()) return;
   if (configuredForUserId === appUserId) return;
 
-  const apiKey = getRevenueCatApiKey();
-  if (!apiKey) {
-    throw new Error("RevenueCat API key mancante. Configura VITE_REVENUECAT_API_KEY_IOS/ANDROID.");
-  }
+  const configureStep = async () => {
+    if (configuredForUserId === appUserId) return;
 
-  await Purchases.configure({ apiKey, appUserID: appUserId });
-  await Purchases.logIn({ appUserID: appUserId });
-  configuredForUserId = appUserId;
+    const apiKey = getRevenueCatApiKey();
+    if (!apiKey) {
+      throw new Error("RevenueCat API key mancante. Configura VITE_REVENUECAT_API_KEY_IOS/ANDROID.");
+    }
+
+    if (!purchasesConfigured) {
+      await Purchases.configure({ apiKey, appUserID: appUserId });
+      purchasesConfigured = true;
+      configuredForUserId = appUserId;
+      return;
+    }
+
+    await Purchases.logIn({ appUserID: appUserId });
+    configuredForUserId = appUserId;
+  };
+
+  const queued = configureQueue.then(configureStep);
+  configureQueue = queued.catch(() => undefined);
+  await queued;
 }
 
 export async function loadBillingOffers(appUserId: string): Promise<BillingOffer[]> {
@@ -69,6 +93,23 @@ export async function loadBillingOffers(appUserId: string): Promise<BillingOffer
   });
 }
 
+function readString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+export async function loadBillingOfferingMetadata(appUserId: string): Promise<BillingOfferingMetadata> {
+  await ensureRevenueCatConfigured(appUserId);
+  const offerings: PurchasesOfferings = await Purchases.getOfferings();
+  const metadata = offerings.current?.metadata ?? {};
+
+  return {
+    paywall_title: readString(metadata.paywall_title),
+    paywall_subtitle: readString(metadata.paywall_subtitle),
+    paywall_cta: readString(metadata.paywall_cta),
+    highlight_package_identifier: readString(metadata.highlight_package_identifier),
+  };
+}
+
 async function syncCustomerInfo(customerInfo: CustomerInfo) {
   await invokeWithAuth("billing-sync", {
     body: { customerInfo },
@@ -91,4 +132,17 @@ export async function syncBillingCustomerInfo(appUserId: string): Promise<void> 
   await ensureRevenueCatConfigured(appUserId);
   const result = await Purchases.getCustomerInfo();
   await syncCustomerInfo(result.customerInfo);
+}
+
+export async function presentNativePaywall(appUserId: string): Promise<string> {
+  await ensureRevenueCatConfigured(appUserId);
+  const requiredEntitlementIdentifier =
+    (import.meta.env.VITE_REVENUECAT_ENTITLEMENT_ID as string | undefined) ?? "pro";
+
+  const result = await RevenueCatUI.presentPaywallIfNeeded({
+    requiredEntitlementIdentifier,
+  });
+
+  await syncBillingCustomerInfo(appUserId);
+  return String(result.result);
 }

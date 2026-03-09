@@ -1,0 +1,164 @@
+
+Showing Recent Issues
+
+Build target AppPlugin with configuration Debug
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'. (in target 'AppPlugin' from project 'CapacitorApp')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'. (in target 'AppPlugin' from project 'CapacitorApp')
+
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'.
+
+
+Build target RevenuecatPurchasesCapacitor with configuration Debug
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'. (in target 'RevenuecatPurchasesCapacitor' from project 'RevenuecatPurchasesCapacitor')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'. (in target 'RevenuecatPurchasesCapacitor' from project 'RevenuecatPurchasesCapacitor')
+
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'.
+
+
+Build target CapacitorApp with configuration Debug
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'. (in target 'CapacitorApp' from project 'CapacitorApp')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'. (in target 'CapacitorApp' from project 'CapacitorApp')
+
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'.
+
+
+Build target CapacitorPreferences with configuration Debug
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'. (in target 'CapacitorPreferences' from project 'CapacitorPreferences')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'. (in target 'CapacitorPreferences' from project 'CapacitorPreferences')
+
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'.
+
+
+Build target App of project App with configuration Debug
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'. (in target 'App' from project 'App')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'. (in target 'App' from project 'App')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'. (in target 'App' from project 'App')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'. (in target 'App' from project 'App')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'. (in target 'App' from project 'App')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'. (in target 'App' from project 'App')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'. (in target 'App' from project 'App')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'. (in target 'App' from project 'App')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'. (in target 'App' from project 'App')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'. (in target 'App' from project 'App')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'. (in target 'App' from project 'App')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'. (in target 'App' from project 'App')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'. (in target 'App' from project 'App')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'. (in target 'App' from project 'App')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'. (in target 'App' from project 'App')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'. (in target 'App' from project 'App')
+/Users/williamcasotto/Desktop/Finance Flow/my-money-compass/ios/App/App.xcodeproj: error: Missing package product 'Capacitor' (in target 'App' from project 'App')
+/Users/williamcasotto/Desktop/Finance Flow/my-money-compass/ios/App/App.xcodeproj: error: Missing package product 'Cordova' (in target 'App' from project 'App')
+/Users/williamcasotto/Desktop/Finance Flow/my-money-compass/ios/App/App.xcodeproj: error: Missing package product 'PurchasesHybridCommon' (in target 'App' from project 'App')
+
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'.
+
+/Users/williamcasotto/Desktop/Finance Flow/my-money-compass/ios/App/App.xcodeproj: Missing package product 'Capacitor'
+
+/Users/williamcasotto/Desktop/Finance Flow/my-money-compass/ios/App/App.xcodeproj: Missing package product 'Cordova'
+
+/Users/williamcasotto/Desktop/Finance Flow/my-money-compass/ios/App/App.xcodeproj: Missing package product 'PurchasesHybridCommon'
+
+
+Build target RevenuecatPurchasesCapacitor with configuration Debug
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'. (in target 'RevenuecatPurchasesCapacitor' from project 'RevenuecatPurchasesCapacitor')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'. (in target 'RevenuecatPurchasesCapacitor' from project 'RevenuecatPurchasesCapacitor')
+
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'.
+
+
+Build target CapApp-SPM with configuration Debug
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'. (in target 'CapApp-SPM' from project 'CapApp-SPM')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'. (in target 'CapApp-SPM' from project 'CapApp-SPM')
+
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'.
+
+
+Build target PreferencesPlugin with configuration Debug
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'. (in target 'PreferencesPlugin' from project 'CapacitorPreferences')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'. (in target 'PreferencesPlugin' from project 'CapacitorPreferences')
+
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'.
+
+
+Build target CapApp-SPM with configuration Debug
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'. (in target 'CapApp-SPM' from project 'CapApp-SPM')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'. (in target 'CapApp-SPM' from project 'CapApp-SPM')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'. (in target 'CapApp-SPM' from project 'CapApp-SPM')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'. (in target 'CapApp-SPM' from project 'CapApp-SPM')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'. (in target 'CapApp-SPM' from project 'CapApp-SPM')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'. (in target 'CapApp-SPM' from project 'CapApp-SPM')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'. (in target 'CapApp-SPM' from project 'CapApp-SPM')
+error: There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'. (in target 'CapApp-SPM' from project 'CapApp-SPM')
+
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework'.
+
+There is no XCFramework found at '/Users/williamcasotto/Library/Developer/Xcode/DerivedData/App-akwanelmifidaqckrsvughcwisdx/SourcePackages/artifacts/capacitor-swift-pm/Cordova/Cordova.xcframework'.
+
+
+
+Build failed    09/03/26, 09:13    2.1 seconds

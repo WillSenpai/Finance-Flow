@@ -8,6 +8,9 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchAutoHide: false,
     },
+    Keyboard: {
+      resize: "body",
+    },
   },
 };
 

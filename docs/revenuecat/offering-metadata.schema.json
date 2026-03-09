@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://financeflow.app/schemas/revenuecat/offering-metadata.schema.json",
+  "title": "RevenueCat Offering Metadata",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "paywall_title": {
+      "type": "string",
+      "description": "Titolo breve mostrato nella sezione Abbonamento Pro in app."
+    },
+    "paywall_subtitle": {
+      "type": "string",
+      "description": "Sottotitolo opzionale mostrato sotto il titolo."
+    },
+    "paywall_cta": {
+      "type": "string",
+      "description": "Label del bottone principale per aprire la paywall RevenueCat UI."
+    },
+    "highlight_package_identifier": {
+      "type": "string",
+      "description": "Identifier del package da evidenziare/prioritizzare (es. $rc_annual)."
+    }
+  }
+}

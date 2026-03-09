@@ -5,14 +5,6 @@ type InvokeOptions = {
   headers?: Record<string, string>;
 };
 
-async function safeSignOut() {
-  try {
-    await supabase.auth.signOut();
-  } catch {
-    // Ignore sign out failures and preserve the original auth error.
-  }
-}
-
 async function getAccessToken(): Promise<string> {
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
   if (sessionError) throw sessionError;
@@ -25,7 +17,6 @@ async function getAccessToken(): Promise<string> {
   token = refreshedData.session?.access_token;
 
   if (!token) {
-    await safeSignOut();
     throw new Error("Sessione non valida o scaduta. Effettua nuovamente il login.");
   }
 
@@ -85,7 +76,6 @@ export async function invokeWithAuth<T = unknown>(fn: string, options: InvokeOpt
 
     const { data: refreshedData, error: refreshError } = await supabase.auth.refreshSession();
     if (refreshError || !refreshedData.session?.access_token) {
-      await safeSignOut();
       throw new Error("Sessione scaduta. Effettua di nuovo il login.");
     }
 
@@ -94,7 +84,6 @@ export async function invokeWithAuth<T = unknown>(fn: string, options: InvokeOpt
       return await runInvoke(token);
     } catch (retryError) {
       if (/401|unauthorized|jwt|authorization/i.test(retryError instanceof Error ? retryError.message : "")) {
-        await safeSignOut();
         throw new Error("Sessione scaduta. Effettua di nuovo il login.");
       }
       throw retryError;

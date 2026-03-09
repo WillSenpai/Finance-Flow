@@ -4,12 +4,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import OpeningLoader from "./components/startup/OpeningLoader";
 import MobileLayout from "./components/layout/MobileLayout";
 import { useSplash } from "./components/SplashScreen";
 import { ScrollToTop } from "./components/ScrollToTop";
 import AppLifecycleManager from "./components/AppLifecycleManager";
+import NativeIOSKeyboardManager from "./components/NativeIOSKeyboardManager";
 import { OPENING_MIN_MS, OPENING_SLOW_MS } from "./config/startup";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { UserProvider } from "./contexts/UserContext";
@@ -17,6 +18,7 @@ import { useUser } from "@/hooks/useUser";
 import { PointsProvider } from "./contexts/PointsContext";
 import { useOpeningBootstrap } from "./hooks/useOpeningBootstrap";
 import { hideNativeSplash } from "./lib/nativeSplash";
+import { isOpeningLoaderEnabled, OPENING_LOADER_PREF_EVENT } from "./lib/openingLoaderPreference";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const GestisciPatrimonio = lazy(() => import("./pages/GestisciPatrimonio"));
@@ -118,6 +120,7 @@ const AppBootstrapGate = () => {
   const { user, loading: authLoading } = useAuth();
   const { loadingData } = useUser();
   const { SplashComponent } = useSplash();
+  const [openingEnabled, setOpeningEnabled] = useState<boolean>(() => isOpeningLoaderEnabled(user?.id));
   const { showOpening, canExit, markExited } = useOpeningBootstrap({
     authLoading,
     hasUser: Boolean(user),
@@ -131,15 +134,39 @@ const AppBootstrapGate = () => {
   }, []);
 
   useEffect(() => {
+    setOpeningEnabled(isOpeningLoaderEnabled(user?.id));
+  }, [user?.id]);
+
+  useEffect(() => {
+    const onPrefChange = (event: Event) => {
+      const detail = (event as CustomEvent<{ userId?: string; enabled?: boolean }>).detail;
+      if (!user?.id) return;
+      if (detail?.userId !== user.id) return;
+      setOpeningEnabled(Boolean(detail.enabled));
+    };
+
+    window.addEventListener(OPENING_LOADER_PREF_EVENT, onPrefChange as EventListener);
+    return () => window.removeEventListener(OPENING_LOADER_PREF_EVENT, onPrefChange as EventListener);
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!openingEnabled && showOpening) {
+      markExited();
+    }
+  }, [markExited, openingEnabled, showOpening]);
+
+  useEffect(() => {
     if (canExit) {
       markExited();
     }
   }, [canExit, markExited]);
 
+  const shouldShowOpening = openingEnabled && showOpening;
+
   return (
     <>
-      <AnimatePresence>{showOpening ? <OpeningLoader /> : null}</AnimatePresence>
-      {!showOpening && <SplashComponent />}
+      <AnimatePresence>{shouldShowOpening ? <OpeningLoader /> : null}</AnimatePresence>
+      {!shouldShowOpening && <SplashComponent />}
       <BrowserRouter>
         <ScrollToTop />
         <Suspense fallback={<div className="min-h-screen bg-background" />}>
@@ -154,6 +181,7 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AppLifecycleManager />
+      <NativeIOSKeyboardManager />
       <TooltipProvider>
         <Toaster />
         <Sonner />
