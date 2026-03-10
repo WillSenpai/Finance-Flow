@@ -30,7 +30,7 @@ const PatrimonioCondiviso = () => {
         <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-primary text-sm font-medium mb-6">
           <ArrowLeft size={18} /> Indietro
         </button>
-        <div className="bg-card border border-border/50 rounded-2xl p-6 text-center">
+        <div className="py-4 text-center border-t border-border/40">
           <p className="text-3xl mb-2">🤝</p>
           <p className="text-sm font-medium">Nessun workspace condiviso attivo</p>
           <p className="text-xs text-muted-foreground mt-1">Crea o accetta un invito dalla sezione Condivisione.</p>
@@ -51,7 +51,7 @@ const PatrimonioCondiviso = () => {
       <h1 className="text-2xl font-semibold tracking-tight">Patrimonio Condiviso 💞</h1>
       <p className="text-xs text-muted-foreground mt-1">{workspaceName}</p>
 
-      <div className="bg-card border border-border/50 rounded-2xl p-5 mt-5">
+      <div className="mt-5 py-4 border-y border-border/40">
         <p className="text-xs uppercase tracking-wider text-muted-foreground">Totale condiviso</p>
         <p className="text-3xl font-bold mt-1">{formatEuro(totale)}</p>
       </div>
@@ -69,7 +69,7 @@ const PatrimonioCondiviso = () => {
         <TrendingUp size={16} /> Investimenti
       </Button>
 
-      <div className="bg-card border border-border/50 rounded-2xl p-4 mt-6">
+      <div className="mt-6 pt-4 border-t border-border/40">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-sm font-semibold flex items-center gap-2">
             <Receipt size={16} /> Spese Condivise (mese corrente)
@@ -78,7 +78,7 @@ const PatrimonioCondiviso = () => {
             Gestisci
           </Button>
         </div>
-        <div className="rounded-xl bg-background/60 border border-border/50 p-3 mb-2 flex items-center justify-between">
+        <div className="py-2 mb-2 flex items-center justify-between border-b border-border/40">
           <span className="text-xs text-muted-foreground">Totale mese</span>
           <span className="text-sm font-semibold">{formatEuro(monthlyTotal)}</span>
         </div>
@@ -88,7 +88,7 @@ const PatrimonioCondiviso = () => {
             .map(([catId, value]) => {
               const cat = categorieSpese.find((c) => c.id === catId);
               return (
-                <div key={catId} className="rounded-xl border border-border/50 px-3 py-2 flex items-center justify-between">
+                <div key={catId} className="px-1 py-2 flex items-center justify-between border-b border-border/30">
                   <span className="text-xs font-medium">{cat?.emoji ?? "📦"} {cat?.nome ?? "Altro"}</span>
                   <span className="text-xs font-semibold">{formatEuro(value)}</span>
                 </div>

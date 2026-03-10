@@ -26,6 +26,8 @@ const PatrimonioCondivisione = () => {
   const [workspaceInput, setWorkspaceInput] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [busy, setBusy] = useState(false);
+  const inviteEmailTrimmed = inviteEmail.trim();
+  const isInviteEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmailTrimmed);
 
   const activeMembers = useMemo(() => members.filter((m) => m.status === "active"), [members]);
 
@@ -42,9 +44,9 @@ const PatrimonioCondivisione = () => {
   };
 
   const handleInvite = async () => {
-    if (!inviteEmail.trim()) return;
+    if (!isInviteEmailValid) return;
     setBusy(true);
-    const result = await inviteMember(inviteEmail.trim());
+    const result = await inviteMember(inviteEmailTrimmed);
     setBusy(false);
     if (!result.ok) {
       toast.error(result.error ?? "Invio invito fallito");
@@ -129,15 +131,22 @@ const PatrimonioCondivisione = () => {
               <p className="text-sm font-semibold mb-3 flex items-center gap-2">
                 <Mail size={16} /> Invita un membro
               </p>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-[1fr_auto] items-center gap-2">
                 <Input
                   placeholder="email@esempio.com"
                   type="email"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
-                  className="rounded-xl h-10"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") void handleInvite();
+                  }}
+                  className="rounded-xl h-10 min-h-10 max-h-10"
                 />
-                <Button onClick={handleInvite} disabled={busy || !inviteEmail.trim()} className="rounded-xl h-10">
+                <Button
+                  onClick={handleInvite}
+                  disabled={busy || !isInviteEmailValid}
+                  className="rounded-xl h-10 min-h-10 px-4 shrink-0"
+                >
                   Invia
                 </Button>
               </div>

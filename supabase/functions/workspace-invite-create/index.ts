@@ -39,6 +39,12 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    if ((authResult.user.email ?? "").toLowerCase() === normalizedEmail) {
+      return new Response(JSON.stringify({ error: "Non puoi invitare te stesso" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -77,6 +83,38 @@ serve(async (req) => {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Normalize invite lifecycle so expired pending invites don't block reinvites.
+    await admin
+      .from("shared_workspace_invites")
+      .update({ status: "expired", responded_at: new Date().toISOString() })
+      .eq("workspace_id", workspaceId)
+      .eq("status", "pending")
+      .lt("expires_at", new Date().toISOString());
+
+    const { data: existingProfile } = await admin
+      .from("profiles")
+      .select("id")
+      .ilike("email", normalizedEmail)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingProfile?.id) {
+      const { data: existingMember } = await admin
+        .from("shared_workspace_members")
+        .select("id")
+        .eq("workspace_id", workspaceId)
+        .eq("user_id", existingProfile.id)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (existingMember) {
+        return new Response(JSON.stringify({ error: "Questo utente è già nel workspace" }), {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     const { count: activeMembers } = await admin
@@ -118,6 +156,12 @@ serve(async (req) => {
       .single();
 
     if (inviteError || !invite) {
+      if (inviteError?.code === "23505") {
+        return new Response(JSON.stringify({ error: "Esiste già un invito pendente per questa email" }), {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       return new Response(JSON.stringify({ error: inviteError?.message ?? "Failed to create invite" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

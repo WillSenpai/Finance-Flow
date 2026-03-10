@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
@@ -89,6 +90,27 @@ const SharedWorkspaceContext = createContext<SharedWorkspaceContextValue | undef
 
 const asDb = () => supabase as any;
 
+const getFunctionsErrorMessage = async (error: unknown, fallback: string) => {
+  if (!error || typeof error !== "object") return fallback;
+  const err = error as { message?: string; context?: Response };
+
+  if (err.context) {
+    if (err.context.status === 401) {
+      return "Sessione non valida. Effettua di nuovo il login.";
+    }
+    const payload = await err.context.clone().json().catch(() => null);
+    if (payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string") {
+      return payload.error;
+    }
+  }
+
+  if (err.message?.includes("non-2xx")) {
+    return "Operazione non riuscita. Riprova tra pochi secondi.";
+  }
+
+  return err.message ?? fallback;
+};
+
 export const SharedWorkspaceProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -108,7 +130,15 @@ export const SharedWorkspaceProvider = ({ children }: { children: ReactNode }) =
       setPendingInvites([]);
       return;
     }
-    const { data, error } = await supabase.functions.invoke("workspace-invite-list");
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (!accessToken) {
+      setPendingInvites([]);
+      return;
+    }
+    const { data, error } = await supabase.functions.invoke("workspace-invite-list", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
     if (error) {
       console.error("workspace-invite-list error:", error);
       return;
@@ -288,10 +318,14 @@ export const SharedWorkspaceProvider = ({ children }: { children: ReactNode }) =
   const inviteMember = useCallback(
     async (email: string) => {
       if (!workspaceId) return { ok: false, error: "Nessun workspace attivo" };
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) return { ok: false, error: "Sessione non valida. Effettua di nuovo il login." };
       const { data, error } = await supabase.functions.invoke("workspace-invite-create", {
         body: { workspaceId, email },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
-      if (error) return { ok: false, error: error.message };
+      if (error) return { ok: false, error: await getFunctionsErrorMessage(error, "Invio invito fallito") };
       await refreshAll();
       return { ok: true, emailSent: Boolean(data?.emailSent) };
     },
@@ -300,10 +334,14 @@ export const SharedWorkspaceProvider = ({ children }: { children: ReactNode }) =
 
   const respondToInvite = useCallback(
     async (inviteId: string, decision: "accept" | "decline") => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) return { ok: false, error: "Sessione non valida. Effettua di nuovo il login." };
       const { error } = await supabase.functions.invoke("workspace-invite-accept", {
         body: { inviteId, decision },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
-      if (error) return { ok: false, error: error.message };
+      if (error) return { ok: false, error: await getFunctionsErrorMessage(error, "Risposta invito fallita") };
       await refreshAll();
       return { ok: true };
     },
@@ -313,10 +351,14 @@ export const SharedWorkspaceProvider = ({ children }: { children: ReactNode }) =
   const removeMember = useCallback(
     async (targetUserId: string) => {
       if (!workspaceId) return { ok: false, error: "Nessun workspace attivo" };
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) return { ok: false, error: "Sessione non valida. Effettua di nuovo il login." };
       const { error } = await supabase.functions.invoke("workspace-member-remove", {
         body: { workspaceId, targetUserId, action: "remove" },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
-      if (error) return { ok: false, error: error.message };
+      if (error) return { ok: false, error: await getFunctionsErrorMessage(error, "Impossibile rimuovere membro") };
       await refreshAll();
       return { ok: true };
     },
@@ -325,10 +367,14 @@ export const SharedWorkspaceProvider = ({ children }: { children: ReactNode }) =
 
   const leaveWorkspace = useCallback(async () => {
     if (!workspaceId) return { ok: false, error: "Nessun workspace attivo" };
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (!accessToken) return { ok: false, error: "Sessione non valida. Effettua di nuovo il login." };
     const { error } = await supabase.functions.invoke("workspace-member-remove", {
       body: { workspaceId, action: "leave" },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
-    if (error) return { ok: false, error: error.message };
+    if (error) return { ok: false, error: await getFunctionsErrorMessage(error, "Impossibile uscire dal workspace") };
     await refreshAll();
     return { ok: true };
   }, [refreshAll, workspaceId]);
