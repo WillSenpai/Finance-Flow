@@ -151,7 +151,7 @@ const LessonIntro = ({ vignettes, lessonTitle, lessonEmoji, onComplete, onSkip }
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="min-h-screen flex flex-col items-center justify-center text-center px-6 py-12"
+        className="min-h-[var(--app-height)] flex flex-col items-center justify-center text-center px-6 py-12"
       >
         <motion.span
           animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}

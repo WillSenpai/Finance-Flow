@@ -555,7 +555,7 @@ const Coach = () => {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-[calc(100vh-5rem)]">
+    <div className="flex h-full min-h-full flex-col overflow-hidden">
       <div className="relative px-5 pb-4 text-center border-b border-border/50 pt-[36px]">
         <Button
           type="button"
@@ -690,7 +690,7 @@ const Coach = () => {
             </Button>
           </div>
 
-          <div className="max-h-[calc(100vh-12rem)] overflow-y-auto p-2">
+          <div className="max-h-[calc(var(--app-height)-12rem)] overflow-y-auto p-2">
             {conversations.length === 0 ? (
               <div className="text-sm text-muted-foreground px-3 py-4">Nessuna conversazione salvata.</div>
             ) : (

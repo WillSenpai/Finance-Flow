@@ -13,6 +13,7 @@ import LessonIntro from "@/components/academy/LessonIntro";
 import { getAcademyLessonMeta, getDefaultLessonTitle } from "@/lib/academy";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { isNativeBillingPlatform, loadBillingOfferingMetadata, loadBillingOffers } from "@/lib/billing/revenuecat";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type StepType = string;
@@ -289,6 +290,22 @@ const LezioneDetail = () => {
     toast({ title: "Quiz salvato", description: "Risultato del quiz facoltativo registrato." });
   };
 
+  const openProPage = async () => {
+    if (user?.id && isNativeBillingPlatform()) {
+      await Promise.allSettled([
+        queryClient.prefetchQuery({
+          queryKey: ["billing-offers", user.id],
+          queryFn: () => loadBillingOffers(user.id),
+        }),
+        queryClient.prefetchQuery({
+          queryKey: ["billing-offering-metadata", user.id],
+          queryFn: () => loadBillingOfferingMetadata(user.id),
+        }),
+      ]);
+    }
+    navigate("/profilo/pro");
+  };
+
   const sendChatMessage = async () => {
     const text = chatInput.trim();
     if (!text || isChatLoading) return;
@@ -365,7 +382,7 @@ const LezioneDetail = () => {
   const isLessonCompleted = Boolean(nodeRuntime?.lesson_completed);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden px-5 pt-10 pb-4">
+    <div className="flex h-full min-h-full flex-col overflow-hidden px-5 pt-10 pb-4">
       {!(showIntro && (hasIllustrations || isGenerating)) && (
         <>
           <div className="mb-3 flex items-center gap-3">
@@ -481,7 +498,7 @@ const LezioneDetail = () => {
           </p>
           <div className="mt-2 grid grid-cols-2 gap-2">
             <Button variant="outline" onClick={() => setShowProPopup(false)}>Chiudi</Button>
-            <Button onClick={() => navigate("/profilo/pro")}>Vai a Pro</Button>
+            <Button onClick={() => void openProPage()}>Vai a Pro</Button>
           </div>
         </DialogContent>
       </Dialog>

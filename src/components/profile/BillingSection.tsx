@@ -222,9 +222,10 @@ export default function BillingSection({ fullPage = false }: { fullPage?: boolea
     <div
       className={
         fullPage
-          ? "min-h-screen overflow-hidden bg-card"
+          ? "min-h-[100dvh] overflow-hidden bg-card"
           : "mb-6 overflow-hidden rounded-[28px] border border-border/60 bg-card shadow-[0_16px_40px_-28px_hsl(var(--foreground)/0.5)]"
       }
+      style={fullPage ? { paddingBottom: "env(safe-area-inset-bottom)" } : undefined}
     >
       <div className="bg-gradient-to-b from-primary/90 via-primary/75 to-primary/40 px-5 pb-5 pt-6 text-primary-foreground">
         <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-medium">

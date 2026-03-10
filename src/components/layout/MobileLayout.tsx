@@ -1,5 +1,6 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Home, Wallet, GraduationCap, Sparkles, User } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useNotifiche } from "@/hooks/useNotifiche";
@@ -18,15 +19,29 @@ const MobileLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { unreadCount } = useNotifiche();
+  const isNative = Capacitor.isNativePlatform();
 
   const showTabBar = !hiddenPaths.some((p) => location.pathname.startsWith(p));
+  const contentBottomPadding = showTabBar
+    ? "calc(4.25rem + var(--safe-bottom))"
+    : "max(1rem, var(--safe-bottom))";
 
   return (
-    <div className="flex justify-center min-h-screen bg-muted/30">
-      <div className="w-full max-w-[430px] min-h-screen bg-background relative flex flex-col shadow-2xl overflow-hidden">
-        <div className="flex-1 overflow-y-auto pb-24">
+    <div
+      className="flex h-[var(--app-height)] min-h-[var(--app-height)] justify-center overflow-hidden bg-muted/30"
+      style={{ paddingLeft: "var(--safe-left)", paddingRight: "var(--safe-right)" }}
+    >
+      <div
+        className={cn(
+          "relative flex h-full min-h-0 flex-col overflow-hidden bg-background",
+          isNative ? "w-full" : "w-full max-w-[430px] shadow-2xl",
+        )}
+        style={{ paddingTop: "var(--safe-top)" }}
+      >
+        <div className="flex-1 min-h-0 overflow-y-auto" style={{ paddingBottom: contentBottomPadding }}>
           <motion.div
             key={location.pathname}
+            className="min-h-full"
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
@@ -36,7 +51,10 @@ const MobileLayout = () => {
         </div>
 
         {showTabBar && (
-          <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-background/80 backdrop-blur-xl border-t border-border z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <nav
+            className="absolute inset-x-0 bottom-0 z-50 border-t border-border bg-background/80 backdrop-blur-xl"
+            style={{ paddingBottom: "var(--safe-bottom)" }}
+          >
             <div className="flex items-center justify-around py-2 pb-2">
               {tabs.map((tab) => {
                 const isActive =

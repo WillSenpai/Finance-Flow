@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import { Badge as BadgeType } from "@/contexts/PointsContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { isOpeningLoaderEnabled, setOpeningLoaderEnabled } from "@/lib/openingLoaderPreference";
+import { isNativeBillingPlatform, loadBillingOfferingMetadata, loadBillingOffers } from "@/lib/billing/revenuecat";
 
 const impostazioni = [
   { icona: Bell, label: "Notifiche", path: "/profilo/notifiche" },
@@ -41,6 +42,7 @@ const Profilo = () => {
   const { signOut, user } = useAuth();
   const { points, streak, badges } = usePoints();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { notifiche, dismiss, dismissAll, unreadCount } = useNotifiche();
   const [selectedBadge, setSelectedBadge] = useState<BadgeType | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -74,6 +76,61 @@ const Profilo = () => {
     if (!user?.id) return;
     setOpeningLoaderEnabledState(isOpeningLoaderEnabled(user.id));
   }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id || !isNativeBillingPlatform()) return;
+
+    void Promise.allSettled([
+      queryClient.prefetchQuery({
+        queryKey: ["billing-offers", user.id],
+        queryFn: () => loadBillingOffers(user.id),
+      }),
+      queryClient.prefetchQuery({
+        queryKey: ["billing-offering-metadata", user.id],
+        queryFn: () => loadBillingOfferingMetadata(user.id),
+      }),
+      queryClient.prefetchQuery({
+        queryKey: ["billing-plan", user.id],
+        queryFn: async () => {
+          const { data, error } = await supabase
+            .from("user_ai_plans" as never)
+            .select("plan, monthly_token_limit, grace_until")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          if (error) throw error;
+          return data;
+        },
+      }),
+      queryClient.prefetchQuery({
+        queryKey: ["billing-subscription", user.id],
+        queryFn: async () => {
+          const { data, error } = await supabase
+            .from("billing_subscriptions" as never)
+            .select("status, current_period_ends_at, auto_renews, product_id")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          if (error) throw error;
+          return data;
+        },
+      }),
+    ]);
+  }, [queryClient, user?.id]);
+
+  const openProPage = async () => {
+    if (user?.id && isNativeBillingPlatform()) {
+      await Promise.allSettled([
+        queryClient.prefetchQuery({
+          queryKey: ["billing-offers", user.id],
+          queryFn: () => loadBillingOffers(user.id),
+        }),
+        queryClient.prefetchQuery({
+          queryKey: ["billing-offering-metadata", user.id],
+          queryFn: () => loadBillingOfferingMetadata(user.id),
+        }),
+      ]);
+    }
+    navigate("/profilo/pro");
+  };
 
   const handleDeleteAccount = async () => {
     if (deletingAccount) return;
@@ -169,7 +226,7 @@ const Profilo = () => {
       <motion.div variants={item} className="mb-6">
         <motion.button
           whileTap={{ scale: 0.98 }}
-          onClick={() => navigate("/profilo/pro")}
+          onClick={() => void openProPage()}
           className="w-full rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card to-card p-4 text-left"
         >
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-background/70 px-3 py-1 text-xs font-semibold text-primary">

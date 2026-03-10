@@ -223,10 +223,10 @@ const Dashboard = () => {
 
       {/* Post Detail Drawer */}
       <Drawer open={!!selectedPost} onOpenChange={(open) => !open && setSelectedPost(null)}>
-        <DrawerContent className="max-h-[85vh] overflow-hidden">
+        <DrawerContent className="max-h-[85dvh] overflow-hidden">
           {selectedPost && (
             <div
-              className="max-h-[calc(85vh-2.5rem)] overflow-y-auto overscroll-contain px-5 pb-6 pt-2"
+              className="max-h-[calc(85dvh-2.5rem)] overflow-y-auto overscroll-contain px-5 pb-6 pt-2"
               style={{ WebkitOverflowScrolling: "touch" }}
             >
               <DrawerHeader className="px-0">
@@ -346,10 +346,10 @@ const Dashboard = () => {
 
       {/* News Summary Drawer */}
       <Drawer open={!!selectedNews} onOpenChange={(open) => !open && setSelectedNews(null)}>
-        <DrawerContent className="max-h-[85vh] overflow-hidden">
+        <DrawerContent className="max-h-[85dvh] overflow-hidden">
           {selectedNews && (
             <div
-              className="max-h-[calc(85vh-2.5rem)] overflow-y-auto overscroll-contain px-5 pb-6 pt-2"
+              className="max-h-[calc(85dvh-2.5rem)] overflow-y-auto overscroll-contain px-5 pb-6 pt-2"
               style={{ WebkitOverflowScrolling: "touch" }}
             >
               <DrawerHeader className="px-0">
