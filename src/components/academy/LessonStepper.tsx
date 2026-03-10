@@ -38,6 +38,8 @@ type LessonStepperProps = {
   onChatInputChange: (val: string) => void;
   onSendChat: () => void;
   isChatLoading: boolean;
+  onNodeViewChange?: (isInsideNode: boolean) => void;
+  backToNodesSignal?: number;
 };
 
 type NodeBlock = {
@@ -506,6 +508,8 @@ const LessonStepper = ({
   onChatInputChange,
   onSendChat,
   isChatLoading,
+  onNodeViewChange,
+  backToNodesSignal,
 }: LessonStepperProps) => {
   const [current, setCurrent] = useState(0);
   const [tracking, setTracking] = useState(false);
@@ -683,6 +687,16 @@ const LessonStepper = ({
   const openedBlock = openedContent?.blocks?.[openedBlockPage?.index ?? -1];
   const openedKey = openedBlockPage ? `${openedBlockPage.nodeKey}-${openedBlockPage.index}` : "";
   const interactive = openedKey ? explainProgress[openedKey] : undefined;
+
+  useEffect(() => {
+    onNodeViewChange?.(Boolean(openedBlockPage));
+  }, [onNodeViewChange, openedBlockPage]);
+
+  useEffect(() => {
+    if (backToNodesSignal === undefined) return;
+    if (!openedBlockPage) return;
+    setOpenedBlockPage(null);
+  }, [backToNodesSignal, openedBlockPage]);
 
   useEffect(() => {
     if (!openedBlockPage || !openedContent || !openedBlock) return;

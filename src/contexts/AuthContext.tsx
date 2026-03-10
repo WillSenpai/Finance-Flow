@@ -121,6 +121,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     applySignedOutState();
   };
 
+  useEffect(() => {
+    supabase.functions.setAuth(session?.access_token ?? "");
+  }, [session?.access_token]);
+
   return (
     <AuthContext.Provider value={{ user, session, loading, signOut }}>
       {children}

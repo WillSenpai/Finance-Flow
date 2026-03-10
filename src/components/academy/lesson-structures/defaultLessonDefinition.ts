@@ -18,8 +18,8 @@ const defaultVisual: LessonVisualConfig = {
     concept: {
       focus: { emoji: "🎯", title: "Definizione", subtitle: "Capisci la logica di base" },
       explain: { emoji: "🤔", title: "Tipi di Budget", subtitle: "Budget Operativi" },
-      question: { emoji: "🧠", title: "Controllo veloce", subtitle: "Verifica se e chiaro" },
-      exercise: { emoji: "⚡", title: "Mossa concreta", subtitle: "Scegli cosa fare ora" },
+      question: { emoji: "🧠", title: "Budgeting Personale", subtitle: "Impara ad essere autonomo" },
+      exercise: { emoji: "⚡", title: "Perché è importante?", subtitle: "Gestisci in autonomia" },
     },
     widget: {
       focus: { emoji: "🛠️", title: "Strumento utile", subtitle: "A cosa ti serve davvero" },

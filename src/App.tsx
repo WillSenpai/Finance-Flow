@@ -184,7 +184,7 @@ const AppBootstrapGate = () => {
     <>
       <AnimatePresence>{shouldShowOpening ? <OpeningLoader /> : null}</AnimatePresence>
       {!shouldShowOpening && <SplashComponent />}
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ScrollToTop />
         <Suspense fallback={<div className="min-h-screen bg-background" />}>
           <AppRoutes />

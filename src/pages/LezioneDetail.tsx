@@ -67,6 +67,8 @@ const LezioneDetail = () => {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
   const [showProPopup, setShowProPopup] = useState(false);
+  const [isInsideNode, setIsInsideNode] = useState(false);
+  const [backToNodesSignal, setBackToNodesSignal] = useState(0);
   const completionSyncedRef = useRef(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -380,6 +382,13 @@ const LezioneDetail = () => {
   const hasIllustrations = illustrations && illustrations.length > 0;
   const isGenerating = generateMutation.isPending;
   const isLessonCompleted = Boolean(nodeRuntime?.lesson_completed);
+  const handleTopBack = () => {
+    if (isInsideNode) {
+      setBackToNodesSignal((value) => value + 1);
+      return;
+    }
+    navigate(-1);
+  };
 
   return (
     <div className="flex h-full min-h-full flex-col overflow-hidden px-5 pt-10 pb-4">
@@ -387,10 +396,10 @@ const LezioneDetail = () => {
         <>
           <div className="mb-3 flex items-center gap-3">
             <button
-              onClick={() => navigate(-1)}
+              onClick={handleTopBack}
               className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-medium text-primary"
             >
-              <ArrowLeft size={18} /> Torna all&apos;Accademia
+              <ArrowLeft size={18} /> {isInsideNode ? "Torna ai nodi" : "Torna all'Accademia"}
             </button>
             <motion.span initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }} className="text-3xl">
               {lessonMeta.emoji}
@@ -483,6 +492,8 @@ const LezioneDetail = () => {
               onChatInputChange={setChatInput}
               onSendChat={sendChatMessage}
               isChatLoading={isChatLoading}
+              onNodeViewChange={setIsInsideNode}
+              backToNodesSignal={backToNodesSignal}
             />
           )}
         </>

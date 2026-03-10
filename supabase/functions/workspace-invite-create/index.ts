@@ -85,6 +85,14 @@ serve(async (req) => {
       });
     }
 
+    const { data: inviterProfile } = await admin
+      .from("profiles")
+      .select("name")
+      .eq("id", authResult.user.id)
+      .maybeSingle();
+    const inviterName =
+      inviterProfile?.name?.trim() || authResult.user.email?.split("@")[0] || "Un tuo contatto";
+
     // Normalize invite lifecycle so expired pending invites don't block reinvites.
     await admin
       .from("shared_workspace_invites")
@@ -176,6 +184,10 @@ serve(async (req) => {
 
     const { error: authInviteError } = await admin.auth.admin.inviteUserByEmail(normalizedEmail, {
       redirectTo,
+      data: {
+        invited_by_name: inviterName,
+        workspace_name: workspace.name ?? "Spazio condiviso",
+      },
     });
 
     if (authInviteError) {
