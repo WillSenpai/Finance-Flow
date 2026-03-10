@@ -189,8 +189,8 @@ const Profilo = () => {
                 >
                   <div
                     className={`rounded-2xl p-3.5 flex items-center gap-3 text-left border ${n.tipo === "warning" ? "bg-destructive/5 border-destructive/20" :
-                        n.tipo === "success" ? "bg-primary/5 border-primary/20" :
-                          "bg-card border-border/50"
+                      n.tipo === "success" ? "bg-primary/5 border-primary/20" :
+                        "bg-card border-border/50"
                       }`}
                   >
                     <motion.button
@@ -400,15 +400,13 @@ const Profilo = () => {
                   setOpeningLoaderEnabledState(next);
                   setOpeningLoaderEnabled(user.id, next);
                 }}
-                className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors ${
-                  openingLoaderEnabled ? "bg-primary" : "bg-muted"
-                }`}
+                className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors ${openingLoaderEnabled ? "bg-primary" : "bg-muted"
+                  }`}
                 aria-pressed={openingLoaderEnabled}
               >
                 <span
-                  className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
-                    openingLoaderEnabled ? "translate-x-7" : "translate-x-1"
-                  }`}
+                  className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${openingLoaderEnabled ? "translate-x-7" : "translate-x-1"
+                    }`}
                 />
               </button>
             </div>
@@ -438,14 +436,14 @@ const Profilo = () => {
           <p className="text-sm font-semibold">Hai qualche suggerimento?</p>
         </div>
         <p className="text-xs text-muted-foreground mb-3">
-          Apri il form dedicato e inviaci idee o problemi per migliorare l'app.
+          Apri il form dedicato e inviaci idee o consigli per migliorare l'app.
         </p>
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={() => navigate("/profilo/suggerimenti")}
           className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
         >
-          Inviaci le tue idee o critiche!
+          Inviaci le tua opinione!
           <ArrowUpRight size={14} />
         </motion.button>
       </motion.div>
@@ -463,7 +461,7 @@ const Profilo = () => {
       </motion.div>
 
       <motion.div variants={item} className="mt-4 rounded-2xl border border-destructive/20 bg-destructive/5 p-4">
-        <p className="text-sm font-semibold text-destructive">Zona pericolosa</p>
+        <p className="text-sm font-semibold text-destructive">Eliminazione Account</p>
         <p className="text-xs text-muted-foreground mt-1 mb-3">
           Questa azione cancellera definitivamente il tuo account e tutti i tuoi dati.
         </p>
@@ -473,14 +471,14 @@ const Profilo = () => {
           className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-destructive border border-destructive/30 rounded-xl hover:bg-destructive/10 transition-colors"
         >
           <Trash2 size={16} />
-          Elimina account e tutti i dati
+          Elimina tutti i tuoi dati
         </motion.button>
       </motion.div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent className="max-w-[360px] rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Sei sicuro di voler eliminare tutto?</AlertDialogTitle>
+            <AlertDialogTitle>Sei sicuro di voler continuare?</AlertDialogTitle>
             <AlertDialogDescription>
               Il tuo account e tutti i dati verranno cancellati definitivamente e non potranno essere recuperati.
             </AlertDialogDescription>
