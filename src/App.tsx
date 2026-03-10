@@ -32,6 +32,7 @@ const Esplora = lazy(() => import("./pages/Esplora"));
 const EsploraArticolo = lazy(() => import("./pages/EsploraArticolo"));
 const AdminEsplora = lazy(() => import("./pages/AdminEsplora"));
 const Profilo = lazy(() => import("./pages/Profilo"));
+const ProfiloPro = lazy(() => import("./pages/ProfiloPro"));
 const Notifiche = lazy(() => import("./pages/Notifiche"));
 const FeedbackSuggerimenti = lazy(() => import("./pages/FeedbackSuggerimenti"));
 const Tema = lazy(() => import("./pages/Tema"));
@@ -97,6 +98,7 @@ const AppRoutes = () => {
         <Route path="/esplora" element={<Esplora />} />
         <Route path="/esplora/:id" element={<EsploraArticolo />} />
         <Route path="/profilo" element={<Profilo />} />
+        <Route path="/profilo/pro" element={<ProfiloPro />} />
         <Route path="/profilo/giochi" element={<Giochi />} />
         <Route path="/profilo/notifiche" element={<Notifiche />} />
         <Route path="/profilo/suggerimenti" element={<FeedbackSuggerimenti />} />

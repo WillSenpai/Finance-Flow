@@ -110,28 +110,39 @@ export async function loadBillingOfferingMetadata(appUserId: string): Promise<Bi
   };
 }
 
-async function syncCustomerInfo(customerInfo: CustomerInfo) {
-  await invokeWithAuth("billing-sync", {
-    body: { customerInfo },
-  });
+function isAuthRelatedError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return /sessione scaduta|sessione non valida|jwt|unauthorized|authorization|401/i.test(message);
+}
+
+async function syncCustomerInfo(customerInfo: CustomerInfo, options?: { strict?: boolean }) {
+  try {
+    await invokeWithAuth("billing-sync", {
+      body: { customerInfo },
+    });
+  } catch (error) {
+    if (options?.strict) throw error;
+    // Post-purchase sync is best-effort: do not surface transient auth failures as purchase errors.
+    console.warn("[billing] Skipping non-blocking billing-sync error:", error);
+  }
 }
 
 export async function purchaseBillingOffer(appUserId: string, offer: BillingOffer): Promise<void> {
   await ensureRevenueCatConfigured(appUserId);
   const result = await Purchases.purchasePackage({ aPackage: offer.aPackage });
-  await syncCustomerInfo(result.customerInfo);
+  await syncCustomerInfo(result.customerInfo, { strict: false });
 }
 
 export async function restoreBillingPurchases(appUserId: string): Promise<void> {
   await ensureRevenueCatConfigured(appUserId);
   const result = await Purchases.restorePurchases();
-  await syncCustomerInfo(result.customerInfo);
+  await syncCustomerInfo(result.customerInfo, { strict: false });
 }
 
 export async function syncBillingCustomerInfo(appUserId: string): Promise<void> {
   await ensureRevenueCatConfigured(appUserId);
   const result = await Purchases.getCustomerInfo();
-  await syncCustomerInfo(result.customerInfo);
+  await syncCustomerInfo(result.customerInfo, { strict: true });
 }
 
 export async function presentNativePaywall(appUserId: string): Promise<string> {
@@ -143,6 +154,11 @@ export async function presentNativePaywall(appUserId: string): Promise<string> {
     requiredEntitlementIdentifier,
   });
 
-  await syncBillingCustomerInfo(appUserId);
+  try {
+    await syncBillingCustomerInfo(appUserId);
+  } catch (error) {
+    if (!isAuthRelatedError(error)) throw error;
+    console.warn("[billing] Ignoring auth error after paywall close; purchase result already handled by store/webhook.");
+  }
   return String(result.result);
 }

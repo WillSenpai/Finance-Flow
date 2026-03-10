@@ -481,7 +481,7 @@ const LezioneDetail = () => {
           </p>
           <div className="mt-2 grid grid-cols-2 gap-2">
             <Button variant="outline" onClick={() => setShowProPopup(false)}>Chiudi</Button>
-            <Button onClick={() => navigate("/profilo")}>Vai a Pro</Button>
+            <Button onClick={() => navigate("/profilo/pro")}>Vai a Pro</Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -1,4 +1,4 @@
-import { Bell, Palette, Shield, Info, Flame, BookOpen, LogOut, Star, ArrowUpRight, X, CheckCheck, Lock, FileText, Gamepad2, Compass, GraduationCap, Trash2, Loader2, MessageSquare } from "lucide-react";
+import { Bell, Palette, Shield, Info, Flame, BookOpen, LogOut, Star, ArrowUpRight, X, CheckCheck, Lock, FileText, Gamepad2, Compass, GraduationCap, Trash2, Loader2, MessageSquare, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@/hooks/useUser";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,7 +24,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import BillingSection from "@/components/profile/BillingSection";
 import { isOpeningLoaderEnabled, setOpeningLoaderEnabled } from "@/lib/openingLoaderPreference";
 
 const impostazioni = [
@@ -167,8 +166,25 @@ const Profilo = () => {
         <BadgeLivello points={points} />
       </motion.div>
 
-      <motion.div variants={item}>
-        <BillingSection />
+      <motion.div variants={item} className="mb-6">
+        <motion.button
+          whileTap={{ scale: 0.98 }}
+          onClick={() => navigate("/profilo/pro")}
+          className="w-full rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card to-card p-4 text-left"
+        >
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-background/70 px-3 py-1 text-xs font-semibold text-primary">
+            <Sparkles size={14} />
+            Piano Pro
+          </div>
+          <p className="text-sm font-semibold">Passa a Pro</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Acquisti in-app, ripristino e sincronizzazione in una pagina dedicata.
+          </p>
+          <div className="mt-3 inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground">
+            Apri pagina Pro
+            <ArrowUpRight size={14} />
+          </div>
+        </motion.button>
       </motion.div>
 
       {/* Badge Grid */}

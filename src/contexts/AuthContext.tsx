@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useRef } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,13 +15,76 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const manualSignOutRef = useRef(false);
+  const recoveryRunningRef = useRef(false);
+  const userRef = useRef<User | null>(null);
+  const sessionRef = useRef<Session | null>(null);
+
+  const applySignedInState = (nextSession: Session) => {
+    setSession(nextSession);
+    setUser(nextSession.user);
+    userRef.current = nextSession.user;
+    sessionRef.current = nextSession;
+    setLoading(false);
+  };
+
+  const applySignedOutState = () => {
+    setSession(null);
+    setUser(null);
+    userRef.current = null;
+    sessionRef.current = null;
+    setLoading(false);
+  };
+
+  const recoverSessionOrKeepState = async (): Promise<boolean> => {
+    if (recoveryRunningRef.current) return false;
+    recoveryRunningRef.current = true;
+    try {
+      const { data: persisted } = await supabase.auth.getSession();
+      if (persisted.session?.user) {
+        applySignedInState(persisted.session);
+        return true;
+      }
+
+      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+      if (!refreshError && refreshed.session?.user) {
+        applySignedInState(refreshed.session);
+        return true;
+      }
+
+      // Keep current state on transient auth/network issues to avoid false logout during native purchase flows.
+      return false;
+    } catch {
+      return false;
+    } finally {
+      recoveryRunningRef.current = false;
+    }
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+      (event, nextSession) => {
+        if (nextSession?.user) {
+          manualSignOutRef.current = false;
+          applySignedInState(nextSession);
+          return;
+        }
+
+        if (event === "SIGNED_OUT" && manualSignOutRef.current) {
+          manualSignOutRef.current = false;
+          applySignedOutState();
+          return;
+        }
+
+        // Guard against transient null sessions (e.g. app background/foreground around native purchase UI).
+        void (async () => {
+          const recovered = await recoverSessionOrKeepState();
+          if (!recovered) {
+            // If we never had a valid session yet, allow signed-out bootstrap state.
+            if (!userRef.current && !sessionRef.current) applySignedOutState();
+            else setLoading(false);
+          }
+        })();
       }
     );
 
@@ -29,39 +92,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     void (async () => {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error || !session) {
-        setSession(null);
-        setUser(null);
-        setLoading(false);
+        const recovered = await recoverSessionOrKeepState();
+        if (!recovered) applySignedOutState();
         return;
       }
 
       const { data: userData, error: userError } = await supabase.auth.getUser(session.access_token);
       if (!userError && userData.user) {
-        setSession(session);
-        setUser(userData.user);
-        setLoading(false);
+        applySignedInState(session);
         return;
       }
 
       const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
       if (!refreshError && refreshed.session?.access_token && refreshed.session.user) {
-        setSession(refreshed.session);
-        setUser(refreshed.session.user);
+        applySignedInState(refreshed.session);
       } else {
         // Fail-safe: avoid stale "logged-in" state that causes repeated 401 calls.
-        setSession(null);
-        setUser(null);
+        applySignedOutState();
       }
-      setLoading(false);
     })();
 
     return () => subscription.unsubscribe();
   }, []);
 
   const signOut = async () => {
+    manualSignOutRef.current = true;
     await supabase.auth.signOut();
-    setSession(null);
-    setUser(null);
+    applySignedOutState();
   };
 
   return (
