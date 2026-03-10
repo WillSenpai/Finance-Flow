@@ -441,9 +441,6 @@ const Patrimonio = () => {
       <Drawer open={simulatorOpen} onOpenChange={setSimulatorOpen}>
         <DrawerContent className="max-h-[90vh]">
           <div className="px-5 pb-6 pt-2 overflow-y-auto">
-            <DrawerHeader className="px-0">
-              <DrawerTitle className="text-base text-left">Simulatore What If 🔮</DrawerTitle>
-            </DrawerHeader>
             <WhatIfSimulator />
           </div>
         </DrawerContent>
