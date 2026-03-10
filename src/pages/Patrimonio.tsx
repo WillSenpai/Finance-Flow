@@ -10,6 +10,7 @@ import { usePoints } from "@/contexts/PointsContext";
 import { useNavigate } from "react-router-dom";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import WhatIfSimulator from "@/components/WhatIfSimulator";
+import { useSharedWorkspace } from "@/hooks/useSharedWorkspace";
 
 const formatEuro = (n: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
@@ -25,6 +26,7 @@ const Patrimonio = () => {
   const { userData, categorie, salvadanai, setSalvadanai, investimenti, spese, categorieSpese } = useUser();
   const { awardPoints } = usePoints();
   const navigate = useNavigate();
+  const { hasActiveWorkspace, pendingInvites } = useSharedWorkspace();
   const isBeginner = userData.level === "beginner";
 
   useEffect(() => {
@@ -53,6 +55,35 @@ const Patrimonio = () => {
         </motion.div>
 
         <motion.div variants={item} className="mt-6">
+          <div className="bg-card border border-border/50 rounded-2xl p-4 mb-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold">Condivisione patrimonio</p>
+                <p className="text-xs text-muted-foreground">
+                  {hasActiveWorkspace ? "Spazio condiviso attivo" : "Condividi con partner, amici o famiglia"}
+                </p>
+              </div>
+              {pendingInvites.length > 0 && (
+                <button
+                  onClick={() => navigate("/patrimonio/inviti")}
+                  className="text-[10px] px-2 py-1 rounded-full bg-primary/10 text-primary font-semibold"
+                >
+                  {pendingInvites.length} invito{pendingInvites.length > 1 ? "i" : ""}
+                </button>
+              )}
+            </div>
+            <div className="mt-3 flex gap-2">
+              <Button variant="outline" className="rounded-xl flex-1 h-10" onClick={() => navigate("/patrimonio/condivisione")}>
+                Gestisci
+              </Button>
+              {hasActiveWorkspace && (
+                <Button className="rounded-xl flex-1 h-10" onClick={() => navigate("/patrimonio/condiviso")}>
+                  Apri condiviso
+                </Button>
+              )}
+            </div>
+          </div>
+
           <div className="bg-card border border-border/50 rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -311,6 +342,37 @@ const Patrimonio = () => {
         >
           <TrendingUp size={18} /> Aggiorna Asset
         </Button>
+      </motion.div>
+
+      <motion.div className="mt-3" variants={item}>
+        <div className="bg-card border border-border/50 rounded-2xl p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold">Condivisione patrimonio</p>
+              <p className="text-xs text-muted-foreground">
+                {hasActiveWorkspace ? "Spazio condiviso attivo" : "Invita partner, amici o familiari"}
+              </p>
+            </div>
+            {pendingInvites.length > 0 && (
+              <button
+                onClick={() => navigate("/patrimonio/inviti")}
+                className="text-[10px] px-2 py-1 rounded-full bg-primary/10 text-primary font-semibold"
+              >
+                {pendingInvites.length} invito{pendingInvites.length > 1 ? "i" : ""}
+              </button>
+            )}
+          </div>
+          <div className="mt-3 flex gap-2">
+            <Button variant="outline" className="rounded-xl flex-1 h-10" onClick={() => navigate("/patrimonio/condivisione")}>
+              Gestisci
+            </Button>
+            {hasActiveWorkspace && (
+              <Button className="rounded-xl flex-1 h-10" onClick={() => navigate("/patrimonio/condiviso")}>
+                Apri condiviso
+              </Button>
+            )}
+          </div>
+        </div>
       </motion.div>
 
       <motion.div className="mt-8" variants={item}>

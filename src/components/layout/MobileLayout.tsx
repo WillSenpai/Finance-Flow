@@ -13,7 +13,26 @@ const tabs = [
   { path: "/profilo", label: "Profilo", icon: User },
 ];
 
-const hiddenPaths = ["/lezione/", "/patrimonio/gestisci", "/patrimonio/salvadanai", "/patrimonio/investimenti", "/patrimonio/spese", "/profilo/notifiche", "/profilo/suggerimenti", "/profilo/tema", "/profilo/privacy", "/profilo/info", "/profilo/pro", "/profilo/admin-posts", "/profilo/admin-accademia", "/esplora/", "/profilo/admin-esplora"];
+const hiddenPaths = [
+  "/lezione/",
+  "/patrimonio/gestisci",
+  "/patrimonio/salvadanai",
+  "/patrimonio/investimenti",
+  "/patrimonio/spese",
+  "/patrimonio/condivisione",
+  "/patrimonio/condiviso",
+  "/patrimonio/inviti",
+  "/profilo/notifiche",
+  "/profilo/suggerimenti",
+  "/profilo/tema",
+  "/profilo/privacy",
+  "/profilo/info",
+  "/profilo/pro",
+  "/profilo/admin-posts",
+  "/profilo/admin-accademia",
+  "/esplora/",
+  "/profilo/admin-esplora",
+];
 
 const MobileLayout = () => {
   const location = useLocation();

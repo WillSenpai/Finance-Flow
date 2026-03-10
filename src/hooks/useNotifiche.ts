@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback, useEffect, useContext } from "react";
 import { useUser } from "@/hooks/useUser";
+import { useSharedWorkspace } from "@/hooks/useSharedWorkspace";
 import { PointsContext } from "@/contexts/PointsContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -41,6 +42,7 @@ const formatEuro = (n: number) =>
 
 export function useNotifiche() {
   const { salvadanai, lastPatrimonioUpdate, spese, categorieSpese } = useUser();
+  const { pendingInvites, hasActiveWorkspace, spese: sharedSpese } = useSharedWorkspace();
   const pointsCtx = useContext(PointsContext);
   const points = pointsCtx?.points ?? 0;
   const [dismissed, setDismissed] = useState<Set<string>>(getDismissed);
@@ -135,12 +137,32 @@ export function useNotifiche() {
       notifications.push({ id: "spese-empty", icon: "💸", text: "Inizia a tracciare le tue spese!", action: "/patrimonio/spese", tipo: "info" });
     }
 
+    if (pendingInvites.length > 0) {
+      notifications.push({
+        id: "shared-invites-pending",
+        icon: "✉️",
+        text: `Hai ${pendingInvites.length} invito${pendingInvites.length > 1 ? "i" : ""} alla condivisione`,
+        action: "/patrimonio/inviti",
+        tipo: "info",
+      });
+    }
+
+    if (hasActiveWorkspace && sharedSpese.length === 0) {
+      notifications.push({
+        id: "shared-spese-empty",
+        icon: "🤝",
+        text: "Aggiungi la prima spesa nel patrimonio condiviso",
+        action: "/patrimonio/condiviso/spese",
+        tipo: "info",
+      });
+    }
+
     if (points >= 50 && points < 100) {
       notifications.push({ id: "points-milestone", icon: "🏆", text: `Hai raggiunto ${points} punti! Continua così!`, tipo: "success" });
     }
 
     return notifications;
-  }, [salvadanai, lastPatrimonioUpdate, spese, categorieSpese, points, recentPosts]);
+  }, [salvadanai, lastPatrimonioUpdate, spese, categorieSpese, points, recentPosts, pendingInvites.length, hasActiveWorkspace, sharedSpese.length]);
 
   const notifiche = useMemo(() => allNotifiche.filter(n => !dismissed.has(n.id)), [allNotifiche, dismissed]);
 

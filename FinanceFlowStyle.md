@@ -31,6 +31,10 @@ Principi:
 
 Fonte: `src/index.css` + mapping in `tailwind.config.ts`.
 
+Token layout/safe-area (obbligatori):
+- `--app-height` (viewport dinamico: fallback `100vh`, preferenza `100dvh`);
+- `--safe-top`, `--safe-right`, `--safe-bottom`, `--safe-left`.
+
 ### 3.1 Light Theme (`:root`)
 - `--background: 45 42% 94%`
 - `--foreground: 36 30% 18%`
@@ -101,10 +105,19 @@ Regole:
 ## 5) Struttura App e Layout
 
 Shell mobile (`src/components/layout/MobileLayout.tsx`):
-- canvas centrato con `max-w-[430px]`;
-- `min-h-screen` e overflow interno controllato;
-- tab bar fissa in basso su pagine abilitate;
-- rispetto safe areas con `env(safe-area-inset-*)`.
+- viewport verticale dinamico con `h-[var(--app-height)]`;
+- modello `outer-scroll` come default (un solo scroll verticale principale);
+- tab bar nel flow della shell (non overlay fissa sul viewport);
+- safe areas gestite tramite variabili `--safe-*` nel layout;
+- larghezza:
+  - nativo iOS/Android: full width device;
+  - web desktop: frame centrato con `max-w-[430px]`.
+
+Regole hard layout (obbligatorie):
+- evitare `h-screen` / `min-h-screen` nelle route già incapsulate da `MobileLayout`;
+- evitare `100vh` statico per altezze funzionali (usare `var(--app-height)` o layout flex);
+- evitare nested scroll verticale non intenzionale (no doppio scrollbar layout+pagina);
+- su pagine con contenuto corto non deve comparire spazio vuoto scrollabile artificiale.
 
 Pattern spacing ricorrenti:
 - wrapper pagina: `px-5 pt-14 pb-4`;
@@ -190,11 +203,13 @@ Quando aggiungi una nuova schermata:
 4. Aggiungi stati completi: loading, empty, error, success.
 5. Verifica dark mode e safe area.
 6. Controlla coerenza tone of voice.
+7. Verifica scroll behavior: contenuto corto senza vuoto extra, contenuto lungo senza clipping.
 
 Regole tecniche:
 - Evitare hardcode di colori/spacing già coperti da token.
 - Preferire composizione di classi utility già in uso.
 - Gestire edge case numerici (progressi, percentuali, contatori).
+- Preferire `h-full/min-h-full` + flex layout al posto di altezze `vh` hardcoded nelle pagine core.
 
 ---
 
@@ -209,6 +224,9 @@ Regole tecniche:
 - [ ] Griglia/spacing allineati ai pattern app.
 - [ ] Safe area rispettata su mobile.
 - [ ] Tab bar/back navigation coerenti con il contesto.
+- [ ] Nessun `h-screen/min-h-screen/100vh` non giustificato nella route.
+- [ ] Nessun doppio scroll verticale involontario.
+- [ ] Nessuno spazio vuoto scrollabile a fine pagina con contenuto corto.
 
 ### Componenti e stati
 - [ ] Stati `loading/empty/error/success` presenti.

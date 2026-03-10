@@ -14,6 +14,7 @@ import NativeIOSKeyboardManager from "./components/NativeIOSKeyboardManager";
 import { OPENING_MIN_MS, OPENING_SLOW_MS } from "./config/startup";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { UserProvider } from "./contexts/UserContext";
+import { SharedWorkspaceProvider } from "./contexts/SharedWorkspaceContext";
 import { useUser } from "@/hooks/useUser";
 import { PointsProvider } from "./contexts/PointsContext";
 import { useOpeningBootstrap } from "./hooks/useOpeningBootstrap";
@@ -47,6 +48,13 @@ const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Patrimonio = lazy(() => import("./pages/Patrimonio"));
 const GestisciInvestimenti = lazy(() => import("./pages/GestisciInvestimenti"));
+const PatrimonioCondivisione = lazy(() => import("./pages/PatrimonioCondivisione"));
+const PatrimonioCondiviso = lazy(() => import("./pages/PatrimonioCondiviso"));
+const GestisciPatrimonioCondiviso = lazy(() => import("./pages/GestisciPatrimonioCondiviso"));
+const GestisciInvestimentiCondivisi = lazy(() => import("./pages/GestisciInvestimentiCondivisi"));
+const GestisciSalvadanaiCondivisi = lazy(() => import("./pages/GestisciSalvadanaiCondivisi"));
+const GestisciSpeseCondivise = lazy(() => import("./pages/GestisciSpeseCondivise"));
+const InvitiPatrimonio = lazy(() => import("./pages/InvitiPatrimonio"));
 
 const queryClient = new QueryClient();
 
@@ -91,6 +99,13 @@ const AppRoutes = () => {
         <Route path="/patrimonio/salvadanai" element={<GestisciSalvadanai />} />
         <Route path="/patrimonio/investimenti" element={<GestisciInvestimenti />} />
         <Route path="/patrimonio/spese" element={<GestisciSpese />} />
+        <Route path="/patrimonio/condivisione" element={<PatrimonioCondivisione />} />
+        <Route path="/patrimonio/condiviso" element={<PatrimonioCondiviso />} />
+        <Route path="/patrimonio/condiviso/gestisci" element={<GestisciPatrimonioCondiviso />} />
+        <Route path="/patrimonio/condiviso/investimenti" element={<GestisciInvestimentiCondivisi />} />
+        <Route path="/patrimonio/condiviso/salvadanai" element={<GestisciSalvadanaiCondivisi />} />
+        <Route path="/patrimonio/condiviso/spese" element={<GestisciSpeseCondivise />} />
+        <Route path="/patrimonio/inviti" element={<InvitiPatrimonio />} />
         <Route path="/simulatore" element={<Navigate to="/patrimonio" replace />} />
         <Route path="/accademia" element={<Accademia />} />
         <Route path="/lezione/:id" element={<LezioneDetail />} />
@@ -189,9 +204,11 @@ const App = () => {
         <Sonner />
         <AuthProvider>
           <UserProvider>
-            <PointsProvider>
-              <AppBootstrapGate />
-            </PointsProvider>
+            <SharedWorkspaceProvider>
+              <PointsProvider>
+                <AppBootstrapGate />
+              </PointsProvider>
+            </SharedWorkspaceProvider>
           </UserProvider>
         </AuthProvider>
       </TooltipProvider>
