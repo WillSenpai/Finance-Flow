@@ -677,22 +677,22 @@ const Coach = () => {
       </div>
 
       <Sheet open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-        <SheetContent side="right" className="w-[90vw] max-w-sm p-0">
-          <SheetHeader className="px-5 py-4 border-b border-border/50 space-y-1">
-            <SheetTitle>Storico conversazioni</SheetTitle>
-            <SheetDescription>Conservazione massima: 30 giorni</SheetDescription>
+        <SheetContent side="right" className="w-[90vw] max-w-sm p-0 pt-[env(safe-area-inset-top)]">
+          <SheetHeader className="px-4 py-3 border-b border-border/50 space-y-0.5">
+            <SheetTitle className="text-base">Storico conversazioni</SheetTitle>
+            <SheetDescription className="text-xs">Conservazione massima: 30 giorni</SheetDescription>
           </SheetHeader>
 
-          <div className="px-4 py-3 border-b border-border/50">
-            <Button onClick={handleCreateNewChat} className="w-full rounded-full gap-2">
-              <MessageSquarePlus size={16} />
+          <div className="px-3 py-2.5 border-b border-border/50">
+            <Button onClick={handleCreateNewChat} className="w-full h-9 rounded-full gap-1.5 text-[13px]">
+              <MessageSquarePlus size={14} />
               Nuova chat
             </Button>
           </div>
 
-          <div className="max-h-[calc(var(--app-height)-12rem)] overflow-y-auto p-2">
+          <div className="max-h-[calc(var(--app-height)-10rem-env(safe-area-inset-top))] overflow-y-auto p-1.5">
             {conversations.length === 0 ? (
-              <div className="text-sm text-muted-foreground px-3 py-4">Nessuna conversazione salvata.</div>
+              <div className="text-xs text-muted-foreground px-2.5 py-3">Nessuna conversazione salvata.</div>
             ) : (
               conversations.map((conv) => (
                 <button
@@ -702,14 +702,14 @@ const Coach = () => {
                     setIsHistoryOpen(false);
                     void loadMessagesForConversation(conv.id);
                   }}
-                  className={`w-full text-left rounded-xl px-3 py-2.5 mb-1 border transition-colors ${
+                  className={`w-full text-left rounded-lg px-2.5 py-2 mb-0.5 border transition-colors ${
                     conv.id === currentConversationId
                       ? "bg-primary/10 border-primary/30"
                       : "bg-card border-border/40 hover:bg-muted/40"
                   }`}
                 >
-                  <p className="text-sm font-medium truncate">{conv.title}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{formatConversationDate(conv.updated_at)}</p>
+                  <p className="text-[13px] font-medium truncate">{conv.title}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{formatConversationDate(conv.updated_at)}</p>
                 </button>
               ))
             )}

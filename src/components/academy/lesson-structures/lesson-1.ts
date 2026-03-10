@@ -6,55 +6,201 @@ const content: StructuredLessonContent = {
     nodeKey: "concept",
     criteria: ["foundational", "integration"],
     blocks: [
-      { kind: "focus", title: "Focus", content: "Il budget è un documento previsionale che pianifica entrate, uscite, costi e ricavi per un periodo futuro, che solitamente è di un anno.🗓️ \nServe come strumento di controllo per gestire risorse limitate, fissando obiettivi economici e finanziari per aziende, progetti, gestione familiare o la propria gestione personale delle spese. \nQuindi, in parole povere, **il budget** è uno strumento che ti aiuta a pianificare e controllare le tue finanze, in modo da poter raggiungere i tuoi obiettivi economici e finanziari.😁" },
-      { kind: "explain", title: "Spiegazione rapida", content: "Esistono diversi tipi di budget, ma i più comuni sono il budget operativo, il budget finanziario e il budget di cassa. \n\n**Il budget operativo** è un budget che pianifica le entrate e le uscite di un'azienda per un periodo di tempo, solitamente un anno. \n**Il budget finanziario** è un budget che pianifica le entrate e le uscite di un'azienda per un periodo di tempo, solitamente un anno. \n**Il budget di cassa** è un budget che pianifica le entrate e le uscite di un'azienda per un periodo di tempo, solitamente un anno." },
-      { kind: "question", title: "Domanda guida", content: "Il budgeting personale è una pratica fondamentale per gestire le proprie finanze in modo efficace. Creare un piano di spesa, monitorare le entrate e le uscite e impostare obiettivi di risparmio possono fare la differenza nella stabilità economica di una persona, esattamente come accade per le aziende con le attività di [budgeting e forecasting](https://easypol.io/blog/pagopa/budgeting-e-forecasting-cosa-sono-differenze-e-come-usarli/)" },
-      { kind: "exercise", title: "Micro-azione", content: "Scegli una categoria (spesa casa, trasporti o svago) e definisci un tetto semplice per 7 giorni." },
+      {
+        kind: "focus",
+        title: "Focus",
+        content:
+          "Il budget e una decisione anticipata: decidi prima dove vanno i soldi, cosi riduci errori impulsivi durante il mese.",
+      },
+      {
+        kind: "explain",
+        title: "Spiegazione rapida",
+        content:
+          "Un budget personale minimo ha 3 parti: entrate nette, spese essenziali, spese variabili. Se sai questi 3 numeri, sai gia governare il mese.",
+      },
+      {
+        kind: "question",
+        title: "Approfondimento",
+        content:
+          "Domanda didattica: perche fissare un tetto prima di spendere riduce gli sforamenti rispetto al controllo a fine mese?",
+        pollAreas: [
+          {
+            id: "concept-cause",
+            prompt: "Qual e la causa principale degli sforamenti senza budget?",
+            options: [
+              "Decisioni prese sotto pressione nel momento dell'acquisto",
+              "Mancanza di entrate sufficienti in assoluto",
+              "Uso di troppe categorie di spesa",
+            ],
+            allowText: true,
+          },
+        ],
+      },
+      {
+        kind: "exercise",
+        title: "Esempio guidato",
+        content:
+          "Scenario: entrate nette 1.850 euro. Passi: 1) assegna 1.100 euro a essenziali, 2) 450 euro a variabili, 3) 300 euro a risparmio/obiettivi. Soluzione: il piano e sostenibile perche la somma e 1.850 euro e il risparmio e preallocato.",
+        pollAreas: [
+          {
+            id: "concept-solve",
+            prompt: "Qual e la prima verifica numerica da fare in questo esercizio?",
+            options: [
+              "Controllare che la somma delle categorie sia uguale alle entrate",
+              "Aumentare subito la quota variabile",
+              "Eliminare del tutto la voce risparmio",
+            ],
+            allowText: true,
+          },
+        ],
+      },
     ],
-    options: [
-      "Lo spiego con parole mie in 1 frase",
-      "Faccio un esempio reale della mia settimana",
-      "Segno il punto che non mi e chiaro",
-    ],
+    options: ["Definisco i 3 numeri base", "Imposto un tetto per categoria", "Scrivo la mia regola mensile"],
   },
   widget: {
     nodeKey: "widget",
     criteria: ["application", "learning"],
     blocks: [
-      { kind: "focus", title: "Focus", content: "Il budget funziona se e visibile: una regola piccola e un check regolare." },
-      { kind: "explain", title: "Spiegazione rapida", content: "Non serve precisione perfetta. Serve una soglia chiara e una revisione breve ogni domenica." },
-      { kind: "question", title: "Domanda guida", content: "Quale numero monitorerai questa settimana per capire se sei in linea?" },
-      { kind: "exercise", title: "Micro-azione", content: "Imposta ora un promemoria domenicale di 10 minuti per rivedere le uscite." },
+      {
+        kind: "focus",
+        title: "Focus",
+        content: "Il budget funziona se e visibile: limite chiaro + check ricorrente breve.",
+      },
+      {
+        kind: "explain",
+        title: "Spiegazione rapida",
+        content:
+          "Non serve un foglio complesso: basta una tabella settimanale con speso, residuo e correzione. L'obiettivo e correggere presto, non essere perfetto.",
+      },
+      {
+        kind: "question",
+        title: "Approfondimento",
+        content: "Domanda didattica: quale indicatore ti avvisa prima che il budget sta deragliando?",
+      },
+      {
+        kind: "exercise",
+        title: "Esempio guidato",
+        content:
+          "Scenario: tetto settimanale 95 euro, al venerdi hai gia speso 82 euro. Passi: 1) calcola residuo (13 euro), 2) identifica 1 spesa rinviabile, 3) imposta limite weekend. Soluzione: limite weekend massimo 13 euro, con rinvio di almeno una spesa discrezionale.",
+      },
     ],
-    options: [
-      "Attivo una micro-azione da fare oggi",
-      "Imposto un promemoria per domani",
-      "Scelgo una versione super semplice",
-    ],
+    options: ["Faccio check settimanale", "Correggo prima del weekend", "Tengo una categoria cuscinetto"],
   },
   challenge: {
     nodeKey: "challenge",
     criteria: ["learning", "caring"],
     blocks: [
-      { kind: "focus", title: "Focus", content: "Scenario: il tetto settimanale e quasi finito al venerdi." },
-      { kind: "explain", title: "Spiegazione rapida", content: "Il test non e evitare ogni spesa, ma scegliere cosa posticipare senza sabotare il piano." },
-      { kind: "question", title: "Domanda guida", content: "Quale spesa puoi rinviare senza impatto reale sulla tua settimana?" },
-      { kind: "exercise", title: "Micro-azione", content: "Definisci una regola di recupero: se superi il tetto, riduci la categoria opzionale successiva." },
+      {
+        kind: "focus",
+        title: "Focus",
+        content: "Il test reale del budget e quando arriva una settimana irregolare, non quando fila tutto liscio.",
+      },
+      {
+        kind: "explain",
+        title: "Spiegazione rapida",
+        content:
+          "Quando sfori, non buttare il piano: applica una regola di recupero semplice nella categoria opzionale successiva.",
+      },
+      {
+        kind: "question",
+        title: "Approfondimento",
+        content: "Domanda didattica: cosa cambia tra errore occasionale e budget strutturalmente irrealistico?",
+      },
+      {
+        kind: "exercise",
+        title: "Esempio guidato",
+        content:
+          "Scenario: sfori di 28 euro questa settimana. Passi: 1) recupera 18 euro da svago settimana prossima, 2) recupera 10 euro da micro-spese, 3) mantieni invariata la quota risparmio. Soluzione: recupero completo in 7 giorni senza toccare l'obiettivo principale.",
+      },
     ],
+  },
+  quiz: {
+    nodeKey: "quiz",
+    criteria: ["integration", "application"],
+    blocks: [
+      {
+        kind: "focus",
+        title: "Focus",
+        content: "Quiz finale: verifica se sai trasformare il budget in decisioni pratiche.",
+      },
+      {
+        kind: "explain",
+        title: "Spiegazione rapida",
+        content:
+          "Rispondi ragionando sui numeri: prima equilibrio tra entrate e uscite, poi priorita, poi correzione settimanale.",
+      },
+      {
+        kind: "question",
+        title: "Domanda 1",
+        content: "Con entrate nette di 2.100 euro, quale struttura e piu robusta?",
+        pollAreas: [
+          {
+            id: "quiz-q1",
+            prompt: "Scegli la risposta migliore",
+            options: [
+              "Essenziali 1.250, variabili 500, risparmio 350",
+              "Essenziali 1.500, variabili 600, risparmio 50",
+              "Essenziali 1.000, variabili 1.000, risparmio 100",
+            ],
+            allowText: true,
+          },
+          {
+            id: "quiz-q1-why",
+            prompt: "Perche hai scelto questa opzione?",
+            allowText: true,
+          },
+        ],
+      },
+      {
+        kind: "exercise",
+        title: "Caso pratico",
+        content:
+          "Scenario: a meta mese hai consumato il 70% del budget variabile. Passi: 1) stima spesa fine mese mantenendo ritmo attuale, 2) calcola lo sforamento, 3) proponi una correzione in 2 mosse. Soluzione attesa: riduzione immediata categorie discrezionali + limite giornaliero fino a fine mese.",
+        pollAreas: [
+          {
+            id: "quiz-case",
+            prompt: "Qual e la prima mossa correttiva piu efficace?",
+            options: [
+              "Ridurre subito la categoria discrezionale piu alta",
+              "Aumentare il budget variabile per stare piu comodi",
+              "Ignorare il dato e valutare solo a fine mese",
+            ],
+            allowText: true,
+          },
+        ],
+      },
+    ],
+    options: ["Completo il quiz con numeri", "Rivedo il passaggio critico", "Chiudo con una regola personale"],
   },
   feedback: {
     nodeKey: "feedback",
     criteria: ["human", "caring"],
     blocks: [
-      { kind: "focus", title: "Focus", content: "Un budget buono ti fa decidere con calma, non con ansia." },
-      { kind: "explain", title: "Spiegazione rapida", content: "Conta piu la continuita della precisione perfetta. Se rivedi ogni settimana, migliori ogni settimana." },
-      { kind: "question", title: "Domanda guida", content: "Qual e la prima abitudine che manterrai anche il mese prossimo?" },
-      { kind: "exercise", title: "Micro-azione", content: "Scrivi il tuo patto personale: limite, giorno di controllo e mossa correttiva." },
+      {
+        kind: "focus",
+        title: "Focus",
+        content: "Un budget valido ti fa decidere con calma anche quando il mese diventa caotico.",
+      },
+      {
+        kind: "explain",
+        title: "Spiegazione rapida",
+        content: "Conta la costanza: 10 minuti a settimana battono un reset totale a fine mese.",
+      },
+      {
+        kind: "question",
+        title: "Approfondimento",
+        content: "Quale regola manterrai per i prossimi 30 giorni?",
+      },
+      {
+        kind: "exercise",
+        title: "Esempio guidato",
+        content: "Scrivi il tuo patto operativo: limite settimanale, giorno di controllo e azione correttiva se sfori.",
+      },
     ],
     suggestedPrompts: [
-      "Aiutami a impostare il mio primo budget settimanale",
-      "Che categorie devo usare se parto da zero?",
-      "Fammi un esempio realistico con stipendio variabile",
+      "Aiutami a costruire il mio budget mensile completo",
+      "Che categorie devo monitorare ogni settimana?",
+      "Dammi una regola anti-sforamento semplice",
     ],
   },
 };

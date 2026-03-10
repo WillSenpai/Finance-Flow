@@ -4,6 +4,7 @@ import { Capacitor } from "@capacitor/core";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useNotifiche } from "@/hooks/useNotifiche";
+import { useRef } from "react";
 
 const tabs = [
   { path: "/", label: "Home", icon: Home },
@@ -39,8 +40,24 @@ const MobileLayout = () => {
   const navigate = useNavigate();
   const { unreadCount } = useNotifiche();
   const isNative = Capacitor.isNativePlatform();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const lastTabTapRef = useRef<{ path: string; at: number } | null>(null);
 
   const showTabBar = !hiddenPaths.some((p) => location.pathname.startsWith(p));
+
+  const handleTabClick = (path: string, isActive: boolean) => {
+    const now = Date.now();
+    const lastTap = lastTabTapRef.current;
+    const isRepeatedTap = !!lastTap && lastTap.path === path && now - lastTap.at <= 700;
+
+    if (isRepeatedTap && isActive) {
+      scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (!isActive) {
+      navigate(path);
+    }
+
+    lastTabTapRef.current = { path, at: now };
+  };
 
   return (
     <div
@@ -54,7 +71,7 @@ const MobileLayout = () => {
         )}
         style={{ paddingTop: "var(--safe-top)" }}
       >
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto">
           <motion.div
             key={location.pathname}
             initial={{ opacity: 0, scale: 0.96 }}
@@ -80,7 +97,7 @@ const MobileLayout = () => {
                 return (
                   <motion.button
                     key={tab.path}
-                    onClick={() => navigate(tab.path)}
+                    onClick={() => handleTabClick(tab.path, isActive)}
                     whileTap={{ scale: 0.85 }}
                     className={cn(
                       "flex flex-col items-center gap-0.5 px-3 py-1 transition-colors relative",

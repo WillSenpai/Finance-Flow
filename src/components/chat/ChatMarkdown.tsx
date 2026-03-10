@@ -102,7 +102,7 @@ const ChatMarkdown = ({ content }: ChatMarkdownProps) => {
   };
 
   return (
-    <div className="prose prose-sm max-w-none dark:prose-invert [&>p]:m-0 [&>ul]:my-1 [&>ol]:my-1">
+    <div className="allow-text-selection prose prose-sm max-w-none dark:prose-invert [&>p]:m-0 [&>ul]:my-1 [&>ol]:my-1">
       <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={components} urlTransform={urlTransform}>{content}</ReactMarkdown>
     </div>
   );

@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Send, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { motion } from "framer-motion";
+import { Textarea } from "@/components/ui/textarea";
+import { motion, useReducedMotion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { resolveLessonDefinition, resolveLessonVisualConfig } from "@/components/academy/lesson-structures";
@@ -32,7 +33,6 @@ type LessonStepperProps = {
   isProUser: boolean;
   onAdvanceNode: (nodeKey: string, payload?: Record<string, unknown>) => Promise<void>;
   onSkipNode: (nodeKey: string) => Promise<void>;
-  onSubmitOptionalQuiz: (score: number, passed: boolean) => Promise<void>;
   chatMessages: { role: "user" | "assistant"; content: string }[];
   chatInput: string;
   onChatInputChange: (val: string) => void;
@@ -46,6 +46,12 @@ type NodeBlock = {
   kind: "focus" | "explain" | "question" | "exercise";
   title: string;
   content: string;
+  pollAreas?: Array<{
+    id: string;
+    prompt: string;
+    options?: string[];
+    allowText?: boolean;
+  }>;
 };
 
 type StructuredNodeContent = {
@@ -83,6 +89,10 @@ type ExplainProgressEntry = {
   step: number;
   trail: Array<{ question: string; answer: string; followup: string }>;
 };
+type PollResponseEntry = {
+  selected?: string;
+  text?: string;
+};
 type FinanceContext = {
   topic: string;
   example: string;
@@ -94,10 +104,11 @@ const fallbackFlow: Array<{ key: string; title: string }> = [
   { key: "concept", title: "Concept" },
   { key: "widget", title: "Widget" },
   { key: "challenge", title: "Challenge" },
+  { key: "quiz", title: "Quiz" },
   { key: "feedback", title: "Feedback" },
 ];
 
-const stepOrder: string[] = ["concept", "widget", "challenge", "feedback"];
+const stepOrder: string[] = ["concept", "widget", "challenge", "quiz", "feedback"];
 
 const criterionMeta: Record<CriterionKey, { title: string; question: string }> = {
   foundational: {
@@ -139,6 +150,7 @@ const anchoredCriteria: Record<StepType, CriterionKey> = {
   concept: "foundational",
   widget: "application",
   challenge: "learning",
+  quiz: "integration",
   feedback: "human",
 };
 
@@ -146,6 +158,7 @@ const fallbackSecondary: Record<StepType, CriterionKey> = {
   concept: "integration",
   widget: "caring",
   challenge: "integration",
+  quiz: "foundational",
   feedback: "caring",
 };
 
@@ -325,6 +338,14 @@ function buildExerciseOptions(step: StepType, criteria: CriterionKey[]): string[
     ];
   }
 
+  if (step === "quiz") {
+    return [
+      "Rispondo e controllo il ragionamento",
+      "Segno il passaggio che voglio rivedere",
+      "Chiudo il quiz con una regola operativa",
+    ];
+  }
+
   return [
     `Chiedo un chiarimento su ${criterionMeta[criteria[0]].title}`,
     `Chiedo un esempio pratico su ${criterionMeta[criteria[1]].title}`,
@@ -406,10 +427,11 @@ function buildStructuredNode(
   const options = buildExerciseOptions(step, criteria);
 
   const focusLine = `${criterionMeta[criteria[0]].title} + ${criterionMeta[criteria[1]].title}`;
-  const questionLine = `${criterionMeta[criteria[0]].question} ${criterionMeta[criteria[1]].question} Come lo applichi al tuo tema: ${finance.topic}?`;
+  const questionLine = `Approfondimento: ${criterionMeta[criteria[0]].title} e ${criterionMeta[criteria[1]].title}. ${criterionMeta[criteria[0]].question} Lettura pratica sul tema ${finance.topic}: riconosci il contesto, scegli una regola semplice e verifica l'impatto con costanza.`;
   const explainFlow = buildExplainFlow(section, finance);
   const focusCore = shortText(section.body || section.title, 22);
   const explainText = removeRepeatedOpening(naturalText, focusCore);
+  const exerciseExplain = `Esempio guidato: ${finance.example} Passo operativo: ${finance.actionCue} Nota di attenzione: ${finance.riskCue}`;
 
   const blocks: NodeBlock[] = [
     {
@@ -424,13 +446,13 @@ function buildStructuredNode(
     },
     {
       kind: "question",
-      title: "Domanda guida",
+      title: "Approfondimento",
       content: questionLine,
     },
     {
       kind: "exercise",
-      title: "Micro-azione",
-      content: `${finance.actionCue} ${finance.riskCue}`,
+      title: "Esempio guidato",
+      content: exerciseExplain,
     },
   ];
 
@@ -460,8 +482,8 @@ function statusLabel(status: NodeStatus) {
 function conceptTitleFor(block: NodeBlock): string {
   if (block.kind === "focus") return "Il principio";
   if (block.kind === "explain") return "Come funziona";
-  if (block.kind === "question") return "Verifica rapida";
-  return "Azione immediata";
+  if (block.kind === "question") return "Approfondimento";
+  return "Esempio guidato";
 }
 
 function blockLabel(nodeKey: string, kind: NodeBlock["kind"]): { emoji: string; title: string; subtitle: string } {
@@ -469,30 +491,73 @@ function blockLabel(nodeKey: string, kind: NodeBlock["kind"]): { emoji: string; 
     concept: {
       focus: { emoji: "🧭", title: "Idea chiave", subtitle: "Capisci la logica di base" },
       explain: { emoji: "🧩", title: "Passaggio pratico", subtitle: "Mettila subito in pratica" },
-      question: { emoji: "🧠", title: "Controllo veloce", subtitle: "Verifica se è chiaro" },
-      exercise: { emoji: "⚡", title: "Mossa concreta", subtitle: "Scegli cosa fare ora" },
+      question: { emoji: "🧠", title: "Approfondimento", subtitle: "Aggiungi contesto e chiarezza" },
+      exercise: { emoji: "⚡", title: "Esempio guidato", subtitle: "Vedi come applicarlo davvero" },
     },
     widget: {
       focus: { emoji: "🛠️", title: "Strumento utile", subtitle: "A cosa ti serve davvero" },
       explain: { emoji: "📌", title: "Uso guidato", subtitle: "Come usarlo passo dopo passo" },
-      question: { emoji: "🔍", title: "Controllo pratico", subtitle: "Cosa guardare per non sbagliare" },
-      exercise: { emoji: "✅", title: "Applicazione", subtitle: "Fai la prova sul tuo caso" },
+      question: { emoji: "🔍", title: "Approfondimento", subtitle: "Cosa guardare senza confusione" },
+      exercise: { emoji: "✅", title: "Esempio guidato", subtitle: "Applicazione spiegata passo passo" },
     },
     challenge: {
       focus: { emoji: "🎯", title: "Scenario reale", subtitle: "Dove si gioca la decisione" },
       explain: { emoji: "🧪", title: "Test rapido", subtitle: "Prova la tua scelta sul campo" },
-      question: { emoji: "⚖️", title: "Scelta migliore", subtitle: "Valuta pro e contro in fretta" },
-      exercise: { emoji: "🔁", title: "Correzione", subtitle: "Aggiusta subito la strategia" },
+      question: { emoji: "⚖️", title: "Approfondimento", subtitle: "Capisci i criteri della scelta" },
+      exercise: { emoji: "🔁", title: "Esempio guidato", subtitle: "Correzione spiegata chiaramente" },
+    },
+    quiz: {
+      focus: { emoji: "🧪", title: "Quiz finale", subtitle: "Verifica cosa sai applicare" },
+      explain: { emoji: "🧭", title: "Istruzioni", subtitle: "Come rispondere in modo efficace" },
+      question: { emoji: "❓", title: "Domanda", subtitle: "Scegli la risposta migliore" },
+      exercise: { emoji: "🧮", title: "Caso pratico", subtitle: "Applica i numeri al tuo contesto" },
     },
     feedback: {
       focus: { emoji: "🪞", title: "Sintesi personale", subtitle: "Cosa ti porti via davvero" },
       explain: { emoji: "💬", title: "Confronto", subtitle: "Chiarisci i dubbi con il tutor" },
-      question: { emoji: "📝", title: "Punto aperto", subtitle: "Segna ciò che vuoi rivedere" },
-      exercise: { emoji: "📅", title: "Piano prossimo", subtitle: "Definisci il prossimo passo" },
+      question: { emoji: "📝", title: "Approfondimento", subtitle: "Fissa i concetti principali" },
+      exercise: { emoji: "📅", title: "Esempio guidato", subtitle: "Vedi il piano in modo concreto" },
     },
   };
 
   return (labels[nodeKey] || labels.concept)[kind];
+}
+
+function blockTint(kind: NodeBlock["kind"]) {
+  if (kind === "focus") {
+    return {
+      shell: "border-primary/20 bg-primary/[0.08]",
+      chip: "border-primary/30 bg-primary/15 text-foreground",
+      rail: "bg-primary/30",
+    };
+  }
+  if (kind === "explain") {
+    return {
+      shell: "border-accent bg-accent/45",
+      chip: "border-accent-foreground/20 bg-accent text-accent-foreground",
+      rail: "bg-accent-foreground/30",
+    };
+  }
+  if (kind === "question") {
+    return {
+      shell: "border-secondary/25 bg-secondary/[0.08]",
+      chip: "border-secondary/30 bg-secondary/15 text-foreground",
+      rail: "bg-secondary/30",
+    };
+  }
+
+  return {
+    shell: "border-border bg-muted/55",
+    chip: "border-border bg-card text-card-foreground",
+    rail: "bg-muted-foreground/25",
+  };
+}
+
+function blockCoachTitle(kind: NodeBlock["kind"]) {
+  if (kind === "focus") return "Punto da portarti via";
+  if (kind === "explain") return "Percorso guidato";
+  if (kind === "question") return "Approfondimento";
+  return "Spiegazione applicata";
 }
 
 const LessonStepper = ({
@@ -502,7 +567,6 @@ const LessonStepper = ({
   isProUser,
   onAdvanceNode,
   onSkipNode,
-  onSubmitOptionalQuiz,
   chatMessages,
   chatInput,
   onChatInputChange,
@@ -515,12 +579,19 @@ const LessonStepper = ({
   const [tracking, setTracking] = useState(false);
   const [challengeResult, setChallengeResult] = useState<"perfect" | "good" | "weak" | null>(null);
   const [reviewOutcome, setReviewOutcome] = useState<"ok" | "ko" | null>(null);
-  const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [finalChoice, setFinalChoice] = useState<string | null>(null);
   const [openedBlockPage, setOpenedBlockPage] = useState<OpenedBlockPage | null>(null);
   const [explainProgress, setExplainProgress] = useState<Record<string, ExplainProgressEntry>>({});
+  const [pollResponses, setPollResponses] = useState<Record<string, PollResponseEntry>>({});
   const chatEndRef = useRef<HTMLDivElement>(null);
   const lastBackToNodesSignalRef = useRef<number | undefined>(backToNodesSignal);
+  const shouldReduceMotion = useReducedMotion();
+  const openedViewportRef = useRef<HTMLDivElement>(null);
+  const openedContentRef = useRef<HTMLDivElement>(null);
+  const [openedContentScale, setOpenedContentScale] = useState(1);
+  const nodeViewportRef = useRef<HTMLDivElement>(null);
+  const nodeContentRef = useRef<HTMLDivElement>(null);
+  const [nodeContentScale, setNodeContentScale] = useState(1);
 
   const lessonDefinition = useMemo(() => resolveLessonDefinition(lessonId), [lessonId]);
   const visualConfig = useMemo(() => resolveLessonVisualConfig(lessonDefinition), [lessonDefinition]);
@@ -556,8 +627,8 @@ const LessonStepper = ({
         blocks: [
           { kind: "focus", title: "Focus", content: "Contenuto non configurato per questo nodo." },
           { kind: "explain", title: "Spiegazione rapida", content: "Aggiungi i contenuti dal file lezione o da Admin." },
-          { kind: "question", title: "Domanda guida", content: "Quale punto vuoi chiarire in questo nodo?" },
-          { kind: "exercise", title: "Micro-azione", content: "Definisci un'azione concreta per proseguire." },
+          { kind: "question", title: "Approfondimento", content: "Approfondimento: chiarisci i punti chiave con un esempio concreto del tuo caso." },
+          { kind: "exercise", title: "Esempio guidato", content: "Esempio guidato: osserva una situazione reale e applica i passaggi in modo ordinato." },
         ],
       }
     );
@@ -614,18 +685,6 @@ const LessonStepper = ({
 
   const submitReview = async (success: boolean) => {
     setReviewOutcome(success ? "ok" : "ko");
-  };
-
-  const submitOptionalQuiz = async (score: number, passed: boolean) => {
-    setTracking(true);
-    try {
-      await onSubmitOptionalQuiz(score, passed);
-      setQuizSubmitted(true);
-    } catch {
-      // Error feedback is handled by page-level toast handlers.
-    } finally {
-      setTracking(false);
-    }
   };
 
   const renderNodeBlocks = (content: StructuredNodeContent) => {
@@ -689,6 +748,44 @@ const LessonStepper = ({
   const openedKey = openedBlockPage ? `${openedBlockPage.nodeKey}-${openedBlockPage.index}` : "";
   const interactive = openedKey ? explainProgress[openedKey] : undefined;
 
+  const getPollAreaKey = (blockKey: string, areaId: string) => `${blockKey}::${areaId}`;
+  const hasPollAreaAnswer = (blockKey: string, areaId: string) => {
+    const entry = pollResponses[getPollAreaKey(blockKey, areaId)];
+    return Boolean(entry?.selected || entry?.text?.trim());
+  };
+  const getPollAreasForBlock = (block: NodeBlock | undefined) => {
+    if (!block || (block.kind !== "question" && block.kind !== "exercise")) return [];
+    if (block.pollAreas && block.pollAreas.length > 0) return block.pollAreas;
+
+    if (openedBlockPage?.nodeKey === "quiz") {
+      return [
+        {
+          id: "quiz-default",
+          prompt: "Qual e la scelta corretta in questo scenario?",
+          options: [
+            "Applico la regola numerica vista nella lezione",
+            "Confronto almeno due alternative prima di decidere",
+            "Segno il dubbio e chiedo un chiarimento al tutor",
+          ],
+          allowText: true,
+        },
+      ];
+    }
+
+    return [
+      {
+        id: "default",
+        prompt: "Qual e il passaggio chiave da applicare in questo blocco?",
+        options: [
+          "Identifico la regola principale",
+          "La applico a un caso concreto",
+          "Rivedo il punto che non torna",
+        ],
+        allowText: true,
+      },
+    ];
+  };
+
   useEffect(() => {
     onNodeViewChange?.(Boolean(openedBlockPage));
   }, [onNodeViewChange, openedBlockPage]);
@@ -709,6 +806,56 @@ const LessonStepper = ({
       return { ...prev, [openedKey]: { step: 0, trail: [] } };
     });
   }, [openedBlockPage, openedBlock, openedContent, openedKey]);
+
+  useEffect(() => {
+    if (!openedBlockPage) return;
+    const viewport = openedViewportRef.current;
+    const content = openedContentRef.current;
+    if (!viewport || !content) return;
+
+    const fit = () => {
+      const availableHeight = viewport.clientHeight;
+      const contentHeight = content.scrollHeight;
+      if (!availableHeight || !contentHeight) return;
+      const scale = Math.min(1, availableHeight / contentHeight);
+      setOpenedContentScale(scale);
+    };
+
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(viewport);
+    observer.observe(content);
+    window.addEventListener("resize", fit);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", fit);
+    };
+  }, [openedBlockPage, openedKey, explainProgress, pollResponses, shouldReduceMotion]);
+
+  useEffect(() => {
+    if (openedBlockPage) return;
+    const viewport = nodeViewportRef.current;
+    const content = nodeContentRef.current;
+    if (!viewport || !content) return;
+
+    const fit = () => {
+      const availableHeight = viewport.clientHeight;
+      const contentHeight = content.scrollHeight;
+      if (!availableHeight || !contentHeight) return;
+      const scale = Math.min(1, availableHeight / contentHeight);
+      setNodeContentScale(scale);
+    };
+
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(viewport);
+    observer.observe(content);
+    window.addEventListener("resize", fit);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", fit);
+    };
+  }, [openedBlockPage, current, chatMessages.length, chatInput, finalChoice, reviewOutcome, challengeResult]);
 
   const handleExplainAnswer = (option: ExplainFlowOption) => {
     if (!openedBlockPage || !openedContent || !openedBlock) return;
@@ -761,9 +908,18 @@ const LessonStepper = ({
 
   if (openedBlockPage && openedContent && openedBlock) {
     const meta = getBlockLabel(openedBlockPage.nodeKey, openedBlock.kind);
+    const tint = blockTint(openedBlock.kind);
     const explainFlow = openedContent.explainFlow ?? [];
-    const currentExplainStep = interactive ? explainFlow[interactive.step] : undefined;
     const explainDone = interactive ? interactive.step >= explainFlow.length : false;
+    const pollAreas = getPollAreasForBlock(openedBlock);
+    const arePollAreasCompleted =
+      pollAreas.length === 0 || pollAreas.every((area) => hasPollAreaAnswer(openedKey, area.id));
+    const blockIsReadyForNext =
+      openedBlock.kind === "explain"
+        ? explainFlow.length === 0 || explainDone
+        : openedBlock.kind === "question" || openedBlock.kind === "exercise"
+          ? arePollAreasCompleted
+          : true;
     const explainAnchors =
       openedBlock.kind === "explain"
         ? openedBlock.content
@@ -771,107 +927,186 @@ const LessonStepper = ({
             .map((chunk) => chunk.trim())
             .filter(Boolean)
         : [];
+    const sectionMotion = shouldReduceMotion
+      ? { initial: { opacity: 1, y: 0 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0 } }
+      : { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.2 } };
+    const openedScaleStyle =
+      openedContentScale < 1
+        ? {
+            transform: `scale(${openedContentScale})`,
+            transformOrigin: "top center",
+            width: `${100 / openedContentScale}%`,
+          }
+        : undefined;
 
     return (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="min-h-0 flex-1 overflow-y-auto px-2">
-          <p className="text-lg font-semibold">
-            {meta.emoji} {meta.title}
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">{meta.subtitle}</p>
+        <div ref={openedViewportRef} className="min-h-0 flex-1 overflow-hidden px-2 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+          <div ref={openedContentRef} style={openedScaleStyle}>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Blocco {openedBlockPage.index + 1} di {openedContent.blocks.length}: {conceptTitleFor(openedBlock)}
+            </p>
 
-          {openedBlock.kind === "explain" ? (
-            <div className="mt-4 space-y-4">
-              <div className="prose prose-sm max-w-none whitespace-pre-line text-foreground/95 dark:prose-invert">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{openedBlock.content}</ReactMarkdown>
+            <motion.section {...sectionMotion} className={`rounded-2xl border p-4 ${tint.shell}`}>
+              <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${tint.chip}`}>
+                <span>{meta.emoji}</span>
+                <span>{blockCoachTitle(openedBlock.kind)}</span>
+              </div>
+              <h2 className="mt-3 text-lg font-semibold">{meta.title}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{meta.subtitle}</p>
+
+              <div className="mt-3 rounded-xl border border-border/60 bg-card/80 p-3">
+                <div className="prose prose-sm max-w-none whitespace-pre-line text-foreground/95 dark:prose-invert">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{openedBlock.content}</ReactMarkdown>
+                </div>
               </div>
 
-              {explainFlow.map((step, idx) => {
-                const answered = interactive?.trail?.[idx];
-                const isUnlocked = idx <= (interactive?.step ?? 0);
-                const isCurrentQuestion = !answered && idx === (interactive?.step ?? 0) && !explainDone;
-                const anchorText =
-                  explainAnchors[idx] ??
-                  (idx === 0 ? openedBlock.content : explainAnchors[explainAnchors.length - 1] ?? "");
+              {openedBlock.kind === "explain" ? (
+                <div className="mt-4 space-y-3">
+                {explainFlow.map((step, idx) => {
+                  const answered = interactive?.trail?.[idx];
+                  const isUnlocked = idx <= (interactive?.step ?? 0);
+                  const isCurrentQuestion = !answered && idx === (interactive?.step ?? 0) && !explainDone;
+                  const anchorText =
+                    explainAnchors[idx] ??
+                    (idx === 0 ? openedBlock.content : explainAnchors[explainAnchors.length - 1] ?? "");
 
-                if (!isUnlocked) return null;
+                  if (!isUnlocked) return null;
 
-                return (
-                  <div key={`${openedKey}-${step.id}`} className="space-y-2 border-b border-border/40 py-3">
-                    <p className="text-xs font-medium text-muted-foreground">Passo {idx + 1}</p>
-                    {anchorText ? (
-                      <div className="prose prose-sm max-w-none whitespace-pre-line text-foreground/90 dark:prose-invert">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{anchorText}</ReactMarkdown>
-                      </div>
-                    ) : null}
-                    <p className="text-sm font-semibold text-foreground">{step.prompt}</p>
+                  return (
+                    <motion.div
+                      key={`${openedKey}-${step.id}`}
+                      {...sectionMotion}
+                      className="space-y-2 rounded-xl border border-border/60 bg-card/80 p-3"
+                    >
+                      <p className="text-xs font-medium text-muted-foreground">Passo {idx + 1}</p>
+                      {anchorText ? (
+                        <div className="prose prose-sm max-w-none whitespace-pre-line text-foreground/90 dark:prose-invert">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{anchorText}</ReactMarkdown>
+                        </div>
+                      ) : null}
+                      <p className="text-sm font-semibold text-foreground">{step.prompt}</p>
 
-                    {answered ? (
-                      <>
-                        <p className="text-xs text-muted-foreground">Hai scelto</p>
-                        <p className="text-sm text-foreground">{answered.answer}</p>
-                        <p className="text-sm text-foreground/90">{answered.followup}</p>
-                        {idx < explainFlow.length - 1 ? (
-                          <p className="whitespace-pre-line text-xs text-muted-foreground">{step.nextHint}</p>
-                        ) : null}
-                      </>
-                    ) : null}
+                      {answered ? (
+                        <>
+                          <p className="text-xs text-muted-foreground">Hai scelto</p>
+                          <p className="text-sm text-foreground">{answered.answer}</p>
+                          <p className="text-sm text-foreground/90">{answered.followup}</p>
+                          {idx < explainFlow.length - 1 ? (
+                            <p className="whitespace-pre-line text-xs text-muted-foreground">{step.nextHint}</p>
+                          ) : null}
+                        </>
+                      ) : null}
 
-                    {isCurrentQuestion ? (
-                      <div className="grid gap-2">
-                        {step.options.map((option) => (
-                          <Button
-                            key={`${openedKey}-${step.id}-${option.label}`}
-                            variant="outline"
-                            className="justify-start rounded-xl text-left"
-                            onClick={() => handleExplainAnswer(option)}
-                          >
-                            {option.label}
-                          </Button>
-                        ))}
-                      </div>
-                    ) : null}
+                      {isCurrentQuestion ? (
+                        <div className="grid gap-2">
+                          {step.options.map((option) => (
+                            <Button
+                              key={`${openedKey}-${step.id}-${option.label}`}
+                              variant="outline"
+                              className="justify-start rounded-xl text-left"
+                              onClick={() => handleExplainAnswer(option)}
+                            >
+                              {option.label}
+                            </Button>
+                          ))}
+                        </div>
+                      ) : null}
+                    </motion.div>
+                  );
+                })}
+
+                {explainDone ? (
+                  <div className="rounded-xl border border-emerald-500/35 bg-emerald-500/10 p-3">
+                    <p className="text-sm font-semibold text-foreground">Passaggio completato</p>
+                    <p className="mt-1 text-sm text-foreground/90">Ottimo: adesso puoi passare al blocco successivo.</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 rounded-lg"
+                      onClick={() =>
+                        setExplainProgress((prev) => ({
+                          ...prev,
+                          [openedKey]: { step: 0, trail: [] },
+                        }))
+                      }
+                    >
+                      Rifai il percorso
+                    </Button>
                   </div>
-                );
-              })}
-
-              {explainDone ? (
-                <div className="border-l-2 border-emerald-500/60 pl-3">
-                  <p className="text-sm font-semibold text-foreground">✅ Passaggio pratico completato</p>
-                  <p className="mt-1 text-sm text-foreground/90">Hai completato il percorso guidato. Ora puoi passare al prossimo blocco.</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-3 rounded-lg"
-                    onClick={() =>
-                      setExplainProgress((prev) => ({
-                        ...prev,
-                        [openedKey]: { step: 0, trail: [] },
-                      }))
-                    }
-                  >
-                    Ricomincia il passaggio
-                  </Button>
+                ) : null}
                 </div>
               ) : null}
-            </div>
-          ) : (
-            <div className="prose prose-sm mt-4 max-w-none whitespace-pre-line text-foreground/95 dark:prose-invert">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{openedBlock.content}</ReactMarkdown>
-            </div>
-          )}
+
+              {(openedBlock.kind === "question" || openedBlock.kind === "exercise") ? (
+                <div className="mt-4 space-y-3 rounded-xl border border-border/60 bg-card/80 p-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Domande di apprendimento
+                  </p>
+                  {pollAreas.map((area, idx) => {
+                    const areaKey = getPollAreaKey(openedKey, area.id);
+                    const response = pollResponses[areaKey];
+                    const options = area.options && area.options.length > 0
+                      ? area.options
+                      : ["Concordo", "Parzialmente", "Da rivedere"];
+
+                    return (
+                      <div key={`${openedKey}-${area.id}`} className="space-y-2 rounded-lg border border-border/50 bg-background/70 p-3">
+                        <p className="text-sm font-medium text-foreground">
+                          {idx + 1}. {area.prompt}
+                        </p>
+                        <div className="grid gap-2">
+                          {options.map((option) => (
+                            <Button
+                              key={`${areaKey}-${option}`}
+                              variant={response?.selected === option ? "default" : "outline"}
+                              className="justify-start rounded-xl text-left"
+                              onClick={() =>
+                                setPollResponses((prev) => ({
+                                  ...prev,
+                                  [areaKey]: { ...prev[areaKey], selected: option },
+                                }))
+                              }
+                            >
+                              {option}
+                            </Button>
+                          ))}
+                        </div>
+                        {area.allowText !== false ? (
+                          <Textarea
+                            value={response?.text || ""}
+                            onChange={(e) =>
+                              setPollResponses((prev) => ({
+                                ...prev,
+                                [areaKey]: { ...prev[areaKey], text: e.target.value },
+                              }))
+                            }
+                            placeholder="Scrivi il tuo ragionamento o la tua risposta..."
+                            rows={2}
+                            className="resize-none rounded-xl"
+                          />
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+
+
+            </motion.section>
+          </div>
         </div>
-        <div className="mt-auto border-t border-border/70 px-1 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-3">
+        <div className="fixed bottom-0 left-1/2 z-30 w-full max-w-[430px] -translate-x-1/2 border-t border-border/70 bg-background/95 px-1 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-3 backdrop-blur">
           <div className="grid grid-cols-2 gap-3">
             <Button variant="outline" onClick={goBackInOpenedBlock} className="h-11 gap-2 rounded-2xl">
               <ArrowLeft size={16} /> Indietro
             </Button>
             <Button
               onClick={goNextInOpenedBlock}
-              disabled={openedBlock.kind === "explain" && explainFlow.length > 0 && !explainDone}
+              disabled={!blockIsReadyForNext}
               className="h-11 gap-2 rounded-2xl"
             >
-              Avanti <ArrowRight size={16} />
+              Prossimo <ArrowRight size={16} />
             </Button>
           </div>
         </div>
@@ -882,7 +1117,7 @@ const LessonStepper = ({
   const canAutoProceed = currentNode.status === "completed" || currentNode.status === "skipped";
   const currentNodeKey = currentNode.node_key;
   const currentNodeContent = getNodeContent(currentNodeKey);
-  const isFeedbackNode = currentNodeKey === "feedback" || current === runtimeFlow.length - 1;
+  const isFeedbackNode = currentNodeKey === "feedback";
   const isChallengeNode = currentNodeKey === "challenge";
   const reflectionSourceNodeKey = runtimeFlow[0]?.node_key;
   const reflectionOptions = reflectionSourceNodeKey ? getNodeContent(reflectionSourceNodeKey).options || [] : [];
@@ -915,9 +1150,21 @@ const LessonStepper = ({
         <span>{statusLabel(currentNode.status)}</span>
       </div>
 
-      <div className="relative min-h-0 flex-1 overflow-y-auto pr-1">
-        {isFeedbackNode ? (
-          <div className="flex h-full flex-col">
+      <div ref={nodeViewportRef} className="relative min-h-0 flex-1 overflow-hidden pr-1 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+        <div
+          ref={nodeContentRef}
+          style={
+            nodeContentScale < 1
+              ? {
+                  transform: `scale(${nodeContentScale})`,
+                  transformOrigin: "top center",
+                  width: `${100 / nodeContentScale}%`,
+                }
+              : undefined
+          }
+        >
+          {isFeedbackNode ? (
+            <div className="flex h-full flex-col">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {visualConfig.nodeBadgeTitles[currentNodeKey] || `Nodo · ${currentNodeKey}`}
             </p>
@@ -939,7 +1186,7 @@ const LessonStepper = ({
             </div>
 
             {chatMessages.length > 0 ? (
-              <div className="mb-4 flex-1 space-y-3 overflow-y-auto">
+              <div className="mb-4 flex-1 space-y-3 overflow-hidden">
                 {chatMessages.map((msg, i) => (
                   <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                     <div
@@ -1004,7 +1251,7 @@ const LessonStepper = ({
                 </Button>
               </div>
 
-              <div className="grid gap-2 md:grid-cols-2">
+              <div className="grid grid-cols-2 gap-2">
                 <Button variant="outline" className="rounded-xl" disabled={tracking} onClick={() => submitReview(false)}>
                   Ripasso necessario
                 </Button>
@@ -1025,22 +1272,10 @@ const LessonStepper = ({
               >
                 {currentNode.status === "completed" ? "Nodo completato" : "Completa feedback"}
               </Button>
-
-              <div className="rounded-xl border border-border/60 bg-muted/30 p-3">
-                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Quiz finale facoltativo</p>
-                <div className="grid gap-2 md:grid-cols-2">
-                  <Button variant="outline" className="rounded-xl" disabled={tracking || quizSubmitted} onClick={() => submitOptionalQuiz(45, false)}>
-                    Quiz da ripassare
-                  </Button>
-                  <Button variant="outline" className="rounded-xl" disabled={tracking || quizSubmitted} onClick={() => submitOptionalQuiz(85, true)}>
-                    Quiz superato
-                  </Button>
-                </div>
-              </div>
             </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
+            </div>
+          ) : (
+            <div className="space-y-4">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {visualConfig.nodeBadgeTitles[currentNodeKey] || `Nodo · ${currentNodeKey}`}
             </p>
@@ -1049,7 +1284,7 @@ const LessonStepper = ({
             {isChallengeNode ? (
               <>
                 <p className="text-sm text-muted-foreground">Come e andata davvero? Scegli senza pensarci troppo.</p>
-                <div className="grid gap-2 md:grid-cols-3">
+                <div className="grid grid-cols-3 gap-2">
                   <Button
                     variant="outline"
                     className="rounded-xl"
@@ -1091,18 +1326,19 @@ const LessonStepper = ({
                 {currentNode.status === "completed" ? "Nodo completato" : tracking ? "Salvo..." : "Completa nodo"}
               </Button>
             )}
-          </div>
-        )}
+            </div>
+          )}
 
-        {currentNode.status === "skipped" ? (
-          <div className="mt-4 rounded-xl border border-amber-300/40 bg-amber-100/30 p-3 text-xs text-amber-900">
-            Nodo skippato: devi comunque completarlo per segnare la lezione come conclusa.
-          </div>
-        ) : null}
+          {currentNode.status === "skipped" ? (
+            <div className="mt-4 rounded-xl border border-amber-300/40 bg-amber-100/30 p-3 text-xs text-amber-900">
+              Nodo skippato: devi comunque completarlo per segnare la lezione come conclusa.
+            </div>
+          ) : null}
+        </div>
       </div>
 
-      <div className="mt-auto border-t border-border/70 px-1 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-3">
-        <div className="grid gap-3 md:grid-cols-3">
+      <div className="fixed bottom-0 left-1/2 z-30 w-full max-w-[430px] -translate-x-1/2 border-t border-border/70 bg-background/95 px-1 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-3 backdrop-blur">
+        <div className="grid grid-cols-3 gap-3">
           <Button
             variant="outline"
             onClick={() => canPrev && setCurrent(current - 1)}

@@ -280,18 +280,6 @@ const LezioneDetail = () => {
     }
   };
 
-  const submitOptionalQuiz = async (score: number, passed: boolean) => {
-    await invokeLessonNodes({
-      action: "submit_optional_quiz",
-      lesson_id: lessonId,
-      user_id: user?.id,
-      score,
-      passed,
-    });
-
-    toast({ title: "Quiz salvato", description: "Risultato del quiz facoltativo registrato." });
-  };
-
   const openProPage = async () => {
     if (user?.id && isNativeBillingPlatform()) {
       await Promise.allSettled([
@@ -470,18 +458,6 @@ const LezioneDetail = () => {
                   toast({
                     title: "Errore",
                     description: e instanceof Error ? e.message : "Impossibile skippare il nodo.",
-                    variant: "destructive",
-                  });
-                  throw e;
-                }
-              }}
-              onSubmitOptionalQuiz={async (score, passed) => {
-                try {
-                  await submitOptionalQuiz(score, passed);
-                } catch (e) {
-                  toast({
-                    title: "Errore",
-                    description: e instanceof Error ? e.message : "Impossibile inviare il quiz.",
                     variant: "destructive",
                   });
                   throw e;

@@ -117,5 +117,20 @@
     -moz-osx-font-smoothing: grayscale;
     margin: 0;
     overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  input,
+  textarea,
+  [contenteditable="true"] {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
+  .allow-text-selection,
+  .allow-text-selection * {
+    user-select: text !important;
+    -webkit-user-select: text !important;
   }
 }

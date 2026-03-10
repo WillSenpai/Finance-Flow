@@ -6,47 +6,114 @@ const content: StructuredLessonContent = {
     nodeKey: "concept",
     criteria: ["foundational", "integration"],
     blocks: [
-      { kind: "focus", title: "Focus", content: "Un fondo raccoglie tanti investitori e li gestisce con una strategia definita." },
-      { kind: "explain", title: "Spiegazione rapida", content: "Tu scegli il tipo di fondo in base a obiettivo, costi, rischio e orizzonte." },
-      { kind: "question", title: "Domanda guida", content: "Quale caratteristica conta di piu per te: costo, volatilita o semplicità?" },
-      { kind: "exercise", title: "Micro-azione", content: "Confronta due fondi su costi annui e composizione, prima di qualsiasi scelta." },
+      { kind: "focus", title: "Focus", content: "Un fondo e un contenitore: il risultato dipende da cosa contiene e quanto costa mantenerlo." },
+      {
+        kind: "explain",
+        title: "Spiegazione rapida",
+        content: "Prima capisci strategia e rischi, poi confronti costi ricorrenti e coerenza con obiettivo.",
+      },
+      { kind: "question", title: "Approfondimento", content: "Domanda didattica: perche due fondi simili possono dare risultati diversi nel lungo periodo?" },
+      {
+        kind: "exercise",
+        title: "Esempio guidato",
+        content:
+          "Scenario: Fondo A costo annuo 0,25%, Fondo B 1,40%, stessa esposizione. Passi: 1) confronta costo annuo su 20.000 euro, 2) proietta impatto su 10 anni, 3) valuta se il maggior costo ha una motivazione reale. Soluzione: costi ricorrenti alti erodono risultato se non giustificati.",
+      },
     ],
-    options: ["Capisco come funziona", "Confronto i costi", "Guardo il rischio"],
+    options: ["Capisco cosa contiene", "Confronto costi", "Valuto coerenza"],
   },
   widget: {
     nodeKey: "widget",
     criteria: ["application", "learning"],
     blocks: [
-      { kind: "focus", title: "Focus", content: "Il costo ricorrente impatta il risultato nel tempo piu di quanto sembri." },
-      { kind: "explain", title: "Spiegazione rapida", content: "Regola pratica: prima capisci cosa c'e dentro il fondo, poi guarda quanto paghi per tenerlo." },
-      { kind: "question", title: "Domanda guida", content: "Sai spiegare in una frase dove investe il fondo che stai valutando?" },
-      { kind: "exercise", title: "Micro-azione", content: "Scrivi una scheda sintetica: obiettivo, asset principali, costi, rischio." },
+      { kind: "focus", title: "Focus", content: "La scelta pratica richiede una checklist minima sempre uguale." },
+      {
+        kind: "explain",
+        title: "Spiegazione rapida",
+        content: "Checklist base: obiettivo fondo, composizione, costo annuo, volatilita, orizzonte consigliato.",
+      },
+      { kind: "question", title: "Approfondimento", content: "Domanda didattica: quale elemento della checklist evita piu errori di acquisto?" },
+      {
+        kind: "exercise",
+        title: "Esempio guidato",
+        content:
+          "Scenario: devi scegliere tra 2 fondi bilanciati. Passi: 1) compila scheda per entrambi, 2) assegna voto 1-5 a ciascun criterio, 3) scegli il fondo con punteggio totale maggiore. Soluzione: decisione ripetibile e meno emotiva.",
+      },
     ],
-    options: ["Scheda sintetica", "Confronto costi", "Confronto rischio"],
+    options: ["Uso checklist", "Valuto costo-rischio", "Scelgo per punteggio"],
   },
   challenge: {
     nodeKey: "challenge",
     criteria: ["learning", "application"],
     blocks: [
-      { kind: "focus", title: "Focus", content: "Scenario: due fondi sembrano simili ma hanno costi diversi." },
-      { kind: "explain", title: "Spiegazione rapida", content: "Nel lungo periodo, differenze piccole di costo possono diventare differenze grandi di risultato." },
-      { kind: "question", title: "Domanda guida", content: "Quale criterio userai per scegliere in modo coerente tra alternative simili?" },
-      { kind: "exercise", title: "Micro-azione", content: "Definisci una soglia massima di costo annuo oltre cui non vai." },
+      { kind: "focus", title: "Focus", content: "Il pericolo e scegliere solo guardando il rendimento recente." },
+      {
+        kind: "explain",
+        title: "Spiegazione rapida",
+        content: "Rendimento passato non basta: deve essere coerente con rischio, costo e obiettivo.",
+      },
+      { kind: "question", title: "Approfondimento", content: "Domanda didattica: quale dato controlli per primo prima di comprare un fondo?" },
+      {
+        kind: "exercise",
+        title: "Esempio guidato",
+        content:
+          "Scenario: Fondo X +18% ultimo anno, costo 1,8%; Fondo Y +14%, costo 0,35%. Passi: 1) valuta orizzonte 5-10 anni, 2) confronta costi ricorrenti, 3) scegli in base a sostenibilita nel tempo. Soluzione: privilegia struttura robusta rispetto al picco recente.",
+      },
     ],
+  },
+  quiz: {
+    nodeKey: "quiz",
+    criteria: ["integration", "application"],
+    blocks: [
+      { kind: "focus", title: "Focus", content: "Quiz finale: verifica se sai confrontare fondi con metodo." },
+      { kind: "explain", title: "Spiegazione rapida", content: "Applica checklist e logica costo-rischio-obiettivo." },
+      {
+        kind: "question",
+        title: "Domanda 1",
+        content: "Quale confronto e corretto tra due fondi potenzialmente simili?",
+        pollAreas: [
+          {
+            id: "quiz-q1",
+            prompt: "Scegli l'opzione migliore",
+            options: [
+              "Composizione + costo annuo + volatilita + coerenza obiettivo",
+              "Solo rendimento ultimi 12 mesi",
+              "Solo nome del gestore",
+            ],
+            allowText: true,
+          },
+        ],
+      },
+      {
+        kind: "exercise",
+        title: "Caso pratico",
+        content:
+          "Scenario: capitale 30.000 euro; differenza di costo annuo tra due fondi 1,1%. Passi: 1) calcola costo annuo differenziale (330 euro), 2) stima impatto pluriennale, 3) valuta se il maggior costo e giustificato da strategia realmente diversa. Soluzione attesa: costo alto richiede motivazione concreta.",
+        pollAreas: [
+          {
+            id: "quiz-case",
+            prompt: "Quanto pesa la differenza costo annuo in euro?",
+            options: ["330 euro", "33 euro", "3.300 euro"],
+            allowText: true,
+          },
+        ],
+      },
+    ],
+    options: ["Confronto completo", "Calcolo impatto costi", "Scelgo per coerenza"],
   },
   feedback: {
     nodeKey: "feedback",
     criteria: ["human", "caring"],
     blocks: [
-      { kind: "focus", title: "Focus", content: "Scegliere un fondo e scegliere un processo, non inseguire la moda del mese." },
-      { kind: "explain", title: "Spiegazione rapida", content: "Quando il criterio e chiaro, le decisioni diventano piu veloci e meno emotive." },
-      { kind: "question", title: "Domanda guida", content: "Qual e la tua regola personale minima per valutare un fondo?" },
-      { kind: "exercise", title: "Micro-azione", content: "Scrivi la tua checklist in 4 punti e usala su ogni nuova proposta." },
+      { kind: "focus", title: "Focus", content: "Scegliere un fondo bene significa scegliere un processo decisionale, non una moda." },
+      { kind: "explain", title: "Spiegazione rapida", content: "Con una checklist chiara riduci errori e ansia decisionale." },
+      { kind: "question", title: "Approfondimento", content: "Quale criterio non vuoi piu saltare quando valuti un fondo?" },
+      { kind: "exercise", title: "Esempio guidato", content: "Definisci la tua checklist finale in 5 punti e usala su ogni proposta." },
     ],
     suggestedPrompts: [
-      "Come confronto due fondi in modo semplice?",
-      "Quali costi devo controllare sempre?",
-      "Fammi una checklist base prima di investire",
+      "Aiutami a confrontare due fondi con un metodo semplice",
+      "Quali costi devo sempre controllare?",
+      "Dammi una checklist pronta da riutilizzare",
     ],
   },
 };

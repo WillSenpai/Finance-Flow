@@ -13,10 +13,18 @@ export type CriterionKey =
 
 export type NodeBlockKind = "focus" | "explain" | "question" | "exercise";
 
+export type BlockPollArea = {
+  id: string;
+  prompt: string;
+  options?: string[];
+  allowText?: boolean;
+};
+
 export type NodeBlock = {
   kind: NodeBlockKind;
   title: string;
   content: string;
+  pollAreas?: BlockPollArea[];
 };
 
 export type ExplainFlowOption = {

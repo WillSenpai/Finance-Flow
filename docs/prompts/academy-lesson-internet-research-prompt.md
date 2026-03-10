@@ -5,7 +5,7 @@ Usa questo prompt su ChatGPT/Claude/Gemini quando devi fare ricerca per creare o
 ## 1) Prompt Master (copia/incolla)
 
 ```text
-Agisci come Research Lead + Instructional Designer per un'app mobile di educazione finanziaria chiamata "My Money Compass".
+Agisci come Research Lead + Instructional Designer per un'app mobile di educazione finanziaria chiamata "Finance Flow".
 
 OBIETTIVO
 Devi fare ricerca su internet e proporre contenuti didattici affidabili, pratici e adatti all'Accademia in-app.
