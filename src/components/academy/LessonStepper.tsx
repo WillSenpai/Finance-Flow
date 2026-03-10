@@ -520,6 +520,7 @@ const LessonStepper = ({
   const [openedBlockPage, setOpenedBlockPage] = useState<OpenedBlockPage | null>(null);
   const [explainProgress, setExplainProgress] = useState<Record<string, ExplainProgressEntry>>({});
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const lastBackToNodesSignalRef = useRef<number | undefined>(backToNodesSignal);
 
   const lessonDefinition = useMemo(() => resolveLessonDefinition(lessonId), [lessonId]);
   const visualConfig = useMemo(() => resolveLessonVisualConfig(lessonDefinition), [lessonDefinition]);
@@ -694,7 +695,8 @@ const LessonStepper = ({
 
   useEffect(() => {
     if (backToNodesSignal === undefined) return;
-    if (!openedBlockPage) return;
+    if (lastBackToNodesSignalRef.current === backToNodesSignal) return;
+    lastBackToNodesSignalRef.current = backToNodesSignal;
     setOpenedBlockPage(null);
   }, [backToNodesSignal, openedBlockPage]);
 
