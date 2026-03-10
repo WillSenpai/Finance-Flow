@@ -22,9 +22,6 @@ const MobileLayout = () => {
   const isNative = Capacitor.isNativePlatform();
 
   const showTabBar = !hiddenPaths.some((p) => location.pathname.startsWith(p));
-  const contentBottomPadding = showTabBar
-    ? "calc(4.25rem + var(--safe-bottom))"
-    : "max(1rem, var(--safe-bottom))";
 
   return (
     <div
@@ -38,10 +35,9 @@ const MobileLayout = () => {
         )}
         style={{ paddingTop: "var(--safe-top)" }}
       >
-        <div className="flex-1 min-h-0 overflow-y-auto" style={{ paddingBottom: contentBottomPadding }}>
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <motion.div
             key={location.pathname}
-            className="min-h-full"
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
@@ -52,7 +48,7 @@ const MobileLayout = () => {
 
         {showTabBar && (
           <nav
-            className="absolute inset-x-0 bottom-0 z-50 border-t border-border bg-background/80 backdrop-blur-xl"
+            className="relative z-50 border-t border-border bg-background/80 backdrop-blur-xl"
             style={{ paddingBottom: "var(--safe-bottom)" }}
           >
             <div className="flex items-center justify-around py-2 pb-2">
