@@ -95,7 +95,8 @@ serve(async (req) => {
       effectiveCronSecret === incomingCronSecret,
     );
 
-    if (!isCronInvocation) {
+    const hasAuthorizationHeader = Boolean(req.headers.get("Authorization"));
+    if (!isCronInvocation && hasAuthorizationHeader) {
       const authResult = await requireAuthenticatedUser(req, corsHeaders);
       if (!authResult.ok) return authResult.response;
       const isAdmin = await requireAdminUser(authResult.user.id);
@@ -163,7 +164,8 @@ serve(async (req) => {
         summaryCandidates.push(article);
       }
     }
-    const toProcess = summaryCandidates.slice(0, 4);
+    const toProcess = summaryCandidates;
+    const processedSummaryTitles = new Set<string>();
 
     for (const article of toProcess) {
       try {
@@ -215,7 +217,8 @@ Scrivi SOLO il riassunto, senza titoli o prefissi. Tono professionale ma accessi
           await summaryResp.text();
         }
 
-        const image = await generateNewsIllustration(AI_API_KEY, article.titolo);
+        const existingCached = existingByTitle.get(article.titolo);
+        const image = existingCached?.image ?? await generateNewsIllustration(AI_API_KEY, article.titolo);
 
         // Upsert into cache with best-effort preview image.
         await supabase.from("news_cache").upsert({
@@ -227,6 +230,7 @@ Scrivi SOLO il riassunto, senza titoli o prefissi. Tono professionale ma accessi
           image,
         }, { onConflict: "titolo" });
 
+        processedSummaryTitles.add(article.titolo);
         console.log(`Cached: ${article.titolo.slice(0, 50)}...`);
       } catch (e) {
         console.error(`Error processing "${article.titolo}":`, e);
@@ -235,7 +239,8 @@ Scrivi SOLO il riassunto, senza titoli o prefissi. Tono professionale ma accessi
 
     // 4. Backfill missing preview images for cached rows and seed remaining fresh news.
     const imageOnlyCandidates = [...missingImageArticles];
-    for (const article of newArticles.slice(4)) {
+    for (const article of newArticles) {
+      if (processedSummaryTitles.has(article.titolo)) continue;
       if (!imageOnlyCandidates.some((candidate) => candidate.titolo === article.titolo)) {
         imageOnlyCandidates.push(article);
       }
@@ -257,15 +262,15 @@ Scrivi SOLO il riassunto, senza titoli o prefissi. Tono professionale ma accessi
       await supabase.from("news_cache").upsert(inserts, { onConflict: "titolo" });
     }
 
-    // 5. Delete old cache entries (keep last 30)
-    const { data: allCached } = await supabase
+    // 5. Delete cache entries older than 7 days.
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { error: cleanupError } = await supabase
       .from("news_cache")
-      .select("id")
-      .order("created_at", { ascending: false });
+      .delete()
+      .lt("created_at", sevenDaysAgo);
 
-    if (allCached && allCached.length > 30) {
-      const toDelete = allCached.slice(30).map((c: any) => c.id);
-      await supabase.from("news_cache").delete().in("id", toDelete);
+    if (cleanupError) {
+      console.error("news-cache cleanup error:", cleanupError);
     }
 
     return new Response(JSON.stringify({ processed: toProcess.length, total: top.length, new: newArticles.length }), {

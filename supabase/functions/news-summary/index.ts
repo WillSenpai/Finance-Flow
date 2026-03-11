@@ -5,13 +5,6 @@ import {
   extractAssistantContent,
 } from "../_shared/ai.ts";
 import { buildCorsHeaders, rejectDisallowedOrigin } from "../_shared/cors.ts";
-import { requireAuthenticatedUser } from "../_shared/auth.ts";
-import {
-  consumeAiTokens,
-  estimateTokensFromText,
-  quotaExceededResponse,
-} from "../_shared/quota.ts";
-import { generateNewsIllustration } from "../_shared/news.ts";
 
 function extractText(html: string): string {
   let text = html
@@ -34,9 +27,6 @@ serve(async (req) => {
   if (originBlocked) return originBlocked;
 
   try {
-    const authResult = await requireAuthenticatedUser(req, corsHeaders);
-    if (!authResult.ok) return authResult.response;
-
     const { titolo, link } = await req.json();
     const AI_API_KEY = Deno.env.get("AI_API_KEY") ?? Deno.env.get("OPENAI_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -47,45 +37,35 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Shared cache check: if summary already exists, return it without regenerating.
-    const { data: cached, error: cacheReadError } = await supabase
+    // Read-only shared cache: images and summaries are generated only by news-generate-cache.
+    const { data: initialCached, error: cacheReadError } = await supabase
       .from("news_cache")
       .select("summary, image")
       .eq("titolo", titolo)
       .maybeSingle();
+    let cached = initialCached;
 
     if (cacheReadError) {
       console.error("news-summary cache read error:", cacheReadError);
     }
 
-    if (cached?.summary) {
-      return new Response(JSON.stringify({ summary: cached.summary, image: cached.image, cached: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const estimatedTokens = 900 + estimateTokensFromText(String(titolo ?? ""));
-    const quota = await consumeAiTokens(authResult.user.id, estimatedTokens, "news-summary");
-    if (!quota.allowed) return quotaExceededResponse(quota, corsHeaders);
-
-    let articleContent = "";
-    if (link) {
-      try {
-        const res = await fetch(link, {
-          headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
-          redirect: "follow",
-        });
-        if (res.ok) {
-          const html = await res.text();
-          articleContent = extractText(html);
+    if (!cached?.summary) {
+      let articleContent = "";
+      if (link) {
+        try {
+          const res = await fetch(link, {
+            headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
+            redirect: "follow",
+          });
+          if (res.ok) {
+            articleContent = extractText(await res.text());
+          }
+        } catch (error) {
+          console.error("news-summary fetch article error:", error);
         }
-      } catch (e) {
-        console.error("Failed to fetch article:", e);
       }
-    }
 
-    // 1. Generate summary
-    const prompt = `Sei un giornalista finanziario esperto. Scrivi un riassunto DETTAGLIATO e APPROFONDITO di questo articolo finanziario in italiano.
+      const prompt = `Sei un giornalista finanziario esperto. Scrivi un riassunto DETTAGLIATO e APPROFONDITO di questo articolo finanziario in italiano.
 
 Il riassunto deve essere di 8-12 frasi e deve coprire:
 1. Il contesto e lo sfondo della notizia
@@ -100,47 +80,40 @@ ${articleContent ? `\nContenuto dell'articolo:\n${articleContent}` : "\nNon è s
 
 Scrivi SOLO il riassunto, senza titoli o prefissi. Usa un tono professionale ma accessibile.`;
 
-    const { response: summaryResponse, modelUsed } = await chatCompletionWithComplexFallback({
-      apiKey: AI_API_KEY,
-      isComplexTask: true,
-      validateContent: isArticleSummaryAcceptable,
-      messages: [{ role: "user", content: prompt }],
-    });
+      const { response: summaryResponse } = await chatCompletionWithComplexFallback({
+        apiKey: AI_API_KEY,
+        isComplexTask: true,
+        validateContent: isArticleSummaryAcceptable,
+        messages: [{ role: "user", content: prompt }],
+      });
 
-    if (!summaryResponse.ok) {
-      if (summaryResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "Troppe richieste, riprova tra qualche secondo." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      if (summaryResponse.ok) {
+        const summaryData = await summaryResponse.json();
+        const generatedSummary = extractAssistantContent(summaryData) || null;
+        if (generatedSummary) {
+          const { error: cacheWriteError } = await supabase
+            .from("news_cache")
+            .update({ summary: generatedSummary })
+            .eq("titolo", titolo);
+
+          if (cacheWriteError) {
+            console.error("news-summary cache write error:", cacheWriteError);
+          } else {
+            cached = { summary: generatedSummary, image: cached?.image ?? null };
+          }
+        }
+      } else {
+        console.error("news-summary summary generation failed:", summaryResponse.status, await summaryResponse.text());
       }
-      if (summaryResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "Crediti AI esauriti." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await summaryResponse.text();
-      console.error("AI gateway error:", summaryResponse.status, t);
-      throw new Error("AI gateway error");
     }
 
-    const summaryData = await summaryResponse.json();
-    const summary = extractAssistantContent(summaryData) || "Riassunto non disponibile.";
-    console.log(`news-summary model used: ${modelUsed}`);
-
-    // 2. Generate image (best-effort, don't block on failure)
-    const image = await generateNewsIllustration(AI_API_KEY, titolo);
-
-    // Persist once in shared cache so all users reuse the same summary.
-    const { error: cacheWriteError } = await supabase
-      .from("news_cache")
-      .update({ summary, image })
-      .eq("titolo", titolo);
-
-    if (cacheWriteError) {
-      console.error("news-summary cache write error:", cacheWriteError);
-    }
-
-    return new Response(JSON.stringify({ summary, image, cached: false }), {
+    return new Response(JSON.stringify({
+      summary: cached?.summary ?? null,
+      image: cached?.image ?? null,
+      cached: Boolean(cached?.summary || cached?.image),
+      pending: !cached?.summary,
+      link: link ?? null,
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import DOMPurify from "dompurify";
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } } as const;
@@ -21,6 +21,13 @@ const formatDate = () => {
 
 type NewsItem = { titolo: string; fonte: string; tempo: string; link: string; summary: string | null; image: string | null };
 type AdminPost = { id: string; titolo: string; contenuto: string; emoji: string; tipo: string; image_url: string | null; visibility: string; created_at: string; scheduled_at: string | null };
+type NewsSummaryResponse = { summary?: string | null; image?: string | null };
+
+function clearActiveFocus() {
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
+}
 
 function getNextNewsRefresh(now: Date): Date {
   const next = new Date(now);
@@ -159,14 +166,16 @@ const Dashboard = () => {
 
   // On-demand summary generation when opening a news without summary
   const handleOpenNews = async (n: NewsItem) => {
+    clearActiveFocus();
     setSelectedNews(n);
     if (!n.summary) {
       setLoadingSummary(true);
       try {
-        const { data, error } = await supabase.functions.invoke("news-summary", {
+        const { data, error } = await supabase.functions.invoke<NewsSummaryResponse>("news-summary", {
           body: { titolo: n.titolo, link: n.link },
         });
-        if (!error && data?.summary) {
+        if (error) throw error;
+        if (data?.summary) {
           const updated = { ...n, summary: data.summary, image: data.image || n.image };
           setSelectedNews(updated);
           // Update the cache in react-query
@@ -174,6 +183,8 @@ const Dashboard = () => {
             old?.map(item => item.titolo === n.titolo ? { ...item, summary: data.summary, image: data.image || item.image } : item)
           );
           queryClient.invalidateQueries({ queryKey: ["news-cache"] });
+        } else if (data?.image && data.image !== n.image) {
+          setSelectedNews({ ...n, image: data.image });
         }
       } catch (e) {
         console.error("Failed to generate summary:", e);
@@ -237,7 +248,7 @@ const Dashboard = () => {
               <motion.div
                 key={post.id}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => { setSelectedPost(post); trackView(post.id); }}
+                onClick={() => { clearActiveFocus(); setSelectedPost(post); trackView(post.id); }}
                 className="bg-card border border-border/50 rounded-2xl p-4 cursor-pointer active:bg-muted/50 transition-colors"
               >
                 <div className="flex items-start gap-3">
@@ -292,6 +303,9 @@ const Dashboard = () => {
                   <span className="text-2xl">{selectedPost.emoji}</span>
                   <DrawerTitle className="text-base leading-snug text-left">{selectedPost.titolo}</DrawerTitle>
                 </div>
+                <DrawerDescription className="sr-only">
+                  Dettaglio della comunicazione admin con contenuto completo e statistiche di engagement.
+                </DrawerDescription>
               </DrawerHeader>
               {selectedPost.image_url && (
                 <img src={selectedPost.image_url} alt="" className="w-full aspect-video object-cover rounded-xl mb-4" />
@@ -425,6 +439,9 @@ const Dashboard = () => {
                   <span className="text-[10px] text-muted-foreground">{selectedNews.tempo}</span>
                 </div>
                 <DrawerTitle className="text-base leading-snug text-left">{selectedNews.titolo}</DrawerTitle>
+                <DrawerDescription className="sr-only">
+                  Anteprima della notizia finanziaria con riassunto AI e link all'articolo originale.
+                </DrawerDescription>
               </DrawerHeader>
 
               <div className="mt-4">
