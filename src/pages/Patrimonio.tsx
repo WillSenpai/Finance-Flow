@@ -119,7 +119,7 @@ function SpeseSectionContent({
         className="w-full bg-card border border-border/50 rounded-2xl p-5 text-center"
       >
         <p className="text-2xl mb-2">💸</p>
-        <p className="text-sm font-medium">Inizia a tracciare le tue spese</p>
+        <p className="text-sm font-medium">Clicca per tracciare le tue spese</p>
         <p className="text-xs text-muted-foreground mt-1">Tieni sotto controllo dove vanno i tuoi soldi</p>
       </motion.button>
     );
@@ -186,7 +186,7 @@ function PatrimonioFocusSection({
 
   return (
     <motion.div className={className} variants={item}>
-      <div className="flex items-start justify-between gap-3 mb-4">
+      <div className="mb-4">
         <div className="min-w-0">
           <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">Sezione in evidenza</p>
           <h2 className="text-lg font-semibold mt-1">{activeMeta.title}</h2>
@@ -194,16 +194,6 @@ function PatrimonioFocusSection({
             Scegli la sezione da visualizzare per tenere questa schermata piu ordinata.
           </p>
         </div>
-        {activeSection === "spese" ? (
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-full gap-1 text-xs shrink-0"
-            onClick={onOpenSpese}
-          >
-            Gestisci
-          </Button>
-        ) : null}
       </div>
 
       <Select value={activeSection} onValueChange={(value) => onSectionChange(value as PatrimonioSection)}>
