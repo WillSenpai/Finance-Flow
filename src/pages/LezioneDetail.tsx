@@ -56,7 +56,7 @@ const LezioneDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { awardPoints } = usePoints();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
 
   const lessonId = id || "1";
@@ -65,7 +65,7 @@ const LezioneDetail = () => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [isChatLoading, setIsChatLoading] = useState(false);
-  const [showIntro, setShowIntro] = useState(true);
+  const [introDismissed, setIntroDismissed] = useState(false);
   const [showProPopup, setShowProPopup] = useState(false);
   const [isInsideNode, setIsInsideNode] = useState(false);
   const [backToNodesSignal, setBackToNodesSignal] = useState(0);
@@ -114,6 +114,23 @@ const LezioneDetail = () => {
       return data || null;
     },
     staleTime: 30 * 60 * 1000,
+  });
+
+  const { data: lessonIntroView, isLoading: introViewLoading } = useQuery({
+    queryKey: ["lesson-intro-view", user?.id, lessonId],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from("user_lesson_intro_views")
+        .select("seen_at")
+        .eq("user_id", user.id)
+        .eq("lesson_id", lessonId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 60 * 1000,
   });
 
   const lessonTitle = lessonData?.titolo || getDefaultLessonTitle(lessonId);
@@ -202,13 +219,39 @@ const LezioneDetail = () => {
     },
     onError: () => {
       toast({ title: "Errore", description: "Impossibile generare le illustrazioni.", variant: "destructive" });
-      setShowIntro(false);
+      setIntroDismissed(true);
+    },
+  });
+
+  const markIntroSeenMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) return;
+      const { error } = await supabase
+        .from("user_lesson_intro_views")
+        .upsert(
+          {
+            user_id: user.id,
+            lesson_id: lessonId,
+            seen_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id,lesson_id" },
+        );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["lesson-intro-view", user?.id, lessonId] });
     },
   });
 
   const generateIllustrations = generateMutation.mutate;
   const isGeneratingIntro = generateMutation.isPending;
   const isGenerationDone = generateMutation.isSuccess;
+  const hasSeenIntro = Boolean(lessonIntroView?.seen_at);
+  const showIntro = !authLoading && !introViewLoading && !hasSeenIntro && !introDismissed;
+
+  useEffect(() => {
+    setIntroDismissed(false);
+  }, [lessonId, user?.id]);
 
   useEffect(() => {
     const shouldGenerate =
@@ -220,6 +263,19 @@ const LezioneDetail = () => {
       showIntro;
     if (shouldGenerate) generateIllustrations();
   }, [illustrationsLoading, illustrations, explanation, generateIllustrations, isGeneratingIntro, isGenerationDone, showIntro]);
+
+  const dismissIntro = async () => {
+    setIntroDismissed(true);
+    try {
+      await markIntroSeenMutation.mutateAsync();
+    } catch (error) {
+      console.error("Lesson intro view persistence failed:", error);
+      toast({
+        title: "Anteprima chiusa",
+        description: "Non sono riuscito a salvare questo stato sul tuo account. Potresti rivedere l'anteprima al prossimo accesso.",
+      });
+    }
+  };
 
   useEffect(() => {
     if (!user || !nodeRuntime?.lesson_completed || completionSyncedRef.current) return;
@@ -370,6 +426,7 @@ const LezioneDetail = () => {
   const hasIllustrations = illustrations && illustrations.length > 0;
   const isGenerating = generateMutation.isPending;
   const isLessonCompleted = Boolean(nodeRuntime?.lesson_completed);
+  const isLessonLoading = explanationLoading || nodesLoading || introViewLoading || authLoading;
   const handleTopBack = () => {
     if (isInsideNode) {
       setBackToNodesSignal((value) => value + 1);
@@ -380,7 +437,7 @@ const LezioneDetail = () => {
 
   return (
     <div className="flex h-full min-h-full flex-col overflow-hidden px-5 pt-10 pb-4">
-      {!(showIntro && (hasIllustrations || isGenerating)) && (
+      {!authLoading && !introViewLoading && !(showIntro && (hasIllustrations || isGenerating)) && (
         <>
           <div className="mb-3 flex items-center gap-3">
             <button
@@ -408,8 +465,8 @@ const LezioneDetail = () => {
           }))}
           lessonTitle={lessonTitle}
           lessonEmoji={lessonMeta.emoji}
-          onComplete={() => setShowIntro(false)}
-          onSkip={() => setShowIntro(false)}
+          onComplete={() => void dismissIntro()}
+          onSkip={() => void dismissIntro()}
         />
       ) : showIntro && isGenerating ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-4">
@@ -417,13 +474,13 @@ const LezioneDetail = () => {
             <Loader2 size={32} className="text-primary" />
           </motion.div>
           <p className="text-sm text-muted-foreground">Preparo le vignette della lezione...</p>
-          <button onClick={() => setShowIntro(false)} className="mt-2 text-xs text-muted-foreground underline">
+          <button onClick={() => void dismissIntro()} className="mt-2 text-xs text-muted-foreground underline">
             Salta e vai alla lezione
           </button>
         </div>
       ) : (
         <>
-          {explanationLoading || nodesLoading ? (
+          {isLessonLoading ? (
             <div className="flex-1 space-y-3">
               <Skeleton className="h-5 w-3/4" />
               <Skeleton className="h-4 w-full" />

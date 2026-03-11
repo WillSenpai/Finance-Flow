@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
-  chatCompletion,
   chatCompletionWithComplexFallback,
   extractAssistantContent,
 } from "../_shared/ai.ts";
@@ -12,6 +11,7 @@ import {
   estimateTokensFromText,
   quotaExceededResponse,
 } from "../_shared/quota.ts";
+import { generateNewsIllustration } from "../_shared/news.ts";
 
 function extractText(html: string): string {
   let text = html
@@ -128,30 +128,7 @@ Scrivi SOLO il riassunto, senza titoli o prefissi. Usa un tono professionale ma 
     console.log(`news-summary model used: ${modelUsed}`);
 
     // 2. Generate image (best-effort, don't block on failure)
-    let image: string | null = null;
-    try {
-      const imageResponse = await chatCompletion({
-        apiKey: AI_API_KEY,
-        model: Deno.env.get("AI_IMAGE_MODEL") ?? "google/gemini-2.5-flash-image",
-        messages: [{
-          role: "user",
-          content: `Generate a professional, modern illustration for a financial news article titled: "${titolo}". Style: flat design, blue and green color palette, no text in the image, clean and minimal, suitable as article thumbnail.`,
-        }],
-        extraBody: {
-          modalities: ["image", "text"],
-        },
-      });
-
-      if (imageResponse.ok) {
-        const imageData = await imageResponse.json();
-        const imageUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-        if (imageUrl) {
-          image = imageUrl;
-        }
-      }
-    } catch (e) {
-      console.error("Image generation failed (non-blocking):", e);
-    }
+    const image = await generateNewsIllustration(AI_API_KEY, titolo);
 
     // Persist once in shared cache so all users reuse the same summary.
     const { error: cacheWriteError } = await supabase

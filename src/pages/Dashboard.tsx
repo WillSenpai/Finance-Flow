@@ -22,6 +22,51 @@ const formatDate = () => {
 type NewsItem = { titolo: string; fonte: string; tempo: string; link: string; summary: string | null; image: string | null };
 type AdminPost = { id: string; titolo: string; contenuto: string; emoji: string; tipo: string; image_url: string | null; visibility: string; created_at: string; scheduled_at: string | null };
 
+function getNextNewsRefresh(now: Date): Date {
+  const next = new Date(now);
+  next.setSeconds(0, 0);
+  const currentHour = now.getHours();
+  const nextHour = Math.floor(currentHour / 4) * 4 + 4;
+  if (nextHour >= 24) {
+    next.setDate(next.getDate() + 1);
+    next.setHours(0, 0, 0, 0);
+    return next;
+  }
+  next.setHours(nextHour, 0, 0, 0);
+  return next;
+}
+
+function formatRefreshCountdown(now: Date): string {
+  const target = getNextNewsRefresh(now);
+  const diffMs = Math.max(target.getTime() - now.getTime(), 0);
+  const totalMinutes = Math.ceil(diffMs / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours <= 0 && minutes <= 1) return "Prossimo aggiornamento tra meno di 1m";
+  if (hours <= 0) return `Prossimo aggiornamento tra ${minutes}m`;
+  if (minutes === 0) return `Prossimo aggiornamento tra ${hours}h`;
+  return `Prossimo aggiornamento tra ${hours}h ${minutes}m`;
+}
+
+function NewsImage({ src, alt, className }: { src: string | null; alt: string; className?: string }) {
+  const [hasError, setHasError] = useState(false);
+
+  if (!src || hasError) {
+    return (
+      <div className={`bg-gradient-to-br from-primary/15 via-sky-500/10 to-emerald-500/15 ${className ?? ""}`}>
+        <div className="flex h-full w-full items-center justify-center">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-background/70 text-primary shadow-sm">
+            <TrendingUp size={20} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return <img src={src} alt={alt} className={className} onError={() => setHasError(true)} />;
+}
+
 const Dashboard = () => {
   const { userData, salvadanai, spese } = useUser();
   const { points, streak, dailyActivities, awardPoints, checkBadges } = usePoints();
@@ -31,6 +76,7 @@ const Dashboard = () => {
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [selectedPost, setSelectedPost] = useState<AdminPost | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
+  const [newsRefreshLabel, setNewsRefreshLabel] = useState(() => formatRefreshCountdown(new Date()));
 
   // Fetch admin posts (published, non-future, visible to all)
   const { data: adminPosts = [] } = useQuery({
@@ -146,6 +192,13 @@ const Dashboard = () => {
     const salvadanaiCompletati = salvadanai.filter((s) => s.attuale >= s.obiettivo).length;
     checkBadges({ points, streak, salvadanaiCompletati, speseRegistrate: spese.length, lezioniCompletate: 0 });
   }, [points, streak, salvadanai, spese, checkBadges]);
+
+  useEffect(() => {
+    const updateLabel = () => setNewsRefreshLabel(formatRefreshCountdown(new Date()));
+    updateLabel();
+    const intervalId = window.setInterval(updateLabel, 30_000);
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   return (
     <motion.div className="px-5 pt-14 pb-4" variants={container} initial="hidden" animate="show">
@@ -268,7 +321,7 @@ const Dashboard = () => {
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <Newspaper size={18} /> News Finanziarie
           </h2>
-          <span className="text-[11px] text-muted-foreground">Aggiornamento ogni 4h</span>
+          <span className="text-[11px] text-muted-foreground text-right">{newsRefreshLabel}</span>
         </div>
 
         {/* Horizontal scroll news cards */}
@@ -296,6 +349,11 @@ const Dashboard = () => {
               whileTap={{ scale: 0.98 }}
               onClick={() => handleOpenNews(news[0])}
             >
+              <NewsImage
+                src={news[0].image}
+                alt={news[0].titolo}
+                className="h-44 w-full object-cover"
+              />
               <div className="bg-gradient-to-br from-primary/10 to-primary/5 p-4 pb-3">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="bg-primary/20 rounded-lg px-2 py-0.5">
@@ -319,22 +377,29 @@ const Dashboard = () => {
               {news.slice(1).map((n, i) => (
                 <motion.div
                   key={i}
-                  className="min-w-[220px] max-w-[240px] bg-card border border-border/50 rounded-2xl p-3.5 cursor-pointer flex-shrink-0 flex flex-col"
+                  className="min-w-[220px] max-w-[240px] bg-card border border-border/50 rounded-2xl overflow-hidden cursor-pointer flex-shrink-0 flex flex-col"
                   whileTap={{ scale: 0.97 }}
                   onClick={() => handleOpenNews(n)}
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <TrendingUp size={14} className="text-primary" />
+                  <NewsImage
+                    src={n.image}
+                    alt={n.titolo}
+                    className="h-28 w-full object-cover"
+                  />
+                  <div className="p-3.5 flex flex-1 flex-col">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <TrendingUp size={14} className="text-primary" />
+                      </div>
+                      <span className="text-[10px] text-muted-foreground truncate">{n.fonte}</span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground truncate">{n.fonte}</span>
-                  </div>
-                  <p className="text-xs font-medium leading-snug flex-1 line-clamp-3">{n.titolo}</p>
-                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/30">
-                    <span className="text-[10px] text-muted-foreground">{n.tempo}</span>
-                    <div className="flex items-center gap-1">
-                      {n.summary && <Sparkles size={10} className="text-primary" />}
-                      <ExternalLink size={10} className="text-muted-foreground" />
+                    <p className="text-xs font-medium leading-snug flex-1 line-clamp-3">{n.titolo}</p>
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/30">
+                      <span className="text-[10px] text-muted-foreground">{n.tempo}</span>
+                      <div className="flex items-center gap-1">
+                        {n.summary && <Sparkles size={10} className="text-primary" />}
+                        <ExternalLink size={10} className="text-muted-foreground" />
+                      </div>
                     </div>
                   </div>
                 </motion.div>

@@ -307,6 +307,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_lesson_intro_views: {
+        Row: {
+          created_at: string
+          lesson_id: string
+          seen_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          lesson_id: string
+          seen_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          lesson_id?: string
+          seen_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       news_cache: {
         Row: {
           created_at: string

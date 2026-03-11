@@ -6,6 +6,7 @@ import {
 } from "../_shared/ai.ts";
 import { buildCorsHeaders, rejectDisallowedOrigin } from "../_shared/cors.ts";
 import { requireAdminUser, requireAuthenticatedUser } from "../_shared/auth.ts";
+import { generateNewsIllustration } from "../_shared/news.ts";
 
 interface NewsItem {
   titolo: string;
@@ -135,16 +136,34 @@ serve(async (req) => {
     // 2. Check which are already cached
     const { data: existing } = await supabase
       .from("news_cache")
-      .select("titolo")
+      .select("titolo,image,summary")
       .in("titolo", top.map(n => n.titolo));
 
-    const existingTitles = new Set((existing || []).map((e: any) => e.titolo));
-    const newArticles = top.filter(n => !existingTitles.has(n.titolo));
+    const existingByTitle = new Map(
+      (existing || []).map((item: any) => [item.titolo as string, item as { titolo: string; image: string | null; summary: string | null }]),
+    );
+    const newArticles = top.filter(n => !existingByTitle.has(n.titolo));
+    const missingImageArticles = top.filter((article) => {
+      const cached = existingByTitle.get(article.titolo);
+      return cached && !cached.image;
+    });
+    const missingSummaryArticles = top.filter((article) => {
+      const cached = existingByTitle.get(article.titolo);
+      return cached && !cached.summary;
+    });
 
-    console.log(`${newArticles.length} new articles to process`);
+    console.log(
+      `${newArticles.length} new articles, ${missingImageArticles.length} missing image, ${missingSummaryArticles.length} missing summary`,
+    );
 
-    // 3. Generate summary for new articles (max 4 at a time)
-    const toProcess = newArticles.slice(0, 4);
+    // 3. Generate summary for new articles plus any cached rows missing summary.
+    const summaryCandidates = [...newArticles];
+    for (const article of missingSummaryArticles) {
+      if (!summaryCandidates.some((candidate) => candidate.titolo === article.titolo)) {
+        summaryCandidates.push(article);
+      }
+    }
+    const toProcess = summaryCandidates.slice(0, 4);
 
     for (const article of toProcess) {
       try {
@@ -196,14 +215,16 @@ Scrivi SOLO il riassunto, senza titoli o prefissi. Tono professionale ma accessi
           await summaryResp.text();
         }
 
-        // Upsert into cache (skip image gen for speed - generate on-demand in news-summary)
+        const image = await generateNewsIllustration(AI_API_KEY, article.titolo);
+
+        // Upsert into cache with best-effort preview image.
         await supabase.from("news_cache").upsert({
           titolo: article.titolo,
           fonte: article.fonte,
           link: article.link,
           tempo: article.tempo,
           summary,
-          image: null,
+          image,
         }, { onConflict: "titolo" });
 
         console.log(`Cached: ${article.titolo.slice(0, 50)}...`);
@@ -212,17 +233,27 @@ Scrivi SOLO il riassunto, senza titoli o prefissi. Tono professionale ma accessi
       }
     }
 
-    // 4. Also insert non-processed articles without summary for immediate display
-    const remaining = newArticles.slice(4);
-    if (remaining.length > 0) {
-      const inserts = remaining.map(a => ({
-        titolo: a.titolo,
-        fonte: a.fonte,
-        link: a.link,
-        tempo: a.tempo,
-        summary: null,
-        image: null,
-      }));
+    // 4. Backfill missing preview images for cached rows and seed remaining fresh news.
+    const imageOnlyCandidates = [...missingImageArticles];
+    for (const article of newArticles.slice(4)) {
+      if (!imageOnlyCandidates.some((candidate) => candidate.titolo === article.titolo)) {
+        imageOnlyCandidates.push(article);
+      }
+    }
+
+    if (imageOnlyCandidates.length > 0) {
+      const inserts = [];
+      for (const article of imageOnlyCandidates) {
+        const image = await generateNewsIllustration(AI_API_KEY, article.titolo);
+        inserts.push({
+          titolo: article.titolo,
+          fonte: article.fonte,
+          link: article.link,
+          tempo: article.tempo,
+          summary: existingByTitle.get(article.titolo)?.summary ?? null,
+          image,
+        });
+      }
       await supabase.from("news_cache").upsert(inserts, { onConflict: "titolo" });
     }
 
