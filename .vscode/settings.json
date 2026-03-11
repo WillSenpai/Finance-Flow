@@ -1,0 +1,25 @@
+{
+  "git.autoRepositoryDetection": "openEditors",
+  "git.scanRepositories": [],
+  "git.openRepositoryInParentFolders": "never",
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/android/.gradle/**": true,
+    "**/android/build/**": true,
+    "**/ios/DerivedData/**": true,
+    "**/ios/Pods/**": true,
+    "**/ios/build/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/android/build": true,
+    "**/ios/DerivedData": true,
+    "**/ios/build": true,
+    "**/ios/Pods": true
+  },
+  "java.configuration.updateBuildConfiguration": "interactive"
+}

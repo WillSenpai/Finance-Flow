@@ -18,6 +18,7 @@ dist-ssr
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 .idea
 .DS_Store
 *.suo
@@ -30,3 +31,6 @@ dist-ssr
 # Local docs not to version
 docs/guida-beta-testing.md
 docs/guida-testflight-completa.md
+
+# Native build artifacts
+ios/DerivedData/
