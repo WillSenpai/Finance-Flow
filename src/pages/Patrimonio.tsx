@@ -1,16 +1,23 @@
-import { useEffect } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TrendingUp, Trash2, Target, BookOpen, ArrowUpRight, Receipt, Calculator, PiggyBank, Landmark } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUser } from "@/hooks/useUser";
 import { usePoints } from "@/contexts/PointsContext";
+import { useAuth } from "@/contexts/AuthContext";
+import type { CategoriaSpesa, Salvadanaio, Spesa } from "@/contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import WhatIfSimulator from "@/components/WhatIfSimulator";
 import { useSharedWorkspace } from "@/hooks/useSharedWorkspace";
+import {
+  getPatrimonioSectionPreference,
+  setPatrimonioSectionPreference,
+  type PatrimonioSection,
+} from "@/lib/patrimonioSectionPreference";
 
 const formatEuro = (n: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
@@ -21,23 +28,253 @@ const item = {
   show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } },
 } as const;
 
+const sectionMeta: Record<PatrimonioSection, { title: string; description: string }> = {
+  salvadanai: {
+    title: "I tuoi Salvadanai",
+    description: "Segui i tuoi obiettivi di risparmio e mostra solo quello che ti serve adesso.",
+  },
+  spese: {
+    title: "Le tue Spese",
+    description: "Controlla le spese recenti senza occupare spazio quando vuoi concentrarti su altro.",
+  },
+};
+
+function SalvadanaiSectionContent({
+  salvadanai,
+  setSalvadanai,
+  onOpenManager,
+}: {
+  salvadanai: Salvadanaio[];
+  setSalvadanai: (salvadanai: Salvadanaio[]) => void;
+  onOpenManager: () => void;
+}) {
+  if (salvadanai.length === 0) {
+    return (
+      <motion.button
+        whileTap={{ scale: 0.97 }}
+        onClick={onOpenManager}
+        className="w-full bg-card border border-border/50 rounded-2xl p-5 text-center"
+      >
+        <p className="text-2xl mb-2">🐷</p>
+        <p className="text-sm font-medium">Crea il tuo primo salvadanaio</p>
+        <p className="text-xs text-muted-foreground mt-1">Imposta un obiettivo e inizia a metterti da parte qualcosa.</p>
+      </motion.button>
+    );
+  }
+
+  return (
+    <AnimatePresence mode="popLayout" initial={false}>
+      {salvadanai.map((s) => {
+        const perc = Math.round((s.attuale / s.obiettivo) * 100);
+        return (
+          <motion.div
+            key={s.nome}
+            layout
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, x: -80, height: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="mb-4 last:mb-0"
+          >
+            <div className="bg-card rounded-2xl p-4 border border-border/50">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium">{s.nome}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">{perc}%</span>
+                  <motion.button
+                    whileTap={{ scale: 0.85 }}
+                    onClick={() => setSalvadanai(salvadanai.filter((x) => x.nome !== s.nome))}
+                    className="text-muted-foreground/50 hover:text-destructive transition-colors p-0.5"
+                  >
+                    <Trash2 size={14} />
+                  </motion.button>
+                </div>
+              </div>
+              <Progress value={perc} className="h-2.5 rounded-full" />
+              <p className="text-xs text-muted-foreground mt-2">
+                {formatEuro(s.attuale)} di {formatEuro(s.obiettivo)}
+              </p>
+            </div>
+          </motion.div>
+        );
+      })}
+    </AnimatePresence>
+  );
+}
+
+function SpeseSectionContent({
+  spese,
+  categorieSpese,
+  onOpenManager,
+}: {
+  spese: Spesa[];
+  categorieSpese: CategoriaSpesa[];
+  onOpenManager: () => void;
+}) {
+  if (spese.length === 0) {
+    return (
+      <motion.button
+        whileTap={{ scale: 0.97 }}
+        onClick={onOpenManager}
+        className="w-full bg-card border border-border/50 rounded-2xl p-5 text-center"
+      >
+        <p className="text-2xl mb-2">💸</p>
+        <p className="text-sm font-medium">Inizia a tracciare le tue spese</p>
+        <p className="text-xs text-muted-foreground mt-1">Tieni sotto controllo dove vanno i tuoi soldi</p>
+      </motion.button>
+    );
+  }
+
+  const now = new Date();
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const monthly = spese.filter((s) => s.data.startsWith(thisMonth));
+  const total = monthly.reduce((acc, s) => acc + s.importo, 0);
+  const byCat = monthly.reduce<Record<string, number>>((acc, s) => {
+    acc[s.categoriaId] = (acc[s.categoriaId] || 0) + s.importo;
+    return acc;
+  }, {});
+
+  return (
+    <div className="space-y-2">
+      <div className="bg-card border border-border/50 rounded-2xl p-4 flex items-center justify-between">
+        <span className="text-sm font-medium">Spese questo mese</span>
+        <span className="text-lg font-bold text-destructive">{formatEuro(total)}</span>
+      </div>
+      {Object.entries(byCat)
+        .slice(0, 4)
+        .map(([catId, val]) => {
+          const cat = categorieSpese.find((c) => c.id === catId);
+          return (
+            <div
+              key={catId}
+              className="bg-card border border-border/50 rounded-2xl p-3 flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2">
+                <span>{cat?.emoji || "📦"}</span>
+                <span className="text-xs font-medium">{cat?.nome || "Altro"}</span>
+              </div>
+              <span className="text-xs font-bold">{formatEuro(val)}</span>
+            </div>
+          );
+        })}
+    </div>
+  );
+}
+
+function PatrimonioFocusSection({
+  activeSection,
+  onSectionChange,
+  salvadanai,
+  setSalvadanai,
+  spese,
+  categorieSpese,
+  onOpenSalvadanai,
+  onOpenSpese,
+  className,
+}: {
+  activeSection: PatrimonioSection;
+  onSectionChange: (section: PatrimonioSection) => void;
+  salvadanai: Salvadanaio[];
+  setSalvadanai: (salvadanai: Salvadanaio[]) => void;
+  spese: Spesa[];
+  categorieSpese: CategoriaSpesa[];
+  onOpenSalvadanai: () => void;
+  onOpenSpese: () => void;
+  className?: string;
+}) {
+  const activeMeta = sectionMeta[activeSection];
+
+  return (
+    <motion.div className={className} variants={item}>
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="min-w-0">
+          <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">Sezione in evidenza</p>
+          <h2 className="text-lg font-semibold mt-1">{activeMeta.title}</h2>
+          <p className="text-xs text-muted-foreground mt-1">
+            Scegli la sezione da visualizzare per tenere questa schermata piu ordinata.
+          </p>
+        </div>
+        {activeSection === "spese" ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-full gap-1 text-xs shrink-0"
+            onClick={onOpenSpese}
+          >
+            Gestisci
+          </Button>
+        ) : null}
+      </div>
+
+      <Select value={activeSection} onValueChange={(value) => onSectionChange(value as PatrimonioSection)}>
+        <SelectTrigger className="rounded-2xl h-12 bg-card">
+          <SelectValue placeholder="Scegli una sezione" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="salvadanai">Salvadanai</SelectItem>
+          <SelectItem value="spese">Spese</SelectItem>
+        </SelectContent>
+      </Select>
+
+      <p className="text-xs text-muted-foreground mt-3">{activeMeta.description}</p>
+
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={activeSection}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          className="mt-4"
+        >
+          {activeSection === "salvadanai" ? (
+            <SalvadanaiSectionContent
+              salvadanai={salvadanai}
+              setSalvadanai={setSalvadanai}
+              onOpenManager={onOpenSalvadanai}
+            />
+          ) : (
+            <SpeseSectionContent
+              spese={spese}
+              categorieSpese={categorieSpese}
+              onOpenManager={onOpenSpese}
+            />
+          )}
+        </motion.div>
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
 const Patrimonio = () => {
   const [simulatorOpen, setSimulatorOpen] = useState(false);
+  const { user } = useAuth();
   const { userData, categorie, salvadanai, setSalvadanai, investimenti, spese, categorieSpese } = useUser();
   const { awardPoints } = usePoints();
   const navigate = useNavigate();
   const { hasActiveWorkspace, pendingInvites } = useSharedWorkspace();
+  const [activeSection, setActiveSection] = useState<PatrimonioSection>(() => getPatrimonioSectionPreference(user?.id));
   const isBeginner = userData.level === "beginner";
 
   useEffect(() => {
     awardPoints("review_patrimonio");
   }, [awardPoints]);
 
+  useEffect(() => {
+    setActiveSection(getPatrimonioSectionPreference(user?.id));
+  }, [user?.id]);
+
+  const handleSectionChange = (section: PatrimonioSection) => {
+    setActiveSection(section);
+    if (user?.id) {
+      setPatrimonioSectionPreference(user.id, section);
+    }
+  };
+
   const totaleCategorie = categorie.reduce((acc, c) => acc + c.valore, 0);
   const totaleInvestimenti = investimenti.reduce((acc, i) => acc + i.valore, 0);
   const totale = totaleCategorie + totaleInvestimenti;
 
-  // Chart data: categorie + investimenti as one segment
   const chartData = [
     ...categorie.map((c) => ({ nome: c.nome, valore: c.valore, colore: c.colore })),
     ...(totaleInvestimenti > 0
@@ -45,7 +282,6 @@ const Patrimonio = () => {
       : []),
   ];
 
-  // === BEGINNER VIEW ===
   if (isBeginner) {
     return (
       <motion.div className="px-5 pt-14 pb-4" variants={container} initial="hidden" animate="show">
@@ -122,138 +358,44 @@ const Patrimonio = () => {
               <BookOpen size={20} className="text-accent-foreground" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium">Cos'è l'inflazione e perché ti ruba i soldi</p>
+              <p className="text-sm font-medium">Cos&apos;e l&apos;inflazione e perche ti ruba i soldi</p>
               <p className="text-xs text-muted-foreground">5 min • Lezione base</p>
             </div>
             <ArrowUpRight size={16} className="text-muted-foreground flex-shrink-0" />
           </motion.button>
         </motion.div>
 
-        <motion.div className="mt-8" variants={item}>
-          <h2 className="text-lg font-semibold mb-4">I tuoi Salvadanai</h2>
-          <AnimatePresence initial={false}>
-            {salvadanai.map((s) => {
-              const perc = Math.round((s.attuale / s.obiettivo) * 100);
-              return (
-                <motion.div
-                  key={s.nome}
-                  layout
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, x: -80, height: 0 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                  className="mb-4 last:mb-0"
-                >
-                  <div className="bg-card rounded-2xl p-4 border border-border/50">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium">{s.nome}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">{perc}%</span>
-                        <motion.button
-                          whileTap={{ scale: 0.85 }}
-                          onClick={() => setSalvadanai(salvadanai.filter((x) => x.nome !== s.nome))}
-                          className="text-muted-foreground/50 hover:text-destructive transition-colors p-0.5"
-                        >
-                          <Trash2 size={14} />
-                        </motion.button>
-                      </div>
-                    </div>
-                    <Progress value={perc} className="h-2.5 rounded-full" />
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {formatEuro(s.attuale)} di {formatEuro(s.obiettivo)}
-                    </p>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </motion.div>
+        <PatrimonioFocusSection
+          className="mt-8"
+          activeSection={activeSection}
+          onSectionChange={handleSectionChange}
+          salvadanai={salvadanai}
+          setSalvadanai={setSalvadanai}
+          spese={spese}
+          categorieSpese={categorieSpese}
+          onOpenSalvadanai={() => navigate("/patrimonio/salvadanai")}
+          onOpenSpese={() => navigate("/patrimonio/spese")}
+        />
 
-        {/* What If Simulator Button */}
-        <motion.div className="mt-8" variants={item}>
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={() => setSimulatorOpen(true)}
-            className="w-full bg-primary/10 border border-primary/20 rounded-2xl p-5 flex items-center gap-4 text-left"
-          >
-            <div className="w-11 h-11 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <Calculator size={22} className="text-primary" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold">Simulatore What If 🔮</p>
-              <p className="text-xs text-muted-foreground">Scopri quanto prima puoi raggiungere i tuoi obiettivi</p>
-            </div>
-            <ArrowUpRight size={16} className="text-primary flex-shrink-0" />
-          </motion.button>
-        </motion.div>
-
-        {/* Spese section */}
-        <motion.div className="mt-8" variants={item}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Receipt size={18} /> Le tue Spese
-            </h2>
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full gap-1 text-xs"
-              onClick={() => navigate("/patrimonio/spese")}
-            >
-              Gestisci
-            </Button>
-          </div>
-          {spese.length === 0 ? (
+        {activeSection === "salvadanai" ? (
+          <motion.div className="mt-8" variants={item}>
             <motion.button
               whileTap={{ scale: 0.97 }}
-              onClick={() => navigate("/patrimonio/spese")}
-              className="w-full bg-card border border-border/50 rounded-2xl p-5 text-center"
+              onClick={() => setSimulatorOpen(true)}
+              className="w-full bg-primary/10 border border-primary/20 rounded-2xl p-5 flex items-center gap-4 text-left"
             >
-              <p className="text-2xl mb-2">💸</p>
-              <p className="text-sm font-medium">Inizia a tracciare le tue spese</p>
-              <p className="text-xs text-muted-foreground mt-1">Tieni sotto controllo dove vanno i tuoi soldi</p>
+              <div className="w-11 h-11 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <Calculator size={22} className="text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold">Simulatore What If 🔮</p>
+                <p className="text-xs text-muted-foreground">Scopri quanto prima puoi raggiungere i tuoi obiettivi</p>
+              </div>
+              <ArrowUpRight size={16} className="text-primary flex-shrink-0" />
             </motion.button>
-          ) : (
-            <div className="space-y-2">
-              {(() => {
-                const now = new Date();
-                const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-                const monthly = spese.filter((s) => s.data.startsWith(thisMonth));
-                const total = monthly.reduce((a, s) => a + s.importo, 0);
-                const byCat = monthly.reduce<Record<string, number>>((a, s) => {
-                  a[s.categoriaId] = (a[s.categoriaId] || 0) + s.importo;
-                  return a;
-                }, {});
-                return (
-                  <>
-                    <div className="bg-card border border-border/50 rounded-2xl p-4 flex items-center justify-between">
-                      <span className="text-sm font-medium">Spese questo mese</span>
-                      <span className="text-lg font-bold text-destructive">{formatEuro(total)}</span>
-                    </div>
-                    {Object.entries(byCat)
-                      .slice(0, 4)
-                      .map(([catId, val]) => {
-                        const cat = categorieSpese.find((c) => c.id === catId);
-                        return (
-                          <div
-                            key={catId}
-                            className="bg-card border border-border/50 rounded-2xl p-3 flex items-center justify-between"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span>{cat?.emoji || "📦"}</span>
-                              <span className="text-xs font-medium">{cat?.nome || "Altro"}</span>
-                            </div>
-                            <span className="text-xs font-bold">{formatEuro(val)}</span>
-                          </div>
-                        );
-                      })}
-                  </>
-                );
-              })()}
-            </div>
-          )}
-        </motion.div>
+          </motion.div>
+        ) : null}
 
-        {/* Simulator Drawer */}
         <Drawer open={simulatorOpen} onOpenChange={setSimulatorOpen}>
           <DrawerContent className="max-h-[90vh]">
             <div className="px-5 pb-6 pt-2 overflow-y-auto">
@@ -268,7 +410,6 @@ const Patrimonio = () => {
     );
   }
 
-  // === INTERMEDIATE / PRO VIEW ===
   return (
     <motion.div className="px-5 pt-14 pb-4" variants={container} initial="hidden" animate="show">
       <motion.div variants={item}>
@@ -375,131 +516,37 @@ const Patrimonio = () => {
         </div>
       </motion.div>
 
-      <motion.div className="mt-8" variants={item}>
-        <h2 className="text-lg font-semibold mb-4">I tuoi Salvadanai</h2>
-        <AnimatePresence initial={false}>
-          {salvadanai.map((s) => {
-            const perc = Math.round((s.attuale / s.obiettivo) * 100);
-            return (
-              <motion.div
-                key={s.nome}
-                layout
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, x: -80, height: 0 }}
-                transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                className="mb-4 last:mb-0"
-              >
-                <div className="bg-card rounded-2xl p-4 border border-border/50">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium">{s.nome}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">{perc}%</span>
-                      <motion.button
-                        whileTap={{ scale: 0.85 }}
-                        onClick={() => setSalvadanai(salvadanai.filter((x) => x.nome !== s.nome))}
-                        className="text-muted-foreground/50 hover:text-destructive transition-colors p-0.5"
-                      >
-                        <Trash2 size={14} />
-                      </motion.button>
-                    </div>
-                  </div>
-                  <Progress value={perc} className="h-2.5 rounded-full" />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {formatEuro(s.attuale)} di {formatEuro(s.obiettivo)}
-                  </p>
-                </div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
-      </motion.div>
+      <PatrimonioFocusSection
+        className="mt-8"
+        activeSection={activeSection}
+        onSectionChange={handleSectionChange}
+        salvadanai={salvadanai}
+        setSalvadanai={setSalvadanai}
+        spese={spese}
+        categorieSpese={categorieSpese}
+        onOpenSalvadanai={() => navigate("/patrimonio/salvadanai")}
+        onOpenSpese={() => navigate("/patrimonio/spese")}
+      />
 
-      {/* What If Simulator Button */}
-      <motion.div className="mt-8" variants={item}>
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={() => setSimulatorOpen(true)}
-          className="w-full bg-primary/10 border border-primary/20 rounded-2xl p-5 flex items-center gap-4 text-left"
-        >
-          <div className="w-11 h-11 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-            <Calculator size={22} className="text-primary" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold">Simulatore What If 🔮</p>
-            <p className="text-xs text-muted-foreground">Scopri quanto prima puoi raggiungere i tuoi obiettivi</p>
-          </div>
-          <ArrowUpRight size={16} className="text-primary flex-shrink-0" />
-        </motion.button>
-      </motion.div>
-
-      {/* Spese section */}
-      <motion.div className="mt-8 mb-4" variants={item}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Receipt size={18} /> Le tue Spese
-          </h2>
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-full gap-1 text-xs"
-            onClick={() => navigate("/patrimonio/spese")}
-          >
-            Gestisci
-          </Button>
-        </div>
-        {spese.length === 0 ? (
+      {activeSection === "salvadanai" ? (
+        <motion.div className="mt-8" variants={item}>
           <motion.button
             whileTap={{ scale: 0.97 }}
-            onClick={() => navigate("/patrimonio/spese")}
-            className="w-full bg-card border border-border/50 rounded-2xl p-5 text-center"
+            onClick={() => setSimulatorOpen(true)}
+            className="w-full bg-primary/10 border border-primary/20 rounded-2xl p-5 flex items-center gap-4 text-left"
           >
-            <p className="text-2xl mb-2">💸</p>
-            <p className="text-sm font-medium">Inizia a tracciare le tue spese</p>
-            <p className="text-xs text-muted-foreground mt-1">Tieni sotto controllo dove vanno i tuoi soldi</p>
+            <div className="w-11 h-11 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+              <Calculator size={22} className="text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold">Simulatore What If 🔮</p>
+              <p className="text-xs text-muted-foreground">Scopri quanto prima puoi raggiungere i tuoi obiettivi</p>
+            </div>
+            <ArrowUpRight size={16} className="text-primary flex-shrink-0" />
           </motion.button>
-        ) : (
-          <div className="space-y-2">
-            {(() => {
-              const now = new Date();
-              const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-              const monthly = spese.filter((s) => s.data.startsWith(thisMonth));
-              const total = monthly.reduce((a, s) => a + s.importo, 0);
-              const byCat = monthly.reduce<Record<string, number>>((a, s) => {
-                a[s.categoriaId] = (a[s.categoriaId] || 0) + s.importo;
-                return a;
-              }, {});
-              return (
-                <>
-                  <div className="bg-card border border-border/50 rounded-2xl p-4 flex items-center justify-between">
-                    <span className="text-sm font-medium">Spese questo mese</span>
-                    <span className="text-lg font-bold text-destructive">{formatEuro(total)}</span>
-                  </div>
-                  {Object.entries(byCat)
-                    .slice(0, 4)
-                    .map(([catId, val]) => {
-                      const cat = categorieSpese.find((c) => c.id === catId);
-                      return (
-                        <div
-                          key={catId}
-                          className="bg-card border border-border/50 rounded-2xl p-3 flex items-center justify-between"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span>{cat?.emoji || "📦"}</span>
-                            <span className="text-xs font-medium">{cat?.nome || "Altro"}</span>
-                          </div>
-                          <span className="text-xs font-bold">{formatEuro(val)}</span>
-                        </div>
-                      );
-                    })}
-                </>
-              );
-            })()}
-          </div>
-        )}
-      </motion.div>
+        </motion.div>
+      ) : null}
 
-      {/* Simulator Drawer */}
       <Drawer open={simulatorOpen} onOpenChange={setSimulatorOpen}>
         <DrawerContent className="max-h-[90vh]">
           <div className="px-5 pb-6 pt-2 overflow-y-auto">

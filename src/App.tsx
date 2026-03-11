@@ -19,7 +19,11 @@ import { useUser } from "@/hooks/useUser";
 import { PointsProvider } from "./contexts/PointsContext";
 import { useOpeningBootstrap } from "./hooks/useOpeningBootstrap";
 import { hideNativeSplash } from "./lib/nativeSplash";
-import { isOpeningLoaderEnabled, OPENING_LOADER_PREF_EVENT } from "./lib/openingLoaderPreference";
+import {
+  isOpeningLoaderEnabled,
+  OPENING_LOADER_PREF_EVENT,
+  resolveOpeningLoaderEnabled,
+} from "./lib/openingLoaderPreference";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const GestisciPatrimonio = lazy(() => import("./pages/GestisciPatrimonio"));
@@ -137,7 +141,9 @@ const AppBootstrapGate = () => {
   const { user, loading: authLoading } = useAuth();
   const { loadingData } = useUser();
   const { SplashComponent } = useSplash();
-  const [openingEnabled, setOpeningEnabled] = useState<boolean>(() => isOpeningLoaderEnabled(user?.id));
+  const [openingEnabled, setOpeningEnabled] = useState<boolean | null>(() =>
+    resolveOpeningLoaderEnabled({ authLoading, userId: user?.id }),
+  );
   const { showOpening, canExit, markExited } = useOpeningBootstrap({
     authLoading,
     hasUser: Boolean(user),
@@ -151,8 +157,8 @@ const AppBootstrapGate = () => {
   }, []);
 
   useEffect(() => {
-    setOpeningEnabled(isOpeningLoaderEnabled(user?.id));
-  }, [user?.id]);
+    setOpeningEnabled(resolveOpeningLoaderEnabled({ authLoading, userId: user?.id }));
+  }, [authLoading, user?.id]);
 
   useEffect(() => {
     const onPrefChange = (event: Event) => {
@@ -167,7 +173,7 @@ const AppBootstrapGate = () => {
   }, [user?.id]);
 
   useEffect(() => {
-    if (!openingEnabled && showOpening) {
+    if (openingEnabled === false && showOpening) {
       markExited();
     }
   }, [markExited, openingEnabled, showOpening]);
@@ -178,7 +184,7 @@ const AppBootstrapGate = () => {
     }
   }, [canExit, markExited]);
 
-  const shouldShowOpening = openingEnabled && showOpening;
+  const shouldShowOpening = openingEnabled === true && showOpening;
 
   return (
     <>

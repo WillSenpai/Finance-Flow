@@ -12,6 +12,17 @@ export function isOpeningLoaderEnabled(userId?: string | null): boolean {
   return raw === "1";
 }
 
+export function resolveOpeningLoaderEnabled({
+  authLoading,
+  userId,
+}: {
+  authLoading: boolean;
+  userId?: string | null;
+}): boolean | null {
+  if (authLoading) return null;
+  return isOpeningLoaderEnabled(userId);
+}
+
 export function setOpeningLoaderEnabled(userId: string, enabled: boolean): void {
   window.localStorage.setItem(keyFor(userId), enabled ? "1" : "0");
   window.dispatchEvent(
