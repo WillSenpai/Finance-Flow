@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -19,20 +19,14 @@ import {
 
 interface PatrimonioCategoryCardProps {
   category: DraftCategoria;
-  isFirst: boolean;
-  isLast: boolean;
   onChange: (localId: string, updates: Partial<DraftCategoria>) => void;
   onDelete: (localId: string) => void;
-  onMove: (localId: string, direction: "up" | "down") => void;
 }
 
 export function PatrimonioCategoryCard({
   category,
-  isFirst,
-  isLast,
   onChange,
   onDelete,
-  onMove,
 }: PatrimonioCategoryCardProps) {
   const [open, setOpen] = useState(false);
   const [draftName, setDraftName] = useState(category.nome);
@@ -63,52 +57,32 @@ export function PatrimonioCategoryCard({
     <>
       <Card className="rounded-3xl border-border/60 shadow-none">
         <CardContent className="p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex items-center gap-3">
               <span
-                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border text-xl"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border text-lg"
                 style={{ backgroundColor: `${category.colore}22`, borderColor: category.colore }}
               >
                 {category.emoji || "🪙"}
               </span>
-              <div>
-                <p className="text-sm font-semibold">{category.nome || "Nuova categoria"}</p>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{category.nome || "Nuova categoria"}</p>
                 <p className="text-xs text-muted-foreground">{formatEuro(category.valore)}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-9 w-9 rounded-xl"
-                onClick={() => onMove(category.localId, "up")}
-                disabled={isFirst}
-              >
-                <ArrowUp size={16} />
+            <div className="flex shrink-0 items-center gap-1.5 self-center">
+              <Button type="button" variant="outline" className="h-8 rounded-lg px-2.5 text-xs" onClick={() => setOpen(true)}>
+                <Pencil size={13} className="mr-1.5" /> Modifica
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
-                className="h-9 w-9 rounded-xl"
-                onClick={() => onMove(category.localId, "down")}
-                disabled={isLast}
-              >
-                <ArrowDown size={16} />
-              </Button>
-              <Button type="button" variant="outline" className="h-9 rounded-xl px-3" onClick={() => setOpen(true)}>
-                <Pencil size={14} className="mr-2" /> Modifica
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-9 w-9 rounded-xl text-destructive"
+                className="h-8 w-8 rounded-lg text-destructive"
                 onClick={() => onDelete(category.localId)}
               >
-                <Trash2 size={16} />
+                <Trash2 size={14} />
               </Button>
             </div>
           </div>

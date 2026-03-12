@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PatrimonioCategoryCard } from "@/components/patrimonio/PatrimonioCategoryCard";
 import { PatrimonioCategoryQuickAdd } from "@/components/patrimonio/PatrimonioCategoryQuickAdd";
 import { PatrimonioDeleteDialog } from "@/components/patrimonio/PatrimonioDeleteDialog";
@@ -54,21 +54,6 @@ const GestisciPatrimonio = () => {
     setCategorieDraft((current) =>
       current.map((cat) => (cat.localId === localId ? { ...cat, ...updates } : cat)),
     );
-  };
-
-  const moveCategory = (localId: string, direction: "up" | "down") => {
-    setCategorieDraft((current) => {
-      const index = current.findIndex((cat) => cat.localId === localId);
-      if (index === -1) return current;
-
-      const targetIndex = direction === "up" ? index - 1 : index + 1;
-      if (targetIndex < 0 || targetIndex >= current.length) return current;
-
-      const next = [...current];
-      const [item] = next.splice(index, 1);
-      next.splice(targetIndex, 0, item);
-      return next;
-    });
   };
 
   const handleAddFunds = () => {
@@ -195,39 +180,33 @@ const GestisciPatrimonio = () => {
       </button>
 
       <div className="space-y-6">
-        <Card className="rounded-3xl border-border/60 shadow-none">
-          <CardHeader>
-            <CardTitle className="text-2xl">Gestisci Patrimonio 🏦</CardTitle>
-            <CardDescription>
-              Crea, ordina e personalizza le categorie. Se elimini una categoria con saldo, il valore viene spostato prima.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <PatrimonioCategoryQuickAdd
-              amountInput={amountInput}
-              categories={categorieDraft}
-              onAddCategory={handleAddCategory}
-              onAddFunds={handleAddFunds}
-              onAmountInputChange={setAmountInput}
-              onSelectedCategoryChange={setSelectedCategoryId}
-              selectedCategoryId={selectedCategoryId}
-            />
-          </CardContent>
-        </Card>
+        <CardHeader className="px-0 pb-0">
+          <CardTitle className="text-2xl">Gestisci Patrimonio 🏦</CardTitle>
+          <CardDescription>
+            Crea e personalizza le categorie. Se elimini una categoria con saldo, il valore viene spostato prima.
+          </CardDescription>
+        </CardHeader>
+
+        <PatrimonioCategoryQuickAdd
+          amountInput={amountInput}
+          categories={categorieDraft}
+          onAddCategory={handleAddCategory}
+          onAddFunds={handleAddFunds}
+          onAmountInputChange={setAmountInput}
+          onSelectedCategoryChange={setSelectedCategoryId}
+          selectedCategoryId={selectedCategoryId}
+        />
 
         <section className="space-y-4">
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">Categorie</h2>
           </div>
-          {categorieDraft.map((category, index) => (
+          {categorieDraft.map((category) => (
             <PatrimonioCategoryCard
               key={category.localId}
               category={category}
-              isFirst={index === 0}
-              isLast={index === categorieDraft.length - 1}
               onChange={handleDraftChange}
               onDelete={handleDeleteRequest}
-              onMove={moveCategory}
             />
           ))}
         </section>

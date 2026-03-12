@@ -9,7 +9,7 @@ import {
   Sparkles,
   TrendingUp,
 } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Sector, Tooltip } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -85,6 +85,90 @@ function formatFreshness(date: string | null) {
 
 function formatMonthLabel() {
   return new Date().toLocaleDateString("it-IT", { month: "long" });
+}
+
+function AllocationTooltip({
+  active,
+  payload,
+  total,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload: { nome: string; valore: number; colore: string } }>;
+  total: number;
+}) {
+  if (!active || !payload?.length) return null;
+
+  const entry = payload[0]?.payload;
+  if (!entry) return null;
+
+  const share = total > 0 ? clampPercentage((entry.valore / total) * 100) : 0;
+
+  return (
+    <div className="rounded-[1.1rem] border border-border/70 bg-card px-3 py-2.5 shadow-[0_18px_34px_-24px_hsl(var(--foreground)/0.35)]">
+      <div className="flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.colore }} />
+        <span className="text-xs font-semibold text-foreground">{entry.nome}</span>
+      </div>
+      <div className="mt-2 flex items-baseline justify-between gap-3">
+        <span className="text-sm font-semibold text-foreground">{formatEuro(entry.valore)}</span>
+        <span className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{share}%</span>
+      </div>
+    </div>
+  );
+}
+
+type ActiveAllocationShapeProps = {
+  cx: number;
+  cy: number;
+  innerRadius: number;
+  outerRadius: number;
+  startAngle: number;
+  endAngle: number;
+  fill: string;
+  payload?: { nome?: string; valore?: number };
+};
+
+function renderActiveAllocationShape(props: ActiveAllocationShapeProps) {
+  const {
+    cx,
+    cy,
+    innerRadius,
+    outerRadius,
+    startAngle,
+    endAngle,
+    fill,
+    payload,
+  } = props;
+
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={outerRadius + 8} fill={fill} opacity={0.12} />
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius + 4}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+        stroke="hsl(var(--card))"
+        strokeWidth={4}
+        cornerRadius={12}
+      />
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={outerRadius + 8}
+        outerRadius={outerRadius + 11}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+        opacity={0.85}
+        cornerRadius={12}
+      />
+      <title>{`${payload?.nome ?? "Categoria"}: ${formatEuro(payload?.valore ?? 0)}`}</title>
+    </g>
+  );
 }
 
 function WealthHero({
@@ -296,6 +380,10 @@ function AllocationSnapshot({
   hiddenBucketsCount: number;
   hiddenBucketsValue: number;
 }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeEntry = chartData[activeIndex] ?? chartData[0];
+  const activeShare = activeEntry && total > 0 ? clampPercentage((activeEntry.valore / total) * 100) : 0;
+
   return (
     <motion.section variants={item} className={`mt-6 ${shellSurface} p-5`}>
       <div className="flex items-end justify-between gap-3">
@@ -308,8 +396,9 @@ function AllocationSnapshot({
         </div>
       </div>
 
-      <div className="mt-4 flex flex-col gap-4 sm:grid sm:grid-cols-[9rem_1fr] sm:items-center">
-        <div className="relative h-36 w-36">
+      <div className="mt-4 flex flex-col gap-4 sm:grid sm:grid-cols-[10.5rem_1fr] sm:items-center">
+        <div className="relative h-40 w-40">
+          <div className="pointer-events-none absolute inset-[14%] rounded-full bg-[radial-gradient(circle,hsla(0,0%,100%,0.5),transparent_68%)]" />
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -318,51 +407,78 @@ function AllocationSnapshot({
                 nameKey="nome"
                 cx="50%"
                 cy="50%"
-                innerRadius={38}
-                outerRadius={62}
-                paddingAngle={3}
+                innerRadius={44}
+                outerRadius={66}
+                paddingAngle={2}
+                cornerRadius={10}
+                activeIndex={activeIndex}
+                activeShape={renderActiveAllocationShape}
+                onMouseEnter={(_, index) => setActiveIndex(index)}
+                onClick={(_, index) => setActiveIndex(index)}
                 stroke="hsl(var(--card))"
-                strokeWidth={3}
+                strokeWidth={4}
               >
                 {chartData.map((entry) => (
                   <Cell key={entry.nome} fill={entry.colore} />
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value: number) => formatEuro(value)}
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "16px",
-                  fontSize: "12px",
-                }}
+                cursor={false}
+                content={<AllocationTooltip total={total} />}
               />
             </PieChart>
           </ResponsiveContainer>
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Top bucket</span>
-            <span className="mt-1 text-center text-sm font-semibold leading-4">{topCategoryName}</span>
+            <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              {isEmpty ? "Nessun dato" : "Focus"}
+            </span>
+            <span className="mt-1 max-w-[6.5rem] text-center text-sm font-semibold leading-4">
+              {isEmpty ? topCategoryName : activeEntry?.nome ?? topCategoryName}
+            </span>
+            {!isEmpty ? (
+              <span className="mt-2 rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                {activeShare}% quota
+              </span>
+            ) : null}
           </div>
         </div>
 
         <div className="space-y-3">
           {chartData.map((entry) => {
             const share = total > 0 ? clampPercentage((entry.valore / total) * 100) : 0;
+            const isActive = activeEntry?.nome === entry.nome;
 
             return (
-              <div key={entry.nome} className={`${innerSurface} bg-background/80 px-3.5 py-3`}>
+              <button
+                key={entry.nome}
+                type="button"
+                onMouseEnter={() => setActiveIndex(chartData.findIndex((item) => item.nome === entry.nome))}
+                onClick={() => setActiveIndex(chartData.findIndex((item) => item.nome === entry.nome))}
+                className={cn(
+                  `${innerSurface} w-full bg-background/80 px-3.5 py-3 text-left transition-all`,
+                  isActive
+                    ? "border border-border/70 shadow-[0_16px_34px_-28px_hsl(var(--foreground)/0.34)]"
+                    : "border border-transparent hover:border-border/50",
+                )}
+              >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.colore }} />
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.colore, boxShadow: `0 0 0 4px ${entry.colore}22` }} />
                     <span className="text-sm font-medium">{entry.nome}</span>
                   </div>
                   <span className="text-xs font-semibold">{formatEuro(entry.valore)}</span>
                 </div>
                 <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-muted-foreground">
                   <span>{share}% del totale</span>
-                  <span>{entry.nome === topCategoryName ? "Quota principale" : "Allocazione attiva"}</span>
+                  <span>{entry.nome === topCategoryName ? "Quota principale" : isActive ? "In evidenza" : "Tocca per evidenziare"}</span>
                 </div>
-              </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full transition-all duration-300"
+                    style={{ width: `${share}%`, backgroundColor: entry.colore }}
+                  />
+                </div>
+              </button>
             );
           })}
         </div>

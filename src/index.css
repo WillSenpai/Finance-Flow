@@ -133,4 +133,109 @@
     user-select: text !important;
     -webkit-user-select: text !important;
   }
+
+  [data-sonner-toaster] {
+    --normal-bg: hsl(var(--background));
+    --normal-border: hsl(var(--border));
+    --normal-text: hsl(var(--foreground));
+  }
+
+  [data-sonner-toaster].toaster {
+    padding-inline: 0.75rem;
+  }
+
+  [data-sonner-toaster][data-y-position="bottom"] {
+    bottom: calc(0.75rem + var(--safe-bottom));
+  }
+
+  [data-sonner-toast].financeflow-toast {
+    position: relative;
+    padding-top: 0.95rem;
+    box-shadow: 0 18px 42px -30px hsl(var(--foreground) / 0.4);
+  }
+
+  [data-sonner-toast].financeflow-toast [data-icon] {
+    display: inline-flex;
+    height: 2.15rem;
+    width: 2.15rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background: hsl(var(--muted));
+    color: hsl(var(--foreground));
+    box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.35);
+  }
+
+  [data-sonner-toast].financeflow-toast [data-content] {
+    min-width: 0;
+  }
+
+  [data-sonner-toast].financeflow-toast [data-title] {
+    padding-right: 0.25rem;
+  }
+
+  [data-sonner-toast].financeflow-toast-success [data-icon] {
+    background: hsl(var(--accent));
+    color: hsl(var(--secondary));
+  }
+
+  [data-sonner-toast].financeflow-toast-error [data-icon] {
+    background: hsl(var(--destructive) / 0.14);
+    color: hsl(var(--destructive));
+  }
+
+  [data-sonner-toast].financeflow-toast-warning [data-icon] {
+    background: hsl(36 27% 43% / 0.16);
+    color: hsl(36 27% 43%);
+  }
+
+  [data-sonner-toast].financeflow-toast-info [data-icon] {
+    background: hsl(var(--primary) / 0.12);
+    color: hsl(var(--primary));
+  }
+
+  [data-sonner-toast].financeflow-toast::before {
+    content: "";
+    position: absolute;
+    left: 0.75rem;
+    right: 0.75rem;
+    top: 0.35rem;
+    height: 3px;
+    border-radius: 9999px;
+    background: hsl(var(--primary));
+    transform-origin: left center;
+    animation: financeflow-toast-timer var(--toast-duration, 4200ms) linear forwards;
+    opacity: 0.95;
+  }
+
+  [data-sonner-toast].financeflow-toast-success::before,
+  [data-sonner-toast][data-type="success"]::before {
+    background: hsl(var(--secondary));
+  }
+
+  [data-sonner-toast].financeflow-toast-error::before,
+  [data-sonner-toast][data-type="error"]::before {
+    background: hsl(var(--destructive));
+  }
+
+  [data-sonner-toast].financeflow-toast-warning::before,
+  [data-sonner-toast][data-type="warning"]::before {
+    background: hsl(36 27% 43%);
+  }
+
+  [data-sonner-toast].financeflow-toast-info::before,
+  [data-sonner-toast][data-type="info"]::before {
+    background: hsl(var(--primary));
+  }
+}
+
+@keyframes financeflow-toast-timer {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
 }
