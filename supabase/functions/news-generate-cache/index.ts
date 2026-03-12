@@ -87,16 +87,13 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const incomingCronSecret = req.headers.get("x-cron-secret");
     const envCronSecret = Deno.env.get("NEWS_CRON_SECRET");
-    const vaultCronSecret = await readVaultCronSecret(supabase);
-    const effectiveCronSecret = envCronSecret || vaultCronSecret;
     const isCronInvocation = Boolean(
-      effectiveCronSecret &&
+      envCronSecret &&
       incomingCronSecret &&
-      effectiveCronSecret === incomingCronSecret,
+      envCronSecret === incomingCronSecret,
     );
 
-    const hasAuthorizationHeader = Boolean(req.headers.get("Authorization"));
-    if (!isCronInvocation && hasAuthorizationHeader) {
+    if (!isCronInvocation) {
       const authResult = await requireAuthenticatedUser(req, corsHeaders);
       if (!authResult.ok) return authResult.response;
       const isAdmin = await requireAdminUser(authResult.user.id);
@@ -309,28 +306,4 @@ function isArticleSummaryAcceptable(content: string): boolean {
     .map((s) => s.trim())
     .filter(Boolean);
   return sentences.length >= 7;
-}
-
-async function readVaultCronSecret(
-  supabase: ReturnType<typeof createClient>,
-): Promise<string | null> {
-  const { data, error } = await supabase
-    .schema("vault")
-    .from("decrypted_secrets")
-    .select("name,decrypted_secret")
-    .in("name", ["NEWS_CRON_SECRET", "news_cron_secret"])
-    .limit(2);
-
-  if (error) return null;
-  if (!Array.isArray(data) || data.length === 0) return null;
-
-  const preferred =
-    data.find((row) => row.name === "NEWS_CRON_SECRET") ??
-    data.find((row) => row.name === "news_cron_secret");
-
-  if (preferred && typeof preferred.decrypted_secret === "string" && preferred.decrypted_secret.trim()) {
-    return preferred.decrypted_secret.trim();
-  }
-
-  return null;
 }
