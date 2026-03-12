@@ -1,46 +1,184 @@
-import { useState } from "react";
-import { ArrowLeft, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
-import { useUser } from "@/hooks/useUser";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-const formatEuro = (n: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PatrimonioCategoryCard } from "@/components/patrimonio/PatrimonioCategoryCard";
+import { PatrimonioCategoryQuickAdd } from "@/components/patrimonio/PatrimonioCategoryQuickAdd";
+import { PatrimonioDeleteDialog } from "@/components/patrimonio/PatrimonioDeleteDialog";
+import {
+  emptyCategory,
+  patrimonioColorPalette,
+  toDraft,
+  type DraftCategoria,
+} from "@/components/patrimonio/patrimonioCategoryEditor";
+import { useUser } from "@/hooks/useUser";
 
 const GestisciPatrimonio = () => {
   const { categorie, setCategorie } = useUser();
   const navigate = useNavigate();
 
-  const [categorieDraft, setCategorieDraft] = useState([...categorie]);
-  const [selectedCategory, setSelectedCategory] = useState(categorie[0]?.nome ?? "");
+  const [categorieDraft, setCategorieDraft] = useState<DraftCategoria[]>(() => categorie.map(toDraft));
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [amountInput, setAmountInput] = useState("");
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [transferTargetId, setTransferTargetId] = useState("");
+
+  const selectedCategory = categorieDraft.find((cat) => cat.localId === selectedCategoryId);
+  const pendingDeleteCategory = categorieDraft.find((cat) => cat.localId === pendingDeleteId);
+  const availableTransferTargets = useMemo(
+    () => categorieDraft.filter((cat) => cat.localId !== pendingDeleteId),
+    [categorieDraft, pendingDeleteId],
+  );
+
+  useEffect(() => {
+    if (!selectedCategoryId && categorieDraft.length > 0) {
+      setSelectedCategoryId(categorieDraft[0].localId);
+    }
+  }, [categorieDraft, selectedCategoryId]);
+
+  const syncSelectedCategory = (nextCategories: DraftCategoria[]) => {
+    if (nextCategories.length === 0) {
+      setSelectedCategoryId("");
+      return;
+    }
+
+    if (!nextCategories.some((cat) => cat.localId === selectedCategoryId)) {
+      setSelectedCategoryId(nextCategories[0].localId);
+    }
+  };
+
+  const handleDraftChange = (localId: string, updates: Partial<DraftCategoria>) => {
+    setCategorieDraft((current) =>
+      current.map((cat) => (cat.localId === localId ? { ...cat, ...updates } : cat)),
+    );
+  };
+
+  const moveCategory = (localId: string, direction: "up" | "down") => {
+    setCategorieDraft((current) => {
+      const index = current.findIndex((cat) => cat.localId === localId);
+      if (index === -1) return current;
+
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= current.length) return current;
+
+      const next = [...current];
+      const [item] = next.splice(index, 1);
+      next.splice(targetIndex, 0, item);
+      return next;
+    });
+  };
 
   const handleAddFunds = () => {
-    const amount = parseInt(amountInput) || 0;
+    const amount = Number(amountInput);
     if (!selectedCategory) {
       toast.error("Seleziona una categoria");
       return;
     }
-    if (amount <= 0) {
+
+    if (!Number.isFinite(amount) || amount <= 0) {
       toast.error("Inserisci un importo maggiore di 0");
       return;
     }
 
-    setCategorieDraft((current) =>
-      current.map((cat) =>
-        cat.nome === selectedCategory ? { ...cat, valore: Math.max(0, cat.valore + amount) } : cat,
-      ),
-    );
+    handleDraftChange(selectedCategory.localId, { valore: Math.max(0, selectedCategory.valore + amount) });
     setAmountInput("");
-    toast.success(`Aggiunti ${formatEuro(amount)} a ${selectedCategory}`);
+    toast.success(`Aggiunti €${amount.toLocaleString("it-IT")} a ${selectedCategory.nome || "categoria"}`);
+  };
+
+  const handleAddCategory = () => {
+    const nextCategory = emptyCategory();
+    setCategorieDraft((current) => [...current, nextCategory]);
+    setSelectedCategoryId(nextCategory.localId);
+  };
+
+  const handleDeleteRequest = (localId: string) => {
+    const category = categorieDraft.find((cat) => cat.localId === localId);
+    if (!category) return;
+
+    if (categorieDraft.length === 1) {
+      toast.error("Devi mantenere almeno una categoria patrimonio");
+      return;
+    }
+
+    if (category.valore > 0) {
+      const fallbackTarget = categorieDraft.find((cat) => cat.localId !== localId);
+      setPendingDeleteId(localId);
+      setTransferTargetId(fallbackTarget?.localId ?? "");
+      return;
+    }
+
+    const nextCategories = categorieDraft.filter((cat) => cat.localId !== localId);
+    setCategorieDraft(nextCategories);
+    syncSelectedCategory(nextCategories);
+    toast.success(`Categoria "${category.nome || "senza nome"}" rimossa`);
+  };
+
+  const closeDeleteDialog = (open: boolean) => {
+    if (open) return;
+    setPendingDeleteId(null);
+    setTransferTargetId("");
+  };
+
+  const confirmDeleteWithTransfer = () => {
+    if (!pendingDeleteCategory) return;
+    if (!transferTargetId) {
+      toast.error("Seleziona dove spostare il valore");
+      return;
+    }
+
+    const nextCategories = categorieDraft
+      .filter((cat) => cat.localId !== pendingDeleteId)
+      .map((cat) =>
+        cat.localId === transferTargetId
+          ? { ...cat, valore: Math.max(0, cat.valore + pendingDeleteCategory.valore) }
+          : cat,
+      );
+
+    setCategorieDraft(nextCategories);
+    syncSelectedCategory(nextCategories);
+    closeDeleteDialog(false);
+    toast.success(`Valore spostato e categoria "${pendingDeleteCategory.nome || "senza nome"}" rimossa`);
   };
 
   const handleSave = async () => {
-    await setCategorie(categorieDraft);
+    const normalized = categorieDraft.map((cat) => ({
+      ...cat,
+      nome: cat.nome.trim(),
+      emoji: cat.emoji.trim(),
+      valore: Number.isFinite(cat.valore) ? Math.max(0, cat.valore) : 0,
+    }));
+
+    if (normalized.length === 0) {
+      toast.error("Aggiungi almeno una categoria");
+      return;
+    }
+
+    if (normalized.some((cat) => !cat.nome)) {
+      toast.error("Ogni categoria deve avere un nome");
+      return;
+    }
+
+    if (normalized.some((cat) => !cat.emoji)) {
+      toast.error("Ogni categoria deve avere un'emoji");
+      return;
+    }
+
+    const normalizedNames = normalized.map((cat) => cat.nome.toLocaleLowerCase("it-IT"));
+    if (new Set(normalizedNames).size !== normalizedNames.length) {
+      toast.error("I nomi delle categorie devono essere unici");
+      return;
+    }
+
+    await setCategorie(
+      normalized.map(({ localId, ...cat }) => ({
+        ...cat,
+        colore: cat.colore || patrimonioColorPalette[0].value,
+      })),
+    );
+
     toast.success("Categorie patrimonio aggiornate ✅");
     navigate(-1);
   };
@@ -52,68 +190,62 @@ const GestisciPatrimonio = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
     >
-      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-primary text-sm font-medium mb-6">
+      <button onClick={() => navigate(-1)} className="mb-6 flex items-center gap-1 text-sm font-medium text-primary">
         <ArrowLeft size={18} /> Indietro
       </button>
 
-      <h1 className="text-2xl font-semibold tracking-tight mb-6">Gestisci Patrimonio 🏦</h1>
+      <div className="space-y-6">
+        <Card className="rounded-3xl border-border/60 shadow-none">
+          <CardHeader>
+            <CardTitle className="text-2xl">Gestisci Patrimonio 🏦</CardTitle>
+            <CardDescription>
+              Crea, ordina e personalizza le categorie. Se elimini una categoria con saldo, il valore viene spostato prima.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PatrimonioCategoryQuickAdd
+              amountInput={amountInput}
+              categories={categorieDraft}
+              onAddCategory={handleAddCategory}
+              onAddFunds={handleAddFunds}
+              onAmountInputChange={setAmountInput}
+              onSelectedCategoryChange={setSelectedCategoryId}
+              selectedCategoryId={selectedCategoryId}
+            />
+          </CardContent>
+        </Card>
 
-      <div className="mb-8">
-        <p className="text-sm font-semibold mb-4">Aggiungi fondi alle categorie</p>
-        <div className="bg-card border border-border/50 rounded-2xl p-4">
-          <div className="space-y-3">
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="rounded-xl h-11">
-                <SelectValue placeholder="Seleziona categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                {categorieDraft.map((cat) => (
-                  <SelectItem key={cat.nome} value={cat.nome}>
-                    {cat.emoji} {cat.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <div className="grid grid-cols-[1fr_auto] items-center gap-2">
-              <div className="relative flex-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">€</span>
-                <Input
-                  type="number"
-                  placeholder="Inserisci importo"
-                  value={amountInput}
-                  onChange={(e) => setAmountInput(e.target.value)}
-                  className="h-10 min-h-10 max-h-10 pl-7 rounded-xl bg-background"
-                />
-              </div>
-              <Button onClick={handleAddFunds} size="icon" className="h-10 w-10 min-h-10 min-w-10 rounded-xl p-0 shrink-0">
-                <Plus size={18} />
-              </Button>
-            </div>
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">Categorie</h2>
           </div>
-        </div>
-      </div>
-
-      <div className="mb-8">
-        <p className="text-sm font-semibold mb-4">Riepilogo categorie</p>
-        <div className="space-y-4">
-          {categorieDraft.map((cat) => (
-            <div key={cat.nome} className="bg-card border border-border/50 rounded-2xl p-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">{cat.emoji}</span>
-                <span className="text-sm font-medium">{cat.nome}</span>
-              </div>
-              <span className="text-sm font-semibold">{formatEuro(cat.valore)}</span>
-            </div>
+          {categorieDraft.map((category, index) => (
+            <PatrimonioCategoryCard
+              key={category.localId}
+              category={category}
+              isFirst={index === 0}
+              isLast={index === categorieDraft.length - 1}
+              onChange={handleDraftChange}
+              onDelete={handleDeleteRequest}
+              onMove={moveCategory}
+            />
           ))}
-        </div>
-      </div>
+        </section>
 
-      <motion.div whileTap={{ scale: 0.97 }}>
-        <Button onClick={handleSave} className="w-full rounded-2xl h-12 text-base">
+        <Button onClick={handleSave} className="h-12 w-full rounded-2xl text-base">
           Salva modifiche ✅
         </Button>
-      </motion.div>
+      </div>
+
+      <PatrimonioDeleteDialog
+        open={Boolean(pendingDeleteId)}
+        onOpenChange={closeDeleteDialog}
+        pendingCategory={pendingDeleteCategory}
+        categories={availableTransferTargets}
+        transferTargetId={transferTargetId}
+        onTransferTargetChange={setTransferTargetId}
+        onConfirm={confirmDeleteWithTransfer}
+      />
     </motion.div>
   );
 };
