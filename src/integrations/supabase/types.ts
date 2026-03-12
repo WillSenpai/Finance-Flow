@@ -535,6 +535,7 @@ export type Database = {
           data: string
           id: string
           importo: number
+          nome: string
           nota: string | null
           ricorrenza: string
           user_id: string
@@ -546,6 +547,7 @@ export type Database = {
           data?: string
           id?: string
           importo: number
+          nome: string
           nota?: string | null
           ricorrenza?: string
           user_id: string
@@ -557,6 +559,7 @@ export type Database = {
           data?: string
           id?: string
           importo?: number
+          nome?: string
           nota?: string | null
           ricorrenza?: string
           user_id?: string

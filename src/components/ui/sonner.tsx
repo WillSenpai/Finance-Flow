@@ -12,7 +12,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       theme={theme as ToasterProps["theme"]}
-      position="bottom-center"
+      position="top-center"
       closeButton
       expand
       visibleToasts={3}
@@ -22,7 +22,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         unstyled: true,
         classNames: {
           toast:
-            "financeflow-toast group pointer-events-auto relative flex w-[min(92vw,420px)] items-start gap-3 overflow-hidden rounded-[1.35rem] border border-border/80 bg-background px-4 py-3.5 pr-12 text-foreground shadow-[0_18px_42px_-30px_hsl(var(--foreground)/0.4)] backdrop-blur-md",
+            "financeflow-toast group pointer-events-auto relative flex w-[min(90vw,420px)] items-start gap-3 overflow-visible rounded-[1.35rem] border border-border/80 bg-background px-4 py-3.5 text-foreground shadow-[0_18px_42px_-30px_hsl(var(--foreground)/0.4)] backdrop-blur-md",
           content: "flex min-w-0 flex-1 flex-col items-start justify-center",
           title: "text-sm font-semibold leading-5 tracking-tight text-foreground",
           description: "mt-1 text-[13px] leading-5 text-muted-foreground",
@@ -31,7 +31,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           cancelButton:
             "mt-2 inline-flex h-8 shrink-0 items-center justify-center rounded-lg bg-muted px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent",
           closeButton:
-            "absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border/70 bg-background/95 text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground",
+            "absolute -right-3 -top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border/80 bg-background text-muted-foreground shadow-[0_12px_28px_-18px_hsl(var(--foreground)/0.5)] transition-colors hover:bg-accent hover:text-foreground",
           success: "financeflow-toast-success",
           error: "financeflow-toast-error",
           warning: "financeflow-toast-warning",

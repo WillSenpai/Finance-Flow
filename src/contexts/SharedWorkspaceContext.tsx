@@ -80,6 +80,7 @@ interface SharedWorkspaceContextValue {
   respondToInvite: (inviteId: string, decision: "accept" | "decline") => Promise<{ ok: boolean; error?: string }>;
   removeMember: (targetUserId: string) => Promise<{ ok: boolean; error?: string }>;
   leaveWorkspace: () => Promise<{ ok: boolean; error?: string }>;
+  deleteWorkspace: () => Promise<{ ok: boolean; error?: string }>;
   setCategorie: (items: SharedCategoriaPatrimonio[]) => Promise<void>;
   setInvestimenti: (items: SharedInvestimento[]) => Promise<void>;
   setSalvadanai: (items: SharedSalvadanaio[]) => Promise<void>;
@@ -417,6 +418,16 @@ export const SharedWorkspaceProvider = ({ children }: { children: ReactNode }) =
     return { ok: true };
   }, [getAccessToken, refreshAll, workspaceId]);
 
+  const deleteWorkspace = useCallback(async () => {
+    if (!workspaceId) return { ok: false, error: "Nessun workspace attivo" };
+    const accessToken = await getAccessToken();
+    if (!accessToken) return { ok: false, error: "Sessione non valida. Effettua di nuovo il login." };
+    const result = await invokeEdgeFunction("workspace-delete", accessToken, { workspaceId });
+    if (!result.ok) return { ok: false, error: result.error };
+    await refreshAll();
+    return { ok: true };
+  }, [getAccessToken, refreshAll, workspaceId]);
+
   const setCategorie = useCallback(
     async (items: SharedCategoriaPatrimonio[]) => {
       if (!workspaceId) return;
@@ -528,6 +539,7 @@ export const SharedWorkspaceProvider = ({ children }: { children: ReactNode }) =
       respondToInvite,
       removeMember,
       leaveWorkspace,
+      deleteWorkspace,
       setCategorie,
       setInvestimenti,
       setSalvadanai,
@@ -540,6 +552,7 @@ export const SharedWorkspaceProvider = ({ children }: { children: ReactNode }) =
       inviteMember,
       investimenti,
       leaveWorkspace,
+      deleteWorkspace,
       loading,
       members,
       myRole,

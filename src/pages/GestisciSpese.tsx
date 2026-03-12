@@ -4,7 +4,6 @@ import {
   CalendarDays,
   MoreHorizontal,
   Pencil,
-  Plus,
   Tag,
   Trash2,
   X,
@@ -16,7 +15,6 @@ import { it } from "date-fns/locale";
 
 import type { CategoriaSpesa, Spesa } from "@/contexts/UserContext";
 import { useUser } from "@/hooks/useUser";
-import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -81,6 +79,7 @@ const sortByDateDesc = (a: Spesa, b: Spesa) => {
 };
 
 const createEmptyState = () => ({
+  nome: "",
   importo: "",
   categoriaId: "",
   ricorrenza: "once" as Spesa["ricorrenza"],
@@ -124,7 +123,8 @@ const GestisciSpese = () => {
 
   const salvaSpesa = () => {
     const valore = Number.parseFloat(formState.importo);
-    if (!Number.isFinite(valore) || valore <= 0 || !formState.categoriaId) return;
+    const nome = formState.nome.trim();
+    if (!nome || !Number.isFinite(valore) || valore <= 0 || !formState.categoriaId) return;
 
     if (formState.editingId) {
       setSpese(
@@ -132,6 +132,7 @@ const GestisciSpese = () => {
           spesa.id === formState.editingId
             ? {
               ...spesa,
+              nome,
               importo: valore,
               categoriaId: formState.categoriaId,
               ricorrenza: formState.ricorrenza,
@@ -146,6 +147,7 @@ const GestisciSpese = () => {
     } else {
       const nuovaSpesa: Spesa = {
         id: crypto.randomUUID(),
+        nome,
         importo: valore,
         categoriaId: formState.categoriaId,
         badge: formState.badges,
@@ -163,6 +165,7 @@ const GestisciSpese = () => {
 
   const editSpesa = (spesa: Spesa) => {
     setFormState({
+      nome: spesa.nome,
       importo: spesa.importo.toString(),
       categoriaId: spesa.categoriaId,
       ricorrenza: spesa.ricorrenza,
@@ -209,7 +212,8 @@ const GestisciSpese = () => {
   const thisMonthAverage = thisMonthSpese.length ? thisMonthTotal / thisMonthSpese.length : 0;
   const latestExpense = useMemo(() => [...spese].sort(sortByDateDesc)[0], [spese]);
 
-  const isFormValid = Number.parseFloat(formState.importo) > 0 && Boolean(formState.categoriaId);
+  const isFormValid =
+    formState.nome.trim().length > 0 && Number.parseFloat(formState.importo) > 0 && Boolean(formState.categoriaId);
 
   return (
     <>
@@ -340,7 +344,7 @@ const GestisciSpese = () => {
           resetForm();
           setExpenseDrawerOpen(true);
         }}
-        className="fixed bottom-24 right-5 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full border border-border/70 bg-foreground text-2xl font-semibold text-background shadow-[0_20px_45px_-24px_rgba(0,0,0,0.55)] transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:bottom-8 sm:right-8"
+        className="fixed bottom-[calc(5.75rem+var(--safe-bottom))] right-[max(1rem,var(--safe-right))] z-40 inline-flex h-14 w-14 items-center justify-center rounded-full border border-border/70 bg-foreground text-2xl font-semibold text-background shadow-[0_20px_45px_-24px_rgba(0,0,0,0.55)] transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:bottom-[calc(2rem+var(--safe-bottom))] sm:right-[max(2rem,var(--safe-right))]"
         aria-label="Aggiungi spesa"
       >
         +
@@ -365,6 +369,20 @@ const GestisciSpese = () => {
             </DrawerHeader>
 
             <div className="mx-auto mt-4 w-full max-w-[420px] min-w-0 space-y-4 overflow-x-hidden pb-2">
+              <label className="space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">Nome spesa</span>
+                <Input
+                  type="text"
+                  placeholder="es. Cena con amici"
+                  value={formState.nome}
+                  onChange={(event) =>
+                    setFormState((current) => ({ ...current, nome: event.target.value }))
+                  }
+                  className="h-12 rounded-2xl border-border/80 bg-background"
+                  maxLength={80}
+                />
+              </label>
+
               <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_148px]">
                 <label className="space-y-1.5">
                   <span className="text-xs font-medium text-muted-foreground">Importo</span>
@@ -463,10 +481,10 @@ const GestisciSpese = () => {
 
                         <div className="space-y-1.5">
                           <span className="text-xs font-medium text-muted-foreground">Tag rapidi</span>
-                          <div className="flex gap-2">
-                            <Input
-                              placeholder="es. cena, lavoro, urgenza"
-                              value={formState.badgeInput}
+                      <div className="flex min-w-0 gap-2">
+                        <Input
+                          placeholder="es. cena, lavoro, urgenza"
+                          value={formState.badgeInput}
                               onChange={(event) =>
                                 setFormState((current) => ({
                                   ...current,
@@ -479,12 +497,18 @@ const GestisciSpese = () => {
                                   addBadge();
                                 }
                               }}
-                              className="h-11 rounded-2xl border-border/80 bg-background"
-                            />
-                            <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-2xl" onClick={addBadge}>
-                              <Tag size={16} />
-                            </Button>
-                          </div>
+                          className="h-11 min-w-0 rounded-2xl border-border/80 bg-background"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-11 w-11 shrink-0 rounded-2xl"
+                          onClick={addBadge}
+                        >
+                          <Tag size={16} />
+                        </Button>
+                      </div>
                         </div>
                       </div>
 
@@ -526,7 +550,7 @@ const GestisciSpese = () => {
             </div>
 
             <div className="mt-3 border-t border-border/70 pt-4">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <button
                   type="button"
                   onClick={() => setShowAdvanced((current) => !current)}
@@ -535,18 +559,22 @@ const GestisciSpese = () => {
                   {showAdvanced ? "Riduci dettagli" : "Aggiungi dettagli, tag o ricorrenza"}
                 </button>
 
-                <div className="flex gap-2">
+                <div className="flex min-w-0 flex-col-reverse gap-2 sm:flex-row">
                   <Button
                     variant="outline"
                     onClick={() => {
                       setExpenseDrawerOpen(false);
                       resetForm();
                     }}
-                    className="rounded-2xl"
+                    className="w-full min-w-0 rounded-2xl sm:w-auto"
                   >
                     Annulla
                   </Button>
-                  <Button onClick={salvaSpesa} disabled={!isFormValid} className="rounded-2xl px-5">
+                  <Button
+                    onClick={salvaSpesa}
+                    disabled={!isFormValid}
+                    className="w-full min-w-0 rounded-2xl px-5 sm:w-auto"
+                  >
                     {formState.editingId ? "Salva modifiche" : "Registra spesa"}
                   </Button>
                 </div>
@@ -603,8 +631,11 @@ function ExpenseRow({
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground">{categoria?.nome || "Altro"}</p>
+              <p className="text-sm font-semibold text-foreground">{spesa.nome}</p>
               <div className="mt-1 flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  {categoria?.emoji || "📦"} {categoria?.nome || "Altro"}
+                </span>
                 <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                   <CalendarDays size={12} />
                   {format(new Date(spesa.data), "d MMMM", { locale: it })}

@@ -40,6 +40,8 @@ import {
 const formatEuro = (n: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
+const formatExpenseEuro = (n: number) => (n === 0 ? formatEuro(0) : formatEuro(-Math.abs(n)));
+
 const container = {
   hidden: {},
   show: { transition: { staggerChildren: 0.07 } },
@@ -233,7 +235,7 @@ function WealthHero({
             <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
               <div className="rounded-[1.7rem] border border-white/12 bg-white/10 p-3.5 backdrop-blur-md">
                 <p className="text-[10px] uppercase tracking-[0.18em] text-primary-foreground/60">Spese mese</p>
-                <p className="mt-2 text-lg font-semibold tracking-tight">{formatEuro(monthlySpending)}</p>
+                <p className="mt-2 text-lg font-semibold tracking-tight">{formatExpenseEuro(monthlySpending)}</p>
               </div>
               <div className="rounded-[1.7rem] border border-white/12 bg-white/10 p-3.5 backdrop-blur-md">
                 <p className="text-[10px] uppercase tracking-[0.18em] text-primary-foreground/60">Obiettivi</p>
@@ -700,7 +702,7 @@ function SpeseSectionContent({
             <p className="text-sm font-semibold">Spese di {formatMonthLabel()}</p>
             <p className="mt-1 text-xs text-muted-foreground">Le categorie piu pesanti entrano qui prima di tutto.</p>
           </div>
-          <span className="text-lg font-semibold text-destructive">{formatEuro(total)}</span>
+          <span className="text-lg font-semibold text-destructive">{formatExpenseEuro(total)}</span>
         </div>
       </div>
 
@@ -722,7 +724,7 @@ function SpeseSectionContent({
                   <p className="text-[11px] text-muted-foreground">{percentage}% del mese</p>
                 </div>
               </div>
-              <span className="text-sm font-semibold">{formatEuro(value)}</span>
+              <span className="text-sm font-semibold text-destructive">{formatExpenseEuro(value)}</span>
             </div>
           </div>
         );
@@ -970,7 +972,9 @@ const Patrimonio = () => {
 
   const totalCategories = categorie.reduce((acc, category) => acc + category.valore, 0);
   const totalInvestments = investimenti.reduce((acc, investment) => acc + investment.valore, 0);
-  const total = totalCategories + totalInvestments;
+  const totalHistoricalSpending = spese.reduce((acc, expense) => acc + expense.importo, 0);
+  const totalAssets = totalCategories + totalInvestments;
+  const total = totalAssets - totalHistoricalSpending;
   const activeAssets =
     categorie.filter((category) => category.valore > 0).length + investimenti.filter((investment) => investment.valore > 0).length;
 
@@ -1007,7 +1011,7 @@ const Patrimonio = () => {
     : "Gestire i tuoi soldi è come prendersi cura di un bonsai, richiede pazienza, precisione e la capacità di guardare lontano.";
   const heroDescription = isBeginner
     ? `Hai ${totalGoals} obiettiv${totalGoals === 1 ? "o" : "i"} attiv${totalGoals === 1 ? "o" : "i"} e ${goalsProgress}% di progresso sui salvadanai attuali.`
-    : `Questo mese hai registrato ${formatEuro(monthlySpending)} di spese e ${activeAssets} bucket con valore attivo.`;
+    : `Il patrimonio netto include ${formatExpenseEuro(totalHistoricalSpending)} di spese storiche e ${activeAssets} bucket con valore attivo.`;
 
   return (
     <motion.div className="px-5 pt-14 pb-4" variants={container} initial="hidden" animate="show">
@@ -1042,7 +1046,7 @@ const Patrimonio = () => {
       />
 
       <AllocationSnapshot
-        total={total}
+        total={totalAssets}
         chartData={chartDataSafe}
         topCategoryName={topBucket.nome}
         topCategoryValue={topBucket.valore}

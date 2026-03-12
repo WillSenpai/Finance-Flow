@@ -31,6 +31,7 @@ export interface CategoriaSpesa {
 
 export interface Spesa {
   id: string;
+  nome: string;
   importo: number;
   categoriaId: string;
   badge: string[];
@@ -230,6 +231,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         if (speseData && speseData.length > 0) {
           setSpeseState(speseData.map(s => ({
             id: s.id,
+            nome: s.nome || s.nota?.trim() || "Spesa",
             importo: Number(s.importo),
             categoriaId: s.categoria_id || "",
             badge: s.badge || [],
@@ -348,6 +350,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       await supabase.from("spese").insert(
         s.map(sp => ({
           user_id: user.id,
+          nome: sp.nome,
           importo: sp.importo,
           categoria_id: slugMap.get(sp.categoriaId) || null,
           badge: sp.badge,
