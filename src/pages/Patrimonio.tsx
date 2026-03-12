@@ -3,7 +3,7 @@ import {
   ArrowRight,
   BookOpen,
   Calculator,
-  ChevronDown,
+  Ellipsis,
   PiggyBank,
   Receipt,
   Sparkles,
@@ -287,6 +287,8 @@ function ActionCluster({
       label: "Salvadanai",
       icon: PiggyBank,
       eyebrow: activeSection === "salvadanai" ? "Focus attivo" : "Risparmio",
+      primaryAction: onOpenSalvadanai,
+      primaryLabel: "Apri salvadanai",
       items: [
         { label: "Apri salvadanai", action: onOpenSalvadanai, shortcut: "Vai" },
         ...(activeSection !== "salvadanai"
@@ -299,6 +301,8 @@ function ActionCluster({
       label: "Investimenti",
       icon: TrendingUp,
       eyebrow: "Mercati",
+      primaryAction: onOpenInvestimenti,
+      primaryLabel: "Apri investimenti",
       items: [
         { label: "Apri investimenti", action: onOpenInvestimenti, shortcut: "Vai" },
         { label: "Aggiorna patrimonio", action: onOpenPatrimonio, shortcut: "Sync" },
@@ -308,6 +312,8 @@ function ActionCluster({
       label: "Spese",
       icon: Receipt,
       eyebrow: activeSection === "spese" ? "Focus attivo" : "Controllo",
+      primaryAction: onOpenSpese,
+      primaryLabel: "Apri spese",
       items: [
         { label: "Apri spese", action: onOpenSpese, shortcut: "Vai" },
         ...(activeSection !== "spese"
@@ -320,48 +326,66 @@ function ActionCluster({
   return (
     <motion.section variants={item} className="mt-6">
       <div className="grid gap-3 sm:grid-cols-3">
-        {shortcuts.map(({ label, icon: Icon, eyebrow, items }) => (
-          <DropdownMenu key={label}>
-            <DropdownMenuTrigger asChild>
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                className={`flex items-center gap-3 ${innerSurface} border border-border/60 bg-card px-4 py-3.5 text-left shadow-[0_12px_28px_-24px_hsl(var(--foreground)/0.32)]`}
-              >
-                <div className={`flex h-10 w-10 items-center justify-center ${innerSurface} bg-muted text-foreground`}>
-                  <Icon size={18} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold">{label}</p>
-                  <p className="text-[11px] text-muted-foreground">{eyebrow}</p>
-                </div>
-                <div className={`${capsule} flex items-center gap-1 border border-border/70 bg-background/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground`}>
-                  Menu <ChevronDown size={12} />
-                </div>
-              </motion.button>
-            </DropdownMenuTrigger>
+        {shortcuts.map(({ label, icon: Icon, eyebrow, items, primaryAction, primaryLabel }) => (
+          <motion.div
+            key={label}
+            variants={item}
+            className={`flex items-center gap-2.5 ${innerSurface} border border-border/60 bg-card p-2.5 shadow-[0_12px_28px_-24px_hsl(var(--foreground)/0.32)]`}
+          >
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.98 }}
+              onClick={primaryAction}
+              className="flex min-w-0 flex-1 items-center gap-3 rounded-[1.5rem] px-2 py-1.5 text-left transition-colors hover:bg-muted/55"
+              aria-label={primaryLabel}
+            >
+              <div className={`flex h-10 w-10 items-center justify-center ${innerSurface} bg-muted text-foreground`}>
+                <Icon size={18} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">{label}</p>
+                <p className="text-[11px] text-muted-foreground">{eyebrow}</p>
+              </div>
+            </motion.button>
 
-            <DropdownMenuContent align="start" className="w-64 rounded-[1.35rem] border-border/60 p-2">
-              <DropdownMenuLabel className="px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                {label}
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {items.map((itemConfig, index) => (
-                <DropdownMenuItem
-                  key={`${label}-${itemConfig.label}`}
-                  onClick={itemConfig.action}
-                  className="rounded-[1rem] px-3 py-2.5"
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 shrink-0 rounded-[1.1rem] border-border/70 bg-background/80 text-muted-foreground hover:bg-accent hover:text-foreground"
+                  aria-label={`Apri menu ${label}`}
                 >
-                  {itemConfig.label}
-                  <DropdownMenuShortcut>{itemConfig.shortcut}</DropdownMenuShortcut>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  <Ellipsis size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="end" sideOffset={10} className="w-64 rounded-[1.35rem] border-border/60 p-2">
+                <DropdownMenuLabel className="px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                  {label}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {items.map((itemConfig) => (
+                  <DropdownMenuItem
+                    key={`${label}-${itemConfig.label}`}
+                    onClick={itemConfig.action}
+                    className="rounded-[1rem] px-3 py-2.5"
+                  >
+                    {itemConfig.label}
+                    <DropdownMenuShortcut>{itemConfig.shortcut}</DropdownMenuShortcut>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </motion.div>
         ))}
       </div>
     </motion.section>
   );
 }
+
+type AllocationEntry = { nome: string; valore: number; colore: string };
 
 function AllocationSnapshot({
   total,
@@ -373,16 +397,25 @@ function AllocationSnapshot({
   hiddenBucketsValue,
 }: {
   total: number;
-  chartData: Array<{ nome: string; valore: number; colore: string }>;
+  chartData: AllocationEntry[];
   topCategoryName: string;
   topCategoryValue: number;
   isEmpty: boolean;
   hiddenBucketsCount: number;
   hiddenBucketsValue: number;
 }) {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    setSelectedIndex(0);
+    setHoveredIndex(null);
+  }, [chartData]);
+
+  const activeIndex = hoveredIndex ?? selectedIndex;
   const activeEntry = chartData[activeIndex] ?? chartData[0];
   const activeShare = activeEntry && total > 0 ? clampPercentage((activeEntry.valore / total) * 100) : 0;
+  const calloutLabel = isEmpty ? topCategoryName : activeEntry?.nome ?? topCategoryName;
 
   return (
     <motion.section variants={item} className={`mt-6 ${shellSurface} p-5`}>
@@ -396,55 +429,60 @@ function AllocationSnapshot({
         </div>
       </div>
 
-      <div className="mt-4 flex flex-col gap-4 sm:grid sm:grid-cols-[10.5rem_1fr] sm:items-center">
-        <div className="relative h-40 w-40">
-          <div className="pointer-events-none absolute inset-[14%] rounded-full bg-[radial-gradient(circle,hsla(0,0%,100%,0.5),transparent_68%)]" />
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={chartData}
-                dataKey="valore"
-                nameKey="nome"
-                cx="50%"
-                cy="50%"
-                innerRadius={44}
-                outerRadius={66}
-                paddingAngle={2}
-                cornerRadius={10}
-                activeIndex={activeIndex}
-                activeShape={renderActiveAllocationShape}
-                onMouseEnter={(_, index) => setActiveIndex(index)}
-                onClick={(_, index) => setActiveIndex(index)}
-                stroke="hsl(var(--card))"
-                strokeWidth={4}
-              >
-                {chartData.map((entry) => (
-                  <Cell key={entry.nome} fill={entry.colore} />
-                ))}
-              </Pie>
-              <Tooltip
-                cursor={false}
-                content={<AllocationTooltip total={total} />}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-              {isEmpty ? "Nessun dato" : "Focus"}
-            </span>
-            <span className="mt-1 max-w-[6.5rem] text-center text-sm font-semibold leading-4">
-              {isEmpty ? topCategoryName : activeEntry?.nome ?? topCategoryName}
-            </span>
-            {!isEmpty ? (
-              <span className="mt-2 rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                {activeShare}% quota
+      <div className="mt-4 flex flex-col gap-5 sm:grid sm:grid-cols-[14.5rem_1fr] sm:items-center">
+        <div className="relative flex min-h-[12rem] items-center justify-center px-2 py-2 sm:px-0">
+          <div className="relative h-40 w-40">
+            <div className="pointer-events-none absolute inset-[14%] rounded-full bg-[radial-gradient(circle,hsla(0,0%,100%,0.5),transparent_68%)]" />
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  dataKey="valore"
+                  nameKey="nome"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={44}
+                  outerRadius={66}
+                  paddingAngle={2}
+                  cornerRadius={10}
+                  activeIndex={activeIndex}
+                  activeShape={renderActiveAllocationShape}
+                  onMouseEnter={(_, index) => setHoveredIndex(index)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                  onClick={(_, index) => setSelectedIndex(index)}
+                  stroke="hsl(var(--card))"
+                  strokeWidth={4}
+                >
+                  {chartData.map((entry) => (
+                    <Cell key={entry.nome} fill={entry.colore} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  cursor={false}
+                  allowEscapeViewBox={{ x: true, y: true }}
+                  wrapperStyle={{ zIndex: 30, pointerEvents: "none" }}
+                  content={<AllocationTooltip total={total} />}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                {isEmpty ? "Nessun dato" : "Focus"}
               </span>
-            ) : null}
+              <span className="mt-1 max-w-[6.5rem] text-center text-sm font-semibold leading-4">
+                {calloutLabel}
+              </span>
+              {!isEmpty ? (
+                <span className="mt-2 rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  {activeShare}% quota
+                </span>
+              ) : null}
+            </div>
           </div>
         </div>
 
         <div className="space-y-3">
-          {chartData.map((entry) => {
+          {chartData.map((entry, index) => {
             const share = total > 0 ? clampPercentage((entry.valore / total) * 100) : 0;
             const isActive = activeEntry?.nome === entry.nome;
 
@@ -452,8 +490,11 @@ function AllocationSnapshot({
               <button
                 key={entry.nome}
                 type="button"
-                onMouseEnter={() => setActiveIndex(chartData.findIndex((item) => item.nome === entry.nome))}
-                onClick={() => setActiveIndex(chartData.findIndex((item) => item.nome === entry.nome))}
+                onMouseEnter={() => setHoveredIndex(index)}
+                onMouseLeave={() => setHoveredIndex(null)}
+                onFocus={() => setHoveredIndex(index)}
+                onBlur={() => setHoveredIndex(null)}
+                onClick={() => setSelectedIndex(index)}
                 className={cn(
                   `${innerSurface} w-full bg-background/80 px-3.5 py-3 text-left transition-all`,
                   isActive

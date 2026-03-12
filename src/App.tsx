@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { Suspense, lazy, useEffect, useState } from "react";
+import { ThemeProvider } from "next-themes";
 import OpeningLoader from "./components/startup/OpeningLoader";
 import MobileLayout from "./components/layout/MobileLayout";
 import { useSplash } from "./components/SplashScreen";
@@ -204,18 +205,26 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <AppLifecycleManager />
       <NativeIOSKeyboardManager />
-      <TooltipProvider>
-        <Sonner />
-        <AuthProvider>
-          <UserProvider>
-            <SharedWorkspaceProvider>
-              <PointsProvider>
-                <AppBootstrapGate />
-              </PointsProvider>
-            </SharedWorkspaceProvider>
-          </UserProvider>
-        </AuthProvider>
-      </TooltipProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        storageKey="financeflow-theme"
+        disableTransitionOnChange
+      >
+        <TooltipProvider>
+          <Sonner />
+          <AuthProvider>
+            <UserProvider>
+              <SharedWorkspaceProvider>
+                <PointsProvider>
+                  <AppBootstrapGate />
+                </PointsProvider>
+              </SharedWorkspaceProvider>
+            </UserProvider>
+          </AuthProvider>
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };

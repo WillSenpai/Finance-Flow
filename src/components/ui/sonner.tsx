@@ -6,7 +6,8 @@ type ToasterProps = React.ComponentProps<typeof Sonner>;
 const TOAST_DURATION = 4200;
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme();
+  const themeState = useTheme();
+  const theme = themeState?.resolvedTheme ?? themeState?.theme ?? "system";
 
   return (
     <Sonner
