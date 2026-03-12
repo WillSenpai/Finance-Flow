@@ -157,6 +157,25 @@ serve(async (req) => {
       `${newArticles.length} new articles, ${missingImageArticles.length} missing image, ${missingSummaryArticles.length} missing summary`,
     );
 
+    // 2b. Refresh the top articles metadata on every run so cron executions
+    // keep the cache current even when titles already exist.
+    if (top.length > 0) {
+      await supabase.from("news_cache").upsert(
+        top.map((article) => {
+          const cached = existingByTitle.get(article.titolo);
+          return {
+            titolo: article.titolo,
+            fonte: article.fonte,
+            link: article.link,
+            tempo: article.tempo,
+            summary: cached?.summary ?? null,
+            image: cached?.image ?? null,
+          };
+        }),
+        { onConflict: "titolo" },
+      );
+    }
+
     // 3. Generate summary for new articles plus any cached rows missing summary.
     const summaryCandidates = [...newArticles];
     for (const article of missingSummaryArticles) {
@@ -262,12 +281,12 @@ Scrivi SOLO il riassunto, senza titoli o prefissi. Tono professionale ma accessi
       await supabase.from("news_cache").upsert(inserts, { onConflict: "titolo" });
     }
 
-    // 5. Delete cache entries older than 7 days.
+    // 5. Delete cache entries not refreshed in the last 7 days.
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const { error: cleanupError } = await supabase
       .from("news_cache")
       .delete()
-      .lt("created_at", sevenDaysAgo);
+      .lt("updated_at", sevenDaysAgo);
 
     if (cleanupError) {
       console.error("news-cache cleanup error:", cleanupError);

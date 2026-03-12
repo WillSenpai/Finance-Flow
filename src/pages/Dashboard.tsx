@@ -155,7 +155,7 @@ const Dashboard = () => {
       const { data, error } = await supabase
         .from("news_cache")
         .select("titolo, fonte, link, tempo, summary, image")
-        .order("created_at", { ascending: false })
+        .order("updated_at", { ascending: false })
         .limit(12);
       if (error) throw error;
       return data as NewsItem[];

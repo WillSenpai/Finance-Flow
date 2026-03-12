@@ -341,6 +341,7 @@ export type Database = {
           summary: string | null
           tempo: string
           titolo: string
+          updated_at: string
         }
         Insert: {
           created_at?: string
@@ -351,6 +352,7 @@ export type Database = {
           summary?: string | null
           tempo?: string
           titolo: string
+          updated_at?: string
         }
         Update: {
           created_at?: string
@@ -361,6 +363,7 @@ export type Database = {
           summary?: string | null
           tempo?: string
           titolo?: string
+          updated_at?: string
         }
         Relationships: []
       }
