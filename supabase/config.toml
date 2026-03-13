@@ -91,3 +91,6 @@ verify_jwt = false
 
 [functions.billing-sync]
 verify_jwt = true
+
+[functions.ai-usage-admin]
+verify_jwt = true

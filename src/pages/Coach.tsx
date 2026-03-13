@@ -16,6 +16,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
+import { triggerProPaywall } from "@/lib/billing/paywallEvents";
 
 interface Messaggio {
   id: string;
@@ -188,6 +189,14 @@ const Coach = () => {
         });
 
         if (!resp.ok) {
+          if (resp.status === 402 || resp.status === 429) {
+            const errData = (await resp.json().catch(() => ({}))) as { error?: string; code?: string };
+            triggerProPaywall({
+              status: resp.status,
+              message: errData.error,
+              code: errData.code,
+            });
+          }
           setSuggestions(fallbackSuggestions);
           return;
         }
@@ -437,6 +446,13 @@ const Coach = () => {
 
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({ error: "Errore di rete" }));
+        if (resp.status === 402 || resp.status === 429) {
+          triggerProPaywall({
+            status: resp.status,
+            message: err.error,
+            code: err.code,
+          });
+        }
         toast.error(err.error || `Errore ${resp.status}`);
         setIsLoading(false);
         return;

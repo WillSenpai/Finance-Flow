@@ -1,4 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
+import { ApiError } from "@/lib/api-error";
+import { triggerProPaywall } from "@/lib/billing/paywallEvents";
 
 type InvokeOptions = {
   body?: unknown;
@@ -60,7 +62,15 @@ export async function invokeWithAuth<T = unknown>(fn: string, options: InvokeOpt
           : null) ??
         `HTTP ${res.status}`;
 
-      throw new Error(message);
+      const code = parsed && typeof parsed === "object" && "code" in parsed && typeof (parsed as { code?: unknown }).code === "string"
+        ? (parsed as { code: string }).code
+        : undefined;
+
+      if (res.status === 402 || res.status === 429) {
+        triggerProPaywall({ status: res.status, message, code });
+      }
+
+      throw new ApiError(message, { status: res.status, code, payload: parsed });
     }
 
     return parsed as T;
@@ -70,6 +80,13 @@ export async function invokeWithAuth<T = unknown>(fn: string, options: InvokeOpt
   try {
     return await runInvoke(token);
   } catch (firstError) {
+    if (
+      firstError instanceof ApiError &&
+      firstError.status !== 401
+    ) {
+      throw firstError;
+    }
+
     if (!/401|unauthorized|jwt|authorization/i.test(firstError instanceof Error ? firstError.message : "")) {
       throw firstError;
     }
@@ -83,6 +100,9 @@ export async function invokeWithAuth<T = unknown>(fn: string, options: InvokeOpt
     try {
       return await runInvoke(token);
     } catch (retryError) {
+      if (retryError instanceof ApiError && retryError.status !== 401) {
+        throw retryError;
+      }
       if (/401|unauthorized|jwt|authorization/i.test(retryError instanceof Error ? retryError.message : "")) {
         throw new Error("Sessione scaduta. Effettua di nuovo il login.");
       }

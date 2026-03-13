@@ -1,6 +1,6 @@
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { Suspense, lazy, useEffect, useState } from "react";
@@ -26,6 +26,9 @@ import {
   resolveOpeningLoaderEnabled,
 } from "./lib/openingLoaderPreference";
 import { shouldSkipOpeningLoaderSync } from "./lib/nativeResume";
+import { isApiError } from "@/lib/api-error";
+import { triggerProPaywall } from "@/lib/billing/paywallEvents";
+import ProPaywallProvider from "@/components/billing/ProPaywallProvider";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const GestisciPatrimonio = lazy(() => import("./pages/GestisciPatrimonio"));
@@ -62,7 +65,22 @@ const GestisciSalvadanaiCondivisi = lazy(() => import("./pages/GestisciSalvadana
 const GestisciSpeseCondivise = lazy(() => import("./pages/GestisciSpeseCondivise"));
 const InvitiPatrimonio = lazy(() => import("./pages/InvitiPatrimonio"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error) => {
+      if (isApiError(error) && (error.status === 402 || error.status === 429)) {
+        triggerProPaywall({ status: error.status, message: error.message, code: error.code });
+      }
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: (error) => {
+      if (isApiError(error) && (error.status === 402 || error.status === 429)) {
+        triggerProPaywall({ status: error.status, message: error.message, code: error.code });
+      }
+    },
+  }),
+});
 
 const AppRoutes = () => {
   const { user, loading: authLoading } = useAuth();
@@ -224,7 +242,9 @@ const App = () => {
             <UserProvider>
               <SharedWorkspaceProvider>
                 <PointsProvider>
-                  <AppBootstrapGate />
+                  <ProPaywallProvider>
+                    <AppBootstrapGate />
+                  </ProPaywallProvider>
                 </PointsProvider>
               </SharedWorkspaceProvider>
             </UserProvider>

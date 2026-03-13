@@ -1,3 +1,6 @@
+import { ApiError } from "@/lib/api-error";
+import { triggerProPaywall } from "@/lib/billing/paywallEvents";
+
 export async function invokeEdgeWithJwt<TResponse>(
   functionName: string,
   accessToken: string,
@@ -21,8 +24,12 @@ export async function invokeEdgeWithJwt<TResponse>(
   });
 
   if (!isOkResponse(response)) {
-    const message = await readEdgeError(response);
-    throw new Error(message);
+    const { message, code } = await readEdgeError(response);
+    const status = typeof response.status === "number" ? response.status : 0;
+    if (status === 402 || status === 429) {
+      triggerProPaywall({ status, message, code });
+    }
+    throw new ApiError(message, { status, code });
   }
 
   return readEdgeSuccess<TResponse>(response);
@@ -50,20 +57,24 @@ async function readEdgeSuccess<TResponse>(response: ResponseLike): Promise<TResp
   throw new Error("Risposta funzione non valida.");
 }
 
-async function readEdgeError(response: ResponseLike): Promise<string> {
+async function readEdgeError(response: ResponseLike): Promise<{ message: string; code?: string }> {
   const parsed = await tryParseBody(response);
   if (parsed && typeof parsed === "object") {
-    const payload = parsed as { error?: string; message?: string };
-    if (typeof payload.error === "string" && payload.error.trim()) return payload.error;
-    if (typeof payload.message === "string" && payload.message.trim()) return payload.message;
+    const payload = parsed as { error?: string; message?: string; code?: string };
+    const message = typeof payload.error === "string" && payload.error.trim()
+      ? payload.error
+      : typeof payload.message === "string" && payload.message.trim()
+      ? payload.message
+      : "";
+    if (message) return { message, code: typeof payload.code === "string" ? payload.code : undefined };
   }
 
   const text = await tryReadText(response);
-  if (text?.trim()) return text;
+  if (text?.trim()) return { message: text };
 
   const status = typeof response.status === "number" ? response.status : 0;
   const statusText = typeof response.statusText === "string" ? response.statusText : "";
-  return `HTTP ${status} ${statusText}`.trim();
+  return { message: `HTTP ${status} ${statusText}`.trim() };
 }
 
 async function tryParseBody(response: ResponseLike): Promise<unknown | undefined> {

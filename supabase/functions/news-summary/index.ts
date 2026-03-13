@@ -1,13 +1,20 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
-  chatCompletionWithComplexFallback,
+  chatCompletion,
   extractAssistantContent,
 } from "../_shared/ai.ts";
 import { buildCorsHeaders, rejectDisallowedOrigin } from "../_shared/cors.ts";
+import {
+  enforceQuota,
+  estimateRequestTokens,
+  inferUsageFromResponse,
+  resolveModelForFeature,
+  trackUsageAsync,
+} from "../_shared/ai_gateway.ts";
 
 function extractText(html: string): string {
-  let text = html
+  const text = html
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "")
     .replace(/<nav[\s\S]*?<\/nav>/gi, "")
@@ -31,6 +38,7 @@ serve(async (req) => {
     const AI_API_KEY = Deno.env.get("AI_API_KEY") ?? Deno.env.get("OPENAI_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
     if (!AI_API_KEY) throw new Error("AI_API_KEY is not configured");
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) throw new Error("Supabase environment is not configured");
     if (!titolo) throw new Error("Titolo mancante");
@@ -80,16 +88,53 @@ ${articleContent ? `\nContenuto dell'articolo:\n${articleContent}` : "\nNon è s
 
 Scrivi SOLO il riassunto, senza titoli o prefissi. Usa un tono professionale ma accessibile.`;
 
-      const { response: summaryResponse } = await chatCompletionWithComplexFallback({
+      let userId: string | null = null;
+      const authHeader = req.headers.get("Authorization");
+      if (authHeader && SUPABASE_ANON_KEY) {
+        const token = authHeader.replace(/^Bearer\\s+/i, "").trim();
+        if (token) {
+          const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            global: { headers: { Authorization: `Bearer ${token}` } },
+          });
+          const { data: authData } = await authClient.auth.getUser();
+          userId = authData.user?.id ?? null;
+        }
+      }
+
+      if (userId) {
+        const estimatedTokens = estimateRequestTokens({
+          base: 900,
+          text: prompt,
+        });
+        const quotaGuard = await enforceQuota({
+          userId,
+          estimatedTokens,
+          corsHeaders,
+        });
+        if (!quotaGuard.ok) return quotaGuard.response;
+      }
+
+      const modelUsed = resolveModelForFeature("news-summary", "free");
+      const summaryResponse = await chatCompletion({
         apiKey: AI_API_KEY,
-        isComplexTask: true,
-        validateContent: isArticleSummaryAcceptable,
+        model: modelUsed,
         messages: [{ role: "user", content: prompt }],
+        stream: false,
       });
 
       if (summaryResponse.ok) {
         const summaryData = await summaryResponse.json();
         const generatedSummary = extractAssistantContent(summaryData) || null;
+        if (generatedSummary && userId) {
+          const usage = inferUsageFromResponse(summaryData, generatedSummary, prompt);
+          await trackUsageAsync({
+            userId,
+            feature: "news-summary",
+            modelUsed,
+            promptTokens: usage.promptTokens,
+            completionTokens: usage.completionTokens,
+          });
+        }
         if (generatedSummary) {
           const { error: cacheWriteError } = await supabase
             .from("news_cache")
@@ -123,11 +168,3 @@ Scrivi SOLO il riassunto, senza titoli o prefissi. Usa un tono professionale ma 
     });
   }
 });
-
-function isArticleSummaryAcceptable(content: string): boolean {
-  const sentences = content
-    .split(/[.!?]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return sentences.length >= 7;
-}

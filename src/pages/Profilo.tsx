@@ -26,6 +26,8 @@ import {
 import { toast } from "sonner";
 import { isOpeningLoaderEnabled, setOpeningLoaderEnabled } from "@/lib/openingLoaderPreference";
 import { isNativeBillingPlatform, loadBillingOfferingMetadata, loadBillingOffers } from "@/lib/billing/revenuecat";
+import AiUsageStatsSection from "@/components/profile/AiUsageStatsSection";
+import AdminAiUsagePanel from "@/components/profile/AdminAiUsagePanel";
 
 const impostazioni = [
   { icona: Bell, label: "Notifiche", path: "/profilo/notifiche" },
@@ -243,6 +245,16 @@ const Profilo = () => {
           </div>
         </motion.button>
       </motion.div>
+
+      <motion.div variants={item}>
+        <AiUsageStatsSection />
+      </motion.div>
+
+      {isAdmin ? (
+        <motion.div variants={item}>
+          <AdminAiUsagePanel />
+        </motion.div>
+      ) : null}
 
       {/* Badge Grid */}
       <motion.div variants={item} className="mb-6">

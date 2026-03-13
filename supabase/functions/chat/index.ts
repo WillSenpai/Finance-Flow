@@ -3,11 +3,12 @@ import { chatCompletion, extractAssistantContent } from "../_shared/ai.ts";
 import { buildCorsHeaders, rejectDisallowedOrigin } from "../_shared/cors.ts";
 import { requireAuthenticatedUser } from "../_shared/auth.ts";
 import {
-  consumeAiTokens,
-  estimateTokensFromMessages,
-  estimateTokensFromText,
-  quotaExceededResponse,
-} from "../_shared/quota.ts";
+  enforceQuota,
+  estimateRequestTokens,
+  paymentRequiredResponse,
+  resolveModelForFeature,
+  trackUsageAsync,
+} from "../_shared/ai_gateway.ts";
 
 type CoachContext = {
   name?: string;
@@ -45,6 +46,8 @@ serve(async (req) => {
     const { messages, context, mode } = (await req.json()) as ChatRequestBody;
     const AI_API_KEY = Deno.env.get("AI_API_KEY") ?? Deno.env.get("OPENAI_API_KEY");
     if (!AI_API_KEY) throw new Error("AI_API_KEY is not configured");
+
+    const contextForPrompt = buildSelectiveContext(context ?? {}, messages ?? []);
 
     const systemPrompt = `Sei Mark, un coach finanziario personale amichevole e competente dentro l'app Finance Flow. Parli sempre in italiano.
 
@@ -120,20 +123,20 @@ IMPORTANTE per Mermaid:
 
 ## Contesto finanziario dell'utente
 
-- Nome: ${context?.name || "Utente"}
-- Livello: ${context?.level === "beginner" ? "Principiante" : context?.level === "intermediate" ? "Intermedio" : "Esperto"}
-- Obiettivi: ${context?.goals?.join(", ") || "Non specificati"}
-- Patrimonio totale: €${context?.patrimonio?.toLocaleString("it-IT") || "0"}
-- Salvadanai: ${context?.salvadanai?.map((s) => `${s.nome}: €${s.attuale.toLocaleString("it-IT")}/${s.obiettivo.toLocaleString("it-IT")} (${Math.round((s.attuale / s.obiettivo) * 100)}%)`).join("; ") || "Nessuno"}
-- Spese questo mese totali: €${context?.speseThisMonth?.toLocaleString("it-IT") || "0"}
-- Spese per categoria questo mese: ${context?.spesePerCategoria?.map((c) => `${c.nome}: €${c.totale.toLocaleString("it-IT")}`).join(", ") || "Nessuna spesa registrata"}
-- Investimenti: ${context?.investimenti?.map((i) => `${i.nome}: €${i.valore.toLocaleString("it-IT")}`).join(", ") || "Nessun investimento"}
-- Stelline ⭐: ${context?.points || 0}
-- Streak: ${context?.streak || 0} giorni
-- Badge sbloccati: ${context?.badgeSbloccati?.join(", ") || "Nessuno"}
-- Badge da sbloccare: ${context?.badgeDaSbloccare?.join(", ") || "Nessuno"}
-- Sfide attive: ${context?.sfideAttive?.map((s) => `${s.nome}: ${s.progresso}/${s.target} ${s.completata ? "(completata!)" : ""}`).join("; ") || "Nessuna"}
-- Corsi Accademia: ${context?.corsi?.map((c) => `${c.titolo}: ${c.completate}/${c.totali} lezioni`).join("; ") || "Non disponibili"}
+- Nome: ${contextForPrompt.name || "Utente"}
+- Livello: ${contextForPrompt.level === "beginner" ? "Principiante" : contextForPrompt.level === "intermediate" ? "Intermedio" : "Esperto"}
+- Obiettivi: ${contextForPrompt.goals?.join(", ") || "Non specificati"}
+- Patrimonio totale: €${contextForPrompt.patrimonio?.toLocaleString("it-IT") || "0"}
+- Salvadanai: ${contextForPrompt.salvadanai?.map((s) => `${s.nome}: €${s.attuale.toLocaleString("it-IT")}/${s.obiettivo.toLocaleString("it-IT")} (${Math.round((s.attuale / s.obiettivo) * 100)}%)`).join("; ") || "Nessuno"}
+- Spese questo mese totali: €${contextForPrompt.speseThisMonth?.toLocaleString("it-IT") || "0"}
+- Spese per categoria questo mese: ${contextForPrompt.spesePerCategoria?.map((c) => `${c.nome}: €${c.totale.toLocaleString("it-IT")}`).join(", ") || "Nessuna spesa registrata"}
+- Investimenti: ${contextForPrompt.investimenti?.map((i) => `${i.nome}: €${i.valore.toLocaleString("it-IT")}`).join(", ") || "Nessun investimento"}
+- Stelline ⭐: ${contextForPrompt.points || 0}
+- Streak: ${contextForPrompt.streak || 0} giorni
+- Badge sbloccati: ${contextForPrompt.badgeSbloccati?.join(", ") || "Nessuno"}
+- Badge da sbloccare: ${contextForPrompt.badgeDaSbloccare?.join(", ") || "Nessuno"}
+- Sfide attive: ${contextForPrompt.sfideAttive?.map((s) => `${s.nome}: ${s.progresso}/${s.target} ${s.completata ? "(completata!)" : ""}`).join("; ") || "Nessuna"}
+- Corsi Accademia: ${contextForPrompt.corsi?.map((c) => `${c.titolo}: ${c.completate}/${c.totali} lezioni`).join("; ") || "Non disponibili"}
 
 ## Regole di risposta
 - Rispondi in modo conciso (max 200 parole) a meno che l'utente non chieda spiegazioni approfondite o mappe concettuali
@@ -142,10 +145,19 @@ IMPORTANTE per Mermaid:
 - Quando l'utente chiede di capire un concetto, offri anche una mappa concettuale
 - Quando suggerisci azioni, includi link interni alle sezioni rilevanti`;
 
+    if (mode === "pro-analysis") {
+      return paymentRequiredResponse(corsHeaders, "Questa modalità del Coach AI è disponibile solo per il piano Pro.");
+    }
+
     if (mode === "suggestions") {
-      const estimatedTokens = 700 + estimateTokensFromMessages(messages ?? []);
-      const quota = await consumeAiTokens(authResult.user.id, estimatedTokens, "chat:suggestions");
-      if (!quota.allowed) return quotaExceededResponse(quota, corsHeaders);
+      const estimatedTokens = estimateRequestTokens({ base: 700, messages: messages ?? [] });
+      const quotaGuard = await enforceQuota({
+        userId: authResult.user.id,
+        estimatedTokens,
+        corsHeaders,
+      });
+      if (!quotaGuard.ok) return quotaGuard.response;
+      const modelUsed = resolveModelForFeature("chat:suggestions", quotaGuard.quota.plan);
 
       const suggestionsPrompt = `Genera ESATTAMENTE 3 suggerimenti brevi per continuare una chat finanziaria in italiano.
 
@@ -158,12 +170,12 @@ Regole:
 
       const suggestionsResponse = await chatCompletion({
         apiKey: AI_API_KEY,
-        model: Deno.env.get("AI_BASE_MODEL"),
+        model: modelUsed,
         messages: [
           { role: "system", content: suggestionsPrompt },
           {
             role: "user",
-            content: `Contesto utente:\n${JSON.stringify(context ?? {}, null, 2)}\n\nUltimi messaggi:\n${JSON.stringify(messages ?? [], null, 2)}`,
+            content: `Contesto utente:\n${JSON.stringify(contextForPrompt, null, 2)}\n\nUltimi messaggi:\n${JSON.stringify(messages ?? [], null, 2)}`,
           },
         ],
         stream: false,
@@ -179,6 +191,17 @@ Regole:
       const suggestionsJson = await suggestionsResponse.json();
       const rawContent = extractAssistantContent(suggestionsJson);
       const suggestions = parseSuggestions(rawContent);
+      const promptTokens = Math.ceil(
+        (JSON.stringify(contextForPrompt).length + JSON.stringify(messages ?? []).length + suggestionsPrompt.length) / 4,
+      );
+      const completionTokens = Math.ceil(rawContent.length / 4);
+      await trackUsageAsync({
+        userId: authResult.user.id,
+        feature: "chat:suggestions",
+        modelUsed,
+        promptTokens,
+        completionTokens,
+      });
 
       return new Response(JSON.stringify({ suggestions }), {
         status: 200,
@@ -186,17 +209,27 @@ Regole:
       });
     }
 
-    const estimatedTokens =
-      1400 + estimateTokensFromMessages(messages ?? []) + estimateTokensFromText(JSON.stringify(context ?? {}));
-    const quota = await consumeAiTokens(authResult.user.id, estimatedTokens, "chat");
-    if (!quota.allowed) return quotaExceededResponse(quota, corsHeaders);
+    const selectiveContext = contextForPrompt;
+    const compactedMessages = compactMessagesForCost(messages ?? []);
+    const estimatedTokens = estimateRequestTokens({
+      base: 1400,
+      messages: compactedMessages,
+      context: selectiveContext,
+    });
+    const quotaGuard = await enforceQuota({
+      userId: authResult.user.id,
+      estimatedTokens,
+      corsHeaders,
+    });
+    if (!quotaGuard.ok) return quotaGuard.response;
+    const modelUsed = resolveModelForFeature("chat", quotaGuard.quota.plan);
 
     const response = await chatCompletion({
       apiKey: AI_API_KEY,
-      model: Deno.env.get("AI_BASE_MODEL"),
+      model: modelUsed,
       messages: [
         { role: "system", content: systemPrompt },
-        ...messages,
+        ...compactedMessages,
       ],
       stream: true,
     });
@@ -219,7 +252,47 @@ Regole:
       });
     }
 
-    return new Response(response.body, {
+    // Stream forward while computing a lightweight completion-token estimate.
+    const source = response.body?.getReader();
+    if (!source) {
+      return new Response(JSON.stringify({ error: "Stream AI non disponibile" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    let completionChars = 0;
+    const stream = new ReadableStream<Uint8Array>({
+      async pull(controller) {
+        const { done, value } = await source.read();
+        if (done) {
+          controller.close();
+          await trackUsageAsync({
+            userId: authResult.user.id,
+            feature: "chat",
+            modelUsed,
+            promptTokens: Math.ceil(
+              (
+                systemPrompt.length +
+                JSON.stringify(selectiveContext).length +
+                JSON.stringify(compactedMessages).length
+              ) / 4,
+            ),
+            completionTokens: Math.ceil(completionChars / 4),
+          });
+          return;
+        }
+
+        if (value) {
+          const chunk = decoder.decode(value, { stream: true });
+          completionChars += extractDeltaChars(chunk);
+          controller.enqueue(encoder.encode(chunk));
+        }
+      },
+    });
+
+    return new Response(stream, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
@@ -258,6 +331,79 @@ function parseSuggestions(rawContent: string): string[] {
   if (lineParsed.length === 3) return lineParsed;
 
   return fallback;
+}
+
+function extractDeltaChars(sseChunk: string): number {
+  let chars = 0;
+  for (const rawLine of sseChunk.split("\n")) {
+    const line = rawLine.trim();
+    if (!line.startsWith("data: ") || line === "data: [DONE]") continue;
+    const payload = line.slice(6);
+    try {
+      const parsed = JSON.parse(payload);
+      const delta = parsed?.choices?.[0]?.delta?.content;
+      if (typeof delta === "string") chars += delta.length;
+    } catch {
+      // ignore malformed partial lines in stream chunks
+    }
+  }
+  return chars;
+}
+
+function compactMessagesForCost(messages: Array<{ role: "user" | "assistant" | "system"; content: string }>) {
+  if (messages.length <= 10) return messages;
+
+  const preservedTail = messages.slice(-5);
+  const oldMessages = messages.slice(0, -5);
+
+  // TODO: Replace with cheap-model summarization call in a background pass:
+  // 1) send oldMessages to a low-cost model with strict JSON schema
+  // 2) persist summary in coach_conversations metadata
+  // 3) reuse persisted summary in subsequent turns, refreshing every N messages.
+  const summary = oldMessages
+    .slice(-8)
+    .map((m) => `${m.role}: ${m.content.replace(/\s+/g, " ").trim().slice(0, 120)}`)
+    .join(" | ");
+
+  return [
+    {
+      role: "system" as const,
+      content: `Riassunto conversazione precedente (compresso per ridurre costi token): ${summary}`,
+    },
+    ...preservedTail,
+  ];
+}
+
+function buildSelectiveContext(
+  context: CoachContext,
+  messages: Array<{ role: "user" | "assistant" | "system"; content: string }>,
+) {
+  const latestUserInput = [...messages]
+    .reverse()
+    .find((m) => m.role === "user")
+    ?.content?.toLowerCase() ?? "";
+
+  const needsGoals = /(obiettiv|risparmi|salvadanaio|target)/i.test(latestUserInput);
+  const needsSpese = /(spes|budget|categoria|uscite|consum)/i.test(latestUserInput);
+  const needsInvestimenti = /(invest|etf|azioni|crypto|obbligaz)/i.test(latestUserInput);
+  const needsGamification = /(badge|streak|sfide|stellin|punti|accademia|corso)/i.test(latestUserInput);
+
+  return {
+    name: context.name,
+    level: context.level,
+    goals: context.goals,
+    patrimonio: context.patrimonio,
+    salvadanai: needsGoals ? context.salvadanai : undefined,
+    speseThisMonth: needsSpese ? context.speseThisMonth : undefined,
+    spesePerCategoria: needsSpese ? context.spesePerCategoria : undefined,
+    investimenti: needsInvestimenti ? context.investimenti : undefined,
+    points: needsGamification ? context.points : undefined,
+    streak: needsGamification ? context.streak : undefined,
+    badgeSbloccati: needsGamification ? context.badgeSbloccati : undefined,
+    badgeDaSbloccare: needsGamification ? context.badgeDaSbloccare : undefined,
+    sfideAttive: needsGamification ? context.sfideAttive : undefined,
+    corsi: needsGamification ? context.corsi : undefined,
+  };
 }
 
 function cleanSuggestions(values: unknown[]): string[] {

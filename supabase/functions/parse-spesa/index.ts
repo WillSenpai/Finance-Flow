@@ -3,10 +3,12 @@ import { chatCompletion } from "../_shared/ai.ts";
 import { buildCorsHeaders, rejectDisallowedOrigin } from "../_shared/cors.ts";
 import { requireAuthenticatedUser } from "../_shared/auth.ts";
 import {
-  consumeAiTokens,
-  estimateTokensFromText,
-  quotaExceededResponse,
-} from "../_shared/quota.ts";
+  enforceQuota,
+  estimateRequestTokens,
+  inferUsageFromResponse,
+  resolveModelForFeature,
+  trackUsageAsync,
+} from "../_shared/ai_gateway.ts";
 
 serve(async (req) => {
   const corsHeaders = buildCorsHeaders(req);
@@ -18,19 +20,28 @@ serve(async (req) => {
     const authResult = await requireAuthenticatedUser(req, corsHeaders);
     if (!authResult.ok) return authResult.response;
 
-    const { text, categorie } = await req.json();
+    const { text, categorie } = await req.json() as {
+      text?: string;
+      categorie?: Array<{ id?: string; nome?: string; emoji?: string }>;
+    };
     const AI_API_KEY = Deno.env.get("AI_API_KEY") ?? Deno.env.get("OPENAI_API_KEY");
     if (!AI_API_KEY) throw new Error("AI_API_KEY is not configured");
 
-    const estimatedTokens = 250 + estimateTokensFromText(text ?? "");
-    const quota = await consumeAiTokens(authResult.user.id, estimatedTokens, "parse-spesa");
-    if (!quota.allowed) return quotaExceededResponse(quota, corsHeaders);
+    const estimatedTokens = estimateRequestTokens({ base: 250, text: text ?? "" });
+    const quotaGuard = await enforceQuota({
+      userId: authResult.user.id,
+      estimatedTokens,
+      corsHeaders,
+    });
+    if (!quotaGuard.ok) return quotaGuard.response;
 
-    const categorieList = categorie?.map((c: any) => `${c.id}: ${c.nome} (${c.emoji})`).join(", ") || "";
+    const modelUsed = resolveModelForFeature("parse-spesa", quotaGuard.quota.plan);
+
+    const categorieList = categorie?.map((c) => `${c.id}: ${c.nome} (${c.emoji})`).join(", ") || "";
 
     const response = await chatCompletion({
       apiKey: AI_API_KEY,
-      model: Deno.env.get("AI_BASE_MODEL"),
+      model: modelUsed,
       messages: [
         {
           role: "system",
@@ -75,6 +86,16 @@ serve(async (req) => {
     }
 
     const data = await response.json();
+    const rawArguments = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments ?? "";
+    const usage = inferUsageFromResponse(data, rawArguments, text ?? "");
+    await trackUsageAsync({
+      userId: authResult.user.id,
+      feature: "parse-spesa",
+      modelUsed,
+      promptTokens: usage.promptTokens,
+      completionTokens: usage.completionTokens,
+    });
+
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall) {
       return new Response(JSON.stringify({ error: "Nessun risultato" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
