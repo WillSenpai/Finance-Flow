@@ -85,9 +85,15 @@ const queryClient = new QueryClient({
 const AppRoutes = () => {
   const { user, loading: authLoading } = useAuth();
   const { hasCompletedOnboarding, loadingData } = useUser();
+  const [bootstrapTimedOut, setBootstrapTimedOut] = useState(false);
 
-  if (authLoading || (user && loadingData)) {
-    return null;
+  useEffect(() => {
+    const timer = window.setTimeout(() => setBootstrapTimedOut(true), 12_000);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  if (!bootstrapTimedOut && (authLoading || (user && loadingData))) {
+    return <div className="min-h-screen bg-background" />;
   }
 
   // Not authenticated
@@ -173,6 +179,7 @@ const AppBootstrapGate = () => {
     slowThresholdMs: OPENING_SLOW_MS,
     skipInitialOpening: skipOpening,
   });
+  const isDev = import.meta.env.DEV;
 
   useEffect(() => {
     void hideNativeSplash();
@@ -206,12 +213,12 @@ const AppBootstrapGate = () => {
     }
   }, [canExit, markExited]);
 
-  const shouldShowOpening = openingEnabled === true && showOpening;
+  const shouldShowOpening = !isDev && openingEnabled === true && showOpening;
 
   return (
     <>
       <AnimatePresence>{shouldShowOpening ? <OpeningLoader /> : null}</AnimatePresence>
-      {!shouldShowOpening && <SplashComponent />}
+      {!shouldShowOpening && !isDev && <SplashComponent />}
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ScrollToTop />
         <Suspense fallback={<div className="min-h-screen bg-background" />}>

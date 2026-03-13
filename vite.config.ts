@@ -4,12 +4,15 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig(() => {
+  const devHost = process.env.VITE_DEV_HOST || "127.0.0.1";
+  const devPort = Number(process.env.VITE_DEV_PORT || "5173");
+
   return {
     server: {
-      host: "::",
-      port: 8080,
+      host: devHost,
+      port: Number.isFinite(devPort) ? devPort : 5173,
       hmr: {
-        overlay: false,
+        overlay: true,
       },
     },
     plugins: [react()],

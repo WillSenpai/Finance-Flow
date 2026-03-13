@@ -128,6 +128,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
     const loadProfile = async () => {
       setLoadingData(true);
+      const loadingWatchdog = window.setTimeout(() => {
+        // Prevent app bootstrap deadlock if any network call hangs indefinitely.
+        setLoadingData(false);
+      }, 10_000);
+
       try {
         // Load profile
         const { data: profile } = await supabase
@@ -242,8 +247,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (err) {
         console.error("Error loading user data:", err);
+      } finally {
+        window.clearTimeout(loadingWatchdog);
+        setLoadingData(false);
       }
-      setLoadingData(false);
     };
 
     loadProfile();

@@ -62,6 +62,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    const authWatchdog = window.setTimeout(() => {
+      // Avoid bootstrap deadlock if auth client never resolves (network/plugin edge cases).
+      setLoading(false);
+    }, 10_000);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, nextSession) => {
         if (nextSession?.user) {
@@ -112,7 +117,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     })();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      window.clearTimeout(authWatchdog);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
