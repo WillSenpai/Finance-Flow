@@ -7,6 +7,7 @@ import { Suspense, lazy, useEffect, useState } from "react";
 import { ThemeProvider } from "next-themes";
 import OpeningLoader from "./components/startup/OpeningLoader";
 import MobileLayout from "./components/layout/MobileLayout";
+import NativeRouteStateManager from "./components/NativeRouteStateManager";
 import { useSplash } from "./components/SplashScreen";
 import { ScrollToTop } from "./components/ScrollToTop";
 import AppLifecycleManager from "./components/AppLifecycleManager";
@@ -24,6 +25,7 @@ import {
   OPENING_LOADER_PREF_EVENT,
   resolveOpeningLoaderEnabled,
 } from "./lib/openingLoaderPreference";
+import { shouldSkipOpeningLoaderSync } from "./lib/nativeResume";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const GestisciPatrimonio = lazy(() => import("./pages/GestisciPatrimonio"));
@@ -144,12 +146,14 @@ const AppBootstrapGate = () => {
   const [openingEnabled, setOpeningEnabled] = useState<boolean | null>(() =>
     resolveOpeningLoaderEnabled({ authLoading, userId: user?.id }),
   );
+  const [skipOpening] = useState(() => shouldSkipOpeningLoaderSync());
   const { showOpening, canExit, markExited } = useOpeningBootstrap({
     authLoading,
     hasUser: Boolean(user),
     loadingData,
     minDurationMs: OPENING_MIN_MS,
     slowThresholdMs: OPENING_SLOW_MS,
+    skipInitialOpening: skipOpening,
   });
 
   useEffect(() => {
@@ -193,7 +197,9 @@ const AppBootstrapGate = () => {
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ScrollToTop />
         <Suspense fallback={<div className="min-h-screen bg-background" />}>
-          <AppRoutes />
+          <NativeRouteStateManager>
+            <AppRoutes />
+          </NativeRouteStateManager>
         </Suspense>
       </BrowserRouter>
     </>

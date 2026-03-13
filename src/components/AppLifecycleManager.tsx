@@ -1,10 +1,9 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { App as CapacitorApp } from "@capacitor/app";
-import { Preferences } from "@capacitor/preferences";
+import { persistBackgroundTimestamp, readBackgroundTimestamp } from "@/lib/nativeResume";
 
 const BACKGROUND_TIMEOUT_MS = 10 * 60 * 1000;
-const LAST_BACKGROUND_AT_KEY = "last_background_at";
 
 const AppLifecycleManager = () => {
   const queryClient = useQueryClient();
@@ -12,10 +11,7 @@ const AppLifecycleManager = () => {
   useEffect(() => {
     const saveBackgroundTimestamp = async () => {
       try {
-        await Preferences.set({
-          key: LAST_BACKGROUND_AT_KEY,
-          value: String(Date.now()),
-        });
+        await persistBackgroundTimestamp();
       } catch {
         // Ignore plugin errors; app refresh logic is best-effort.
       }
@@ -23,10 +19,10 @@ const AppLifecycleManager = () => {
 
     const refreshIfExpired = async () => {
       try {
-        const { value } = await Preferences.get({ key: LAST_BACKGROUND_AT_KEY });
-        if (!value) return;
+        const lastBackgroundAt = await readBackgroundTimestamp();
+        if (!lastBackgroundAt) return;
 
-        const elapsed = Date.now() - Number(value);
+        const elapsed = Date.now() - lastBackgroundAt;
         if (elapsed <= BACKGROUND_TIMEOUT_MS) return;
 
         await queryClient.invalidateQueries();

@@ -6,6 +6,7 @@ interface UseOpeningBootstrapInput {
   loadingData: boolean;
   minDurationMs?: number;
   slowThresholdMs?: number;
+  skipInitialOpening?: boolean;
 }
 
 interface UseOpeningBootstrapOutput {
@@ -22,10 +23,11 @@ export const useOpeningBootstrap = ({
   loadingData,
   minDurationMs,
   slowThresholdMs,
+  skipInitialOpening = false,
 }: UseOpeningBootstrapInput): UseOpeningBootstrapOutput => {
   const [minElapsed, setMinElapsed] = useState(false);
   const [slowElapsed, setSlowElapsed] = useState(false);
-  const [hasExited, setHasExited] = useState(false);
+  const [hasExited, setHasExited] = useState(skipInitialOpening);
 
   useEffect(() => {
     const minTimer = window.setTimeout(() => setMinElapsed(true), minDurationMs ?? 0);

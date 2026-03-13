@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   CalendarDays,
@@ -12,8 +12,10 @@ import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { Capacitor } from "@capacitor/core";
 
 import type { CategoriaSpesa, Spesa } from "@/contexts/UserContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useUser } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -90,13 +92,23 @@ const createEmptyState = () => ({
   editingId: null as string | null,
 });
 
+type ExpenseDraft = {
+  formState: ReturnType<typeof createEmptyState>;
+  expenseDrawerOpen: boolean;
+  showAdvanced: boolean;
+};
+
 const GestisciSpese = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { spese, setSpese, categorieSpese } = useUser();
 
   const [expenseDrawerOpen, setExpenseDrawerOpen] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [formState, setFormState] = useState(createEmptyState);
+  const hasRestoredDraftRef = useRef(false);
+  const draftKey = `financeflow:spese:draft:${user?.id ?? "guest"}`;
+  const isNative = Capacitor.isNativePlatform();
 
   const resetForm = () => {
     setFormState(createEmptyState());
@@ -161,6 +173,7 @@ const GestisciSpese = () => {
 
     setExpenseDrawerOpen(false);
     resetForm();
+    window.localStorage.removeItem(draftKey);
   };
 
   const editSpesa = (spesa: Spesa) => {
@@ -181,7 +194,10 @@ const GestisciSpese = () => {
 
   const deleteSpesa = (id: string) => {
     setSpese(spese.filter((spesa) => spesa.id !== id));
-    if (formState.editingId === id) resetForm();
+    if (formState.editingId === id) {
+      resetForm();
+      window.localStorage.removeItem(draftKey);
+    }
     toast.success("Spesa eliminata.");
   };
 
@@ -214,6 +230,56 @@ const GestisciSpese = () => {
 
   const isFormValid =
     formState.nome.trim().length > 0 && Number.parseFloat(formState.importo) > 0 && Boolean(formState.categoriaId);
+
+  useEffect(() => {
+    if (!isNative || hasRestoredDraftRef.current) return;
+
+    hasRestoredDraftRef.current = true;
+    const raw = window.localStorage.getItem(draftKey);
+    if (!raw) return;
+
+    try {
+      const draft = JSON.parse(raw) as Partial<ExpenseDraft>;
+      if (draft.formState) {
+        setFormState({
+          ...createEmptyState(),
+          ...draft.formState,
+        });
+      }
+      setShowAdvanced(Boolean(draft.showAdvanced));
+      setExpenseDrawerOpen(Boolean(draft.expenseDrawerOpen));
+    } catch {
+      window.localStorage.removeItem(draftKey);
+    }
+  }, [draftKey, isNative]);
+
+  useEffect(() => {
+    if (!isNative || !hasRestoredDraftRef.current) return;
+
+    const isEmptyDraft =
+      !expenseDrawerOpen &&
+      !showAdvanced &&
+      !formState.nome.trim() &&
+      !formState.importo &&
+      !formState.categoriaId &&
+      formState.ricorrenza === "once" &&
+      !formState.nota &&
+      !formState.badgeInput &&
+      formState.badges.length === 0 &&
+      formState.editingId === null;
+
+    if (isEmptyDraft) {
+      window.localStorage.removeItem(draftKey);
+      return;
+    }
+
+    const draft: ExpenseDraft = {
+      formState,
+      expenseDrawerOpen,
+      showAdvanced,
+    };
+    window.localStorage.setItem(draftKey, JSON.stringify(draft));
+  }, [draftKey, expenseDrawerOpen, formState, isNative, showAdvanced]);
 
   return (
     <>
@@ -354,7 +420,10 @@ const GestisciSpese = () => {
         open={expenseDrawerOpen}
         onOpenChange={(open) => {
           setExpenseDrawerOpen(open);
-          if (!open) resetForm();
+          if (!open) {
+            resetForm();
+            window.localStorage.removeItem(draftKey);
+          }
         }}
       >
         <DrawerContent className="overflow-hidden overscroll-none rounded-t-[2rem] border-border/70 bg-background/95">
@@ -565,6 +634,7 @@ const GestisciSpese = () => {
                     onClick={() => {
                       setExpenseDrawerOpen(false);
                       resetForm();
+                      window.localStorage.removeItem(draftKey);
                     }}
                     className="w-full min-w-0 rounded-2xl sm:w-auto"
                   >
