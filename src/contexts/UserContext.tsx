@@ -134,13 +134,26 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       }, 10_000);
 
       try {
-        // Load profile
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
+        // Fire all queries in parallel to minimize bootstrap latency.
+        const [
+          { data: profile },
+          { data: roles },
+          { data: patrimonio },
+          { data: inv },
+          { data: salv },
+          { data: catSpese },
+          { data: speseData },
+        ] = await Promise.all([
+          supabase.from("profiles").select("*").eq("id", user.id).single(),
+          supabase.from("user_roles" as any).select("role").eq("user_id", user.id),
+          supabase.from("patrimonio").select("*").eq("user_id", user.id).order("ordine"),
+          supabase.from("investimenti").select("*").eq("user_id", user.id),
+          supabase.from("salvadanai").select("*").eq("user_id", user.id),
+          supabase.from("categorie_spese").select("*").eq("user_id", user.id),
+          supabase.from("spese").select("*").eq("user_id", user.id),
+        ]);
 
+        // Apply profile data
         if (profile) {
           setUserDataState({
             name: profile.name,
@@ -154,25 +167,14 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           setHasCompletedOnboarding(profile.has_completed_onboarding);
         }
 
-        // Check admin role
-        const { data: roles } = await supabase
-          .from("user_roles" as any)
-          .select("role")
-          .eq("user_id", user.id);
-
+        // Apply admin role
         const adminRole = roles?.some((r: any) => r.role === "admin");
         setIsAdmin(!!adminRole);
         if (adminRole) {
           setHasCompletedOnboarding(true);
         }
 
-        // Load patrimonio
-        const { data: patrimonio } = await supabase
-          .from("patrimonio")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("ordine");
-
+        // Apply patrimonio
         if (patrimonio && patrimonio.length > 0) {
           setCategorieState(patrimonio.map(p => ({
             nome: p.nome,
@@ -183,12 +185,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           setLastPatrimonioUpdate(patrimonio[0].created_at);
         }
 
-        // Load investimenti
-        const { data: inv } = await supabase
-          .from("investimenti")
-          .select("*")
-          .eq("user_id", user.id);
-
+        // Apply investimenti
         if (inv && inv.length > 0) {
           setInvestimentiState(inv.map(i => ({
             nome: i.nome,
@@ -198,12 +195,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           })));
         }
 
-        // Load salvadanai
-        const { data: salv } = await supabase
-          .from("salvadanai")
-          .select("*")
-          .eq("user_id", user.id);
-
+        // Apply salvadanai
         if (salv && salv.length > 0) {
           setSalvadanaiState(salv.map(s => ({
             nome: s.nome,
@@ -212,12 +204,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           })));
         }
 
-        // Load categorie spese
-        const { data: catSpese } = await supabase
-          .from("categorie_spese")
-          .select("*")
-          .eq("user_id", user.id);
-
+        // Apply categorie spese
         if (catSpese && catSpese.length > 0) {
           setCategorieSpeseState(catSpese.map(c => ({
             id: c.id,
@@ -227,12 +214,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           })));
         }
 
-        // Load spese
-        const { data: speseData } = await supabase
-          .from("spese")
-          .select("*")
-          .eq("user_id", user.id);
-
+        // Apply spese
         if (speseData && speseData.length > 0) {
           setSpeseState(speseData.map(s => ({
             id: s.id,

@@ -4,13 +4,14 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig(() => {
-  const devHost = process.env.VITE_DEV_HOST || "127.0.0.1";
+  const devHost = process.env.VITE_DEV_HOST || "localhost";
   const devPort = Number(process.env.VITE_DEV_PORT || "5173");
 
   return {
     server: {
       host: devHost,
       port: Number.isFinite(devPort) ? devPort : 5173,
+      strictPort: false,
       watch: {
         ignored: [
           "**/ios/DerivedData/**",
@@ -25,8 +26,9 @@ export default defineConfig(() => {
     },
     plugins: [react()],
     optimizeDeps: {
-      // Keep explicit includes for startup performance, but allow automatic
-      // discovery so transitive CJS deps are still pre-bundled in dev.
+      // Pre-declare only the core runtime deps. Heavy deps like mermaid and
+      // framer-motion are excluded from the forced-include list so Vite
+      // discovers and bundles them lazily without blocking page serve.
       noDiscovery: false,
       holdUntilCrawlEnd: false,
       include: [
@@ -43,6 +45,11 @@ export default defineConfig(() => {
         "d3-array",
         "style-to-js",
         "style-to-object",
+        "@supabase/supabase-js",
+        "clsx",
+        "tailwind-merge",
+        "sonner",
+        "zod",
       ],
     },
     build: {

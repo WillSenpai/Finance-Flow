@@ -19,7 +19,8 @@
     "reset:deps": "rm -rf node_modules/.vite && npm install",
     "icons:generate": "bash scripts/generate-icons.sh",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "deploy:ios": "npm run build && npx cap sync && chmod -R u+w ios && dot_clean ios/App && find ios/App -exec xattr -c {} + 2>/dev/null || true && npx cap run ios --target 6F6C05CE-467E-4450-8B41-D388E60D4164"
   },
   "dependencies": {
     "@capacitor/android": "^8.1.0",
