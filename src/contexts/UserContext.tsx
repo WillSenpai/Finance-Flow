@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
+import { trackEvent, AnalyticsEvents } from "@/lib/posthog";
 
 export interface CategoriaPatrimonio {
   nome: string;
@@ -258,6 +259,13 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
     const now = new Date().toISOString();
     setLastPatrimonioUpdate(now);
+
+    const totalValue = c.reduce((sum, cat) => sum + cat.valore, 0);
+    trackEvent(AnalyticsEvents.PATRIMONIO_UPDATED, {
+      total_value: totalValue,
+      categories_count: c.length,
+    });
+
     // Delete and re-insert
     await supabase.from("patrimonio").delete().eq("user_id", user.id);
     if (c.length > 0) {
@@ -277,6 +285,13 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const setSalvadanai = async (s: Salvadanaio[]) => {
     setSalvadanaiState(s);
     if (!user) return;
+
+    trackEvent(AnalyticsEvents.SALVADANAIO_UPDATED, {
+      count: s.length,
+      total_goal: s.reduce((sum, sal) => sum + sal.obiettivo, 0),
+      total_saved: s.reduce((sum, sal) => sum + sal.attuale, 0),
+    });
+
     await supabase.from("salvadanai").delete().eq("user_id", user.id);
     if (s.length > 0) {
       await supabase.from("salvadanai").insert(
@@ -293,6 +308,12 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const setInvestimenti = async (i: Investimento[]) => {
     setInvestimentiState(i);
     if (!user) return;
+
+    trackEvent(AnalyticsEvents.INVESTIMENTO_UPDATED, {
+      count: i.length,
+      total_value: i.reduce((sum, inv) => sum + inv.valore, 0),
+    });
+
     await supabase.from("investimenti").delete().eq("user_id", user.id);
     if (i.length > 0) {
       await supabase.from("investimenti").insert(
@@ -327,6 +348,12 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const setSpese = async (s: Spesa[]) => {
     setSpeseState(s);
     if (!user) return;
+
+    trackEvent(AnalyticsEvents.SPESA_UPDATED, {
+      count: s.length,
+      total_amount: s.reduce((sum, sp) => sum + sp.importo, 0),
+    });
+
     await supabase.from("spese").delete().eq("user_id", user.id);
     if (s.length > 0) {
       // Need to map categoriaId to actual DB category ids
@@ -354,6 +381,12 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const completeOnboarding = async (data: UserData) => {
     setUserDataState(data);
     setHasCompletedOnboarding(true);
+
+    trackEvent(AnalyticsEvents.ONBOARDING_COMPLETED, {
+      level: data.level,
+      goals: data.goals,
+    });
+
     if (user) {
       await supabase.from("profiles").update({
         name: data.name,

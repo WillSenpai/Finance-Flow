@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { trackEvent, AnalyticsEvents } from "@/lib/posthog";
 
 interface DailyActivities {
   daily_login: boolean;
@@ -201,6 +202,13 @@ export const PointsProvider = ({ children }: { children: ReactNode }) => {
         return b;
       });
 
+      // Track newly unlocked badges
+      newBadges.forEach((b, i) => {
+        if (b.sbloccato && !prev.badges[i].sbloccato) {
+          trackEvent(AnalyticsEvents.BADGE_UNLOCKED, { badge_id: b.id, badge_name: b.nome });
+        }
+      });
+
       const next: PointsData = {
         points: newPoints,
         streak: newStreak,
@@ -210,6 +218,14 @@ export const PointsProvider = ({ children }: { children: ReactNode }) => {
         challenges: prev.challenges,
       };
       persist(next);
+
+      trackEvent(AnalyticsEvents.POINTS_EARNED, {
+        activity,
+        points_amount: ACTIVITY_POINTS[activity],
+        total_points: newPoints,
+        streak: newStreak,
+      });
+
       return next;
     });
   }, [persist]);
@@ -219,7 +235,11 @@ export const PointsProvider = ({ children }: { children: ReactNode }) => {
       const challenges = prev.challenges.map(c => {
         if (c.id !== challengeId || c.completata) return c;
         const newProgress = Math.min(progresso, c.target);
-        return { ...c, progresso: newProgress, completata: newProgress >= c.target };
+        const justCompleted = newProgress >= c.target;
+        if (justCompleted) {
+          trackEvent(AnalyticsEvents.CHALLENGE_COMPLETED, { challenge_id: c.id, challenge_name: c.nome });
+        }
+        return { ...c, progresso: newProgress, completata: justCompleted };
       });
       const next = { ...prev, challenges };
       persist(next);
@@ -231,10 +251,14 @@ export const PointsProvider = ({ children }: { children: ReactNode }) => {
     setData(prev => {
       const badges = prev.badges.map(b => {
         if (b.sbloccato) return b;
-        if (b.id === "first_goal") return { ...b, progresso: Math.min(context.salvadanaiCompletati, b.target), sbloccato: context.salvadanaiCompletati >= 1 };
-        if (b.id === "spese_tracker") return { ...b, progresso: Math.min(context.speseRegistrate, b.target), sbloccato: context.speseRegistrate >= 20 };
-        if (b.id === "lesson_master") return { ...b, progresso: Math.min(context.lezioniCompletate, b.target), sbloccato: context.lezioniCompletate >= 5 };
-        return b;
+        let updated = b;
+        if (b.id === "first_goal") updated = { ...b, progresso: Math.min(context.salvadanaiCompletati, b.target), sbloccato: context.salvadanaiCompletati >= 1 };
+        else if (b.id === "spese_tracker") updated = { ...b, progresso: Math.min(context.speseRegistrate, b.target), sbloccato: context.speseRegistrate >= 20 };
+        else if (b.id === "lesson_master") updated = { ...b, progresso: Math.min(context.lezioniCompletate, b.target), sbloccato: context.lezioniCompletate >= 5 };
+        if (updated.sbloccato && !b.sbloccato) {
+          trackEvent(AnalyticsEvents.BADGE_UNLOCKED, { badge_id: updated.id, badge_name: updated.nome });
+        }
+        return updated;
       });
       const next = { ...prev, badges };
       persist(next);

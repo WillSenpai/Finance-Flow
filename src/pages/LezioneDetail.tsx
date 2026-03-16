@@ -303,6 +303,9 @@ const LezioneDetail = () => {
   }, [awardPoints, legacyCompletion?.lesson_id, lessonId, nodeRuntime?.lesson_completed, queryClient, user]);
 
   const advanceNode = async (nodeKey: StepType, payload?: Record<string, unknown>) => {
+    if (!nodeKey) {
+      throw new Error(`advanceNode: node_key è vuoto o non valido (ricevuto: ${JSON.stringify(nodeKey)})`);
+    }
     await invokeLessonNodes({
       action: "advance",
       lesson_id: lessonId,
@@ -316,6 +319,9 @@ const LezioneDetail = () => {
   };
 
   const skipNode = async (nodeKey: StepType) => {
+    if (!nodeKey) {
+      throw new Error(`skipNode: node_key è vuoto o non valido (ricevuto: ${JSON.stringify(nodeKey)})`);
+    }
     try {
       await invokeLessonNodes({
         action: "skip",

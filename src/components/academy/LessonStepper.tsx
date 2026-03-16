@@ -257,6 +257,10 @@ const LessonStepper = ({
 
   const submitAdvance = async () => {
     if (!activeNode || !canComplete) return;
+    if (!activeNode.node_key) {
+      console.error("[LessonStepper] submitAdvance aborted: node_key is empty", { activeNodeIndex, activeNode });
+      return;
+    }
     setIsSubmitting(true);
     try {
       const responsePayload = {
@@ -284,6 +288,10 @@ const LessonStepper = ({
 
   const submitSkip = async () => {
     if (!activeNode || activeNode.status === "locked" || activeNode.status === "completed") return;
+    if (!activeNode.node_key) {
+      console.error("[LessonStepper] submitSkip aborted: node_key is empty", { activeNodeIndex, activeNode });
+      return;
+    }
     setIsSubmitting(true);
     try {
       await onSkipNode(activeNode.node_key);

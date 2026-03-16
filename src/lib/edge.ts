@@ -1,5 +1,6 @@
 import { ApiError } from "@/lib/api-error";
 import { triggerProPaywall } from "@/lib/billing/paywallEvents";
+import { trackEvent, AnalyticsEvents } from "@/lib/posthog";
 
 export async function invokeEdgeWithJwt<TResponse>(
   functionName: string,
@@ -26,11 +27,21 @@ export async function invokeEdgeWithJwt<TResponse>(
   if (!isOkResponse(response)) {
     const { message, code } = await readEdgeError(response);
     const status = typeof response.status === "number" ? response.status : 0;
+    trackEvent(AnalyticsEvents.EDGE_FUNCTION_ERROR, {
+      function_name: functionName,
+      status,
+      error_code: code,
+    });
     if (status === 402 || status === 429) {
       triggerProPaywall({ status, message, code });
     }
     throw new ApiError(message, { status, code });
   }
+
+  trackEvent(AnalyticsEvents.EDGE_FUNCTION_CALLED, {
+    function_name: functionName,
+    success: true,
+  });
 
   return readEdgeSuccess<TResponse>(response);
 }

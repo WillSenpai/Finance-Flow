@@ -29,6 +29,9 @@ import { shouldSkipOpeningLoaderSync } from "./lib/nativeResume";
 import { isApiError } from "@/lib/api-error";
 import { triggerProPaywall } from "@/lib/billing/paywallEvents";
 import ProPaywallProvider from "@/components/billing/ProPaywallProvider";
+import { initPostHog, trackEvent, AnalyticsEvents } from "@/lib/posthog";
+import { usePostHogIdentify } from "@/hooks/usePostHogIdentify";
+import { usePostHogPageView } from "@/hooks/usePostHogPageView";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const GestisciPatrimonio = lazy(() => import("./pages/GestisciPatrimonio"));
@@ -107,6 +110,9 @@ const AppRoutes = () => {
   const { hasCompletedOnboarding, loadingData } = useUser();
   const [bootstrapTimedOut, setBootstrapTimedOut] = useState(false);
   const isDev = import.meta.env.DEV;
+
+  // PostHog automatic page-view tracking on route change
+  usePostHogPageView();
 
   useEffect(() => {
     const timer = window.setTimeout(() => setBootstrapTimedOut(true), 12_000);
@@ -203,6 +209,9 @@ const AppBootstrapGate = () => {
   const { user, loading: authLoading } = useAuth();
   const { loadingData } = useUser();
   const { SplashComponent } = useSplash();
+
+  // Keep PostHog user identity in sync with auth state
+  usePostHogIdentify();
   const [openingEnabled, setOpeningEnabled] = useState<boolean | null>(() =>
     resolveOpeningLoaderEnabled({ authLoading, userId: user?.id }),
   );
@@ -276,6 +285,20 @@ const AppBootstrapGate = () => {
     </>
   );
 };
+
+// Initialise PostHog once at module level
+initPostHog();
+
+// Detect first app install
+const FF_INSTALLED_KEY = "ff_installed";
+if (!localStorage.getItem(FF_INSTALLED_KEY)) {
+  localStorage.setItem(FF_INSTALLED_KEY, "1");
+  const platform =
+    typeof (window as any).Capacitor?.getPlatform === "function"
+      ? (window as any).Capacitor.getPlatform()
+      : "web";
+  trackEvent(AnalyticsEvents.APP_INSTALLED, { platform });
+}
 
 const App = () => {
   return (

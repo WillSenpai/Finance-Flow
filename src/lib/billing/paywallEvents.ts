@@ -1,3 +1,5 @@
+import { trackEvent, AnalyticsEvents } from "@/lib/posthog";
+
 export type PaywallReason = {
   status: number;
   message?: string;
@@ -8,6 +10,10 @@ const PAYWALL_EVENT = "financeflow:pro-paywall-open";
 
 export function triggerProPaywall(reason: PaywallReason) {
   if (typeof window === "undefined") return;
+  trackEvent(AnalyticsEvents.PRO_PAYWALL_SHOWN, {
+    status: reason.status,
+    code: reason.code,
+  });
   window.dispatchEvent(new CustomEvent(PAYWALL_EVENT, { detail: reason }));
 }
 

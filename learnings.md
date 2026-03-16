@@ -27,3 +27,17 @@
 **Stato:** ✅ Completato
 **Confidence:** Alta
 
+---
+
+### [2026-03-16] PostHog Analytics Integration
+
+**Context:** Integrazione PostHog SDK per tracciare metriche utente complete (azioni, crediti, click, utenti attivi, install).
+**Modifiche:**
+1.  **SDK Setup**: Installato `posthog-js`, creato `src/lib/posthog.ts` con init, identify, tracking tipizzati.
+2.  **User Identification**: Hook `usePostHogIdentify` sincronizza identità utente PostHog con AuthContext.
+3.  **Page Views**: Hook `usePostHogPageView` traccia ogni navigazione react-router.
+4.  **13 eventi custom**: points_earned, badge_unlocked, challenge_completed, patrimonio/salvadanai/investimenti/spese updated, onboarding_completed, pro_paywall_shown, edge_function_called/error, app_installed.
+5.  **Env**: API key in `.env` con host EU per GDPR.
+**Stato:** ✅ Completato
+**Confidence:** Alta
+
