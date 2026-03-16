@@ -1,4 +1,4 @@
-import { Bell, Palette, Shield, Info, Flame, BookOpen, LogOut, Star, ArrowUpRight, X, CheckCheck, Lock, FileText, Gamepad2, Compass, GraduationCap, Trash2, Loader2, MessageSquare, Sparkles } from "lucide-react";
+import { Bell, Palette, Shield, Info, Flame, BookOpen, LogOut, Star, ArrowUpRight, X, CheckCheck, Lock, FileText, Gamepad2, Compass, GraduationCap, Trash2, Loader2, MessageSquare, Sparkles, BarChart3 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@/hooks/useUser";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,7 +27,6 @@ import { toast } from "sonner";
 import { isOpeningLoaderEnabled, setOpeningLoaderEnabled } from "@/lib/openingLoaderPreference";
 import { isNativeBillingPlatform, loadBillingOfferingMetadata, loadBillingOffers } from "@/lib/billing/revenuecat";
 import AiUsageStatsSection from "@/components/profile/AiUsageStatsSection";
-import AdminAiUsagePanel from "@/components/profile/AdminAiUsagePanel";
 
 const impostazioni = [
   { icona: Bell, label: "Notifiche", path: "/profilo/notifiche" },
@@ -250,12 +249,6 @@ const Profilo = () => {
         <AiUsageStatsSection />
       </motion.div>
 
-      {isAdmin ? (
-        <motion.div variants={item}>
-          <AdminAiUsagePanel />
-        </motion.div>
-      ) : null}
-
       {/* Badge Grid */}
       <motion.div variants={item} className="mb-6">
         <h2 className="text-sm font-semibold mb-3">Badge ({sbloccati}/{badges.length}) 🏅</h2>
@@ -380,6 +373,20 @@ const Profilo = () => {
             <div className="flex-1">
               <p className="text-sm font-semibold">Gestione Esplora</p>
               <p className="text-[11px] text-muted-foreground">Crea e gestisci articoli enciclopedia</p>
+            </div>
+            <ArrowUpRight size={16} className="text-muted-foreground" />
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={() => navigate("/profilo/admin-analytics")}
+            className="w-full bg-card border border-primary/20 rounded-2xl p-4 flex items-center gap-3 text-left"
+          >
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <BarChart3 size={20} className="text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold">Analytics AI</p>
+              <p className="text-[11px] text-muted-foreground">Dashboard completa su consumi e utilizzo</p>
             </div>
             <ArrowUpRight size={16} className="text-muted-foreground" />
           </motion.button>

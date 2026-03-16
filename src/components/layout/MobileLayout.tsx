@@ -33,6 +33,7 @@ const hiddenPaths = [
   "/profilo/admin-accademia",
   "/esplora/",
   "/profilo/admin-esplora",
+  "/profilo/admin-analytics",
 ];
 
 const MobileLayout = () => {

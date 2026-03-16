@@ -11,13 +11,39 @@ export default defineConfig(() => {
     server: {
       host: devHost,
       port: Number.isFinite(devPort) ? devPort : 5173,
+      watch: {
+        ignored: [
+          "**/ios/DerivedData/**",
+          "**/android/**/build/**",
+          "**/dist/**",
+          "**/.git/**",
+        ],
+      },
       hmr: {
         overlay: true,
       },
     },
     plugins: [react()],
     optimizeDeps: {
-      include: ["recharts", "d3-shape", "d3-scale", "d3-array"],
+      // Keep explicit includes for startup performance, but allow automatic
+      // discovery so transitive CJS deps are still pre-bundled in dev.
+      noDiscovery: false,
+      holdUntilCrawlEnd: false,
+      include: [
+        "react",
+        "react/jsx-runtime",
+        "react/jsx-dev-runtime",
+        "react-dom",
+        "react-dom/client",
+        "react-router-dom",
+        "@tanstack/react-query",
+        "recharts",
+        "d3-shape",
+        "d3-scale",
+        "d3-array",
+        "style-to-js",
+        "style-to-object",
+      ],
     },
     build: {
       rollupOptions: {

@@ -41,6 +41,10 @@ export type ExplainFlowStep = {
 
 export type StructuredNodeContent = {
   nodeKey: string;
+  semanticType?: string;
+  goal?: string;
+  estimatedMinutes?: number;
+  checkpointPrompt?: string;
   criteria: CriterionKey[];
   blocks: NodeBlock[];
   explainFlow?: ExplainFlowStep[];
@@ -60,10 +64,12 @@ export type LessonVisualConfig = {
 };
 
 export type StructuredLessonContent = Record<string, StructuredNodeContent>;
+export type DynamicLessonContent = StructuredNodeContent[];
 
 export type LessonDefinition = {
   id: string;
   buildStructuredContent: () => StructuredLessonContent;
+  buildDynamicContent?: () => DynamicLessonContent;
   visual?: Partial<LessonVisualConfig>;
   renderNodeHeader?: (step: StepType) => ReactNode;
 };

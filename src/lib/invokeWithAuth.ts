@@ -27,10 +27,11 @@ async function getAccessToken(): Promise<string> {
 
 export async function invokeWithAuth<T = unknown>(fn: string, options: InvokeOptions = {}): Promise<T> {
   const baseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-  const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+  const functionsApiKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ??
+    (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined);
 
-  if (!baseUrl || !publishableKey) {
-    throw new Error("Configurazione Supabase mancante (URL/Publishable key).");
+  if (!baseUrl || !functionsApiKey) {
+    throw new Error("Configurazione Supabase mancante (URL/API key).");
   }
 
   const runInvoke = async (token: string) => {
@@ -38,7 +39,7 @@ export async function invokeWithAuth<T = unknown>(fn: string, options: InvokeOpt
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        apikey: publishableKey,
+        apikey: functionsApiKey,
         Authorization: `Bearer ${token}`,
         ...(options.headers ?? {}),
       },

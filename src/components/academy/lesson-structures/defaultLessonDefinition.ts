@@ -1,4 +1,10 @@
-import type { LessonDefinition, LessonVisualConfig, StructuredLessonContent, StepType } from "./types";
+import type {
+  DynamicLessonContent,
+  LessonDefinition,
+  LessonVisualConfig,
+  StructuredLessonContent,
+  StepType,
+} from "./types";
 
 export const defaultFallbackFlow: Array<{ key: StepType; title: string }> = [
   { key: "concept", title: "Concept" },
@@ -125,6 +131,21 @@ export function createStaticLessonDefinition(
   return {
     id: lessonId,
     buildStructuredContent: () => content,
+    buildDynamicContent: () => Object.values(content),
+    visual,
+  };
+}
+
+export function createDynamicLessonDefinition(
+  lessonId: string,
+  nodes: DynamicLessonContent,
+  visual?: Partial<LessonVisualConfig>,
+): LessonDefinition {
+  const asRecord = Object.fromEntries(nodes.map((node) => [node.nodeKey, node])) as StructuredLessonContent;
+  return {
+    id: lessonId,
+    buildStructuredContent: () => asRecord,
+    buildDynamicContent: () => nodes,
     visual,
   };
 }

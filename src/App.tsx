@@ -50,6 +50,7 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const InfoApp = lazy(() => import("./pages/InfoApp"));
 const AdminPosts = lazy(() => import("./pages/AdminPosts"));
 const AdminAccademia = lazy(() => import("./pages/AdminAccademia"));
+const AdminAiAnalytics = lazy(() => import("./pages/AdminAiAnalytics"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Login = lazy(() => import("./pages/Login"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
@@ -82,10 +83,30 @@ const queryClient = new QueryClient({
   }),
 });
 
+const DevBootDebug = ({
+  authLoading,
+  loadingData,
+  hasUser,
+  bootstrapTimedOut,
+}: {
+  authLoading: boolean;
+  loadingData: boolean;
+  hasUser: boolean;
+  bootstrapTimedOut: boolean;
+}) => {
+  if (!import.meta.env.DEV) return null;
+  return (
+    <div className="fixed bottom-2 left-2 z-[9999] rounded-md border border-border/70 bg-background/95 px-2 py-1 font-mono text-[10px] text-foreground shadow">
+      {`authLoading=${String(authLoading)} user=${String(hasUser)} loadingData=${String(loadingData)} timeout=${String(bootstrapTimedOut)}`}
+    </div>
+  );
+};
+
 const AppRoutes = () => {
   const { user, loading: authLoading } = useAuth();
   const { hasCompletedOnboarding, loadingData } = useUser();
   const [bootstrapTimedOut, setBootstrapTimedOut] = useState(false);
+  const isDev = import.meta.env.DEV;
 
   useEffect(() => {
     const timer = window.setTimeout(() => setBootstrapTimedOut(true), 12_000);
@@ -93,7 +114,21 @@ const AppRoutes = () => {
   }, []);
 
   if (!bootstrapTimedOut && (authLoading || (user && loadingData))) {
-    return <div className="min-h-screen bg-background" />;
+    return (
+      <div className="relative min-h-screen bg-background">
+        {isDev ? (
+          <div className="flex min-h-screen items-center justify-center px-6 text-center text-sm text-muted-foreground">
+            Avvio in corso... attendo auth/sessione profilo.
+          </div>
+        ) : null}
+        <DevBootDebug
+          authLoading={authLoading}
+          hasUser={Boolean(user)}
+          loadingData={Boolean(user && loadingData)}
+          bootstrapTimedOut={bootstrapTimedOut}
+        />
+      </div>
+    );
   }
 
   // Not authenticated
@@ -153,6 +188,7 @@ const AppRoutes = () => {
         <Route path="/profilo/admin-posts" element={<AdminPosts />} />
         <Route path="/profilo/admin-accademia" element={<AdminAccademia />} />
         <Route path="/profilo/admin-esplora" element={<AdminEsplora />} />
+        <Route path="/profilo/admin-analytics" element={<AdminAiAnalytics />} />
       </Route>
       <Route path="/onboarding" element={<Navigate to="/" replace />} />
       <Route path="/login" element={<Navigate to="/" replace />} />
@@ -221,7 +257,17 @@ const AppBootstrapGate = () => {
       {!shouldShowOpening && !isDev && <SplashComponent />}
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ScrollToTop />
-        <Suspense fallback={<div className="min-h-screen bg-background" />}>
+        <Suspense
+          fallback={
+            <div className="min-h-screen bg-background">
+              {isDev ? (
+                <div className="flex min-h-screen items-center justify-center px-6 text-center text-sm text-muted-foreground">
+                  Caricamento moduli pagina...
+                </div>
+              ) : null}
+            </div>
+          }
+        >
           <NativeRouteStateManager>
             <AppRoutes />
           </NativeRouteStateManager>

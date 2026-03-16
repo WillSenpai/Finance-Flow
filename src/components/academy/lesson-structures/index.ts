@@ -7,6 +7,7 @@ import lesson5Definition from "./lesson-5";
 import lesson6Definition from "./lesson-6";
 import lesson7Definition from "./lesson-7";
 import lesson8Definition from "./lesson-8";
+import { intelligentInvestorLessonDefinitions } from "./intelligentInvestorLessons";
 import type { LessonDefinition, LessonVisualConfig } from "./types";
 
 const lessonRegistry: Record<string, LessonDefinition> = {
@@ -18,6 +19,7 @@ const lessonRegistry: Record<string, LessonDefinition> = {
   "6": lesson6Definition,
   "7": lesson7Definition,
   "8": lesson8Definition,
+  ...intelligentInvestorLessonDefinitions,
 };
 
 export function resolveLessonDefinition(lessonId: string): LessonDefinition {

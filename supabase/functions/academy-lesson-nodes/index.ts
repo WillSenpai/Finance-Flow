@@ -13,6 +13,10 @@ type NodeRow = {
   title: string;
   description: string;
   sort_order: number;
+  semantic_type?: string | null;
+  goal?: string | null;
+  estimated_minutes?: number | null;
+  checkpoint_prompt?: string | null;
 };
 
 type ProgressRow = {
@@ -44,7 +48,7 @@ serve(async (req) => {
 
     const lessonNodesRes = await admin
       .from("academy_lesson_nodes")
-      .select("id, lesson_id, node_key, title, description, sort_order")
+      .select("id, lesson_id, node_key, title, description, sort_order, semantic_type, goal, estimated_minutes, checkpoint_prompt")
       .eq("lesson_id", lessonId)
       .eq("is_active", true)
       .order("sort_order", { ascending: true });
@@ -254,6 +258,10 @@ async function recomputeAndFetch(
     title: node.title,
     description: node.description,
     sort_order: node.sort_order,
+    semantic_type: node.semantic_type ?? null,
+    goal: node.goal ?? null,
+    estimated_minutes: node.estimated_minutes ?? null,
+    checkpoint_prompt: node.checkpoint_prompt ?? null,
     status: progressMap.get(node.id) ?? "locked",
   }));
 
