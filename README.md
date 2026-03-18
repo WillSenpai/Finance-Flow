@@ -16,6 +16,11 @@ npm i
 npm run dev
 ```
 
+## Package manager
+
+- Canonico: `npm` (`package-lock.json`).
+- Evitare lockfile multipli nel repo.
+
 ## Stack
 
 - Vite
@@ -27,3 +32,5 @@ npm run dev
 ## Documentazione utile
 
 - Migrazione Supabase: `docs/SUPABASE_MIGRATION.md`
+- Blueprint struttura progetto: `docs/Project_Folders_Structure_Blueprint.md`
+- Convenzioni struttura/cartelle: `CONTRIBUTING.md`
