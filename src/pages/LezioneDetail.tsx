@@ -13,6 +13,7 @@ import LessonIntro from "@/components/academy/LessonIntro";
 import { getAcademyLessonMeta, getDefaultLessonTitle } from "@/lib/academy";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { isNativeBillingPlatform, loadBillingOfferingMetadata, loadBillingOffers } from "@/lib/billing/revenuecat";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
@@ -445,19 +446,25 @@ const LezioneDetail = () => {
     <div className="flex h-full min-h-full flex-col overflow-hidden px-5 pt-10 pb-4">
       {!authLoading && !introViewLoading && !(showIntro && (hasIllustrations || isGenerating)) && (
         <>
-          <div className="mb-3 flex items-center gap-3">
+          <div className="mb-3 flex items-center justify-between gap-3">
             <button
               onClick={handleTopBack}
-              className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-medium text-primary"
+              className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-medium text-primary shrink-0"
             >
               <ArrowLeft size={18} /> {isInsideNode ? "Torna ai nodi" : "Torna all'Accademia"}
             </button>
-            <motion.span initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }} className="text-3xl">
-              {lessonMeta.emoji}
-            </motion.span>
-            <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-xl font-semibold tracking-tight">
-              {lessonTitle}
-            </motion.h1>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Badge variant="secondary" className="flex items-center gap-1.5 px-3 py-1 bg-secondary/50 font-medium">
+                <span className="text-sm leading-none">{lessonMeta.emoji}</span>
+                <span className="text-xs">
+                  {lessonTitle}
+                </span>
+              </Badge>
+            </motion.div>
           </div>
         </>
       )}

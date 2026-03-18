@@ -70,7 +70,7 @@ serve(async (req) => {
     if (action === "advance") {
       const nodeKey = String(body.node_key ?? "") as LessonNodeKey;
       const eventId = String(body.event_id ?? `advance:${lessonId}:${nodeKey}:${Date.now()}`);
-      if (!nodeKey) return json({ error: "Invalid node_key" }, 400, corsHeaders);
+      if (!nodeKey) return json({ error: `Invalid node_key (received: ${JSON.stringify(body.node_key)})` }, 400, corsHeaders);
 
       const progress = await getProgressMap(admin, userId, lessonId);
       const targetNode = lessonNodes.find((node) => node.node_key === nodeKey);
@@ -107,7 +107,7 @@ serve(async (req) => {
     if (action === "skip") {
       const nodeKey = String(body.node_key ?? "") as LessonNodeKey;
       const eventId = String(body.event_id ?? `skip:${lessonId}:${nodeKey}:${Date.now()}`);
-      if (!nodeKey) return json({ error: "Invalid node_key" }, 400, corsHeaders);
+      if (!nodeKey) return json({ error: `Invalid node_key (received: ${JSON.stringify(body.node_key)})` }, 400, corsHeaders);
 
       if (plan !== "pro") {
         return json({ error: "PRO_REQUIRED_FOR_SKIP", code: "PRO_REQUIRED_FOR_SKIP" }, 403, corsHeaders);

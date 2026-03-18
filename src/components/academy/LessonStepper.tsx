@@ -3,7 +3,6 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
-  Clock3,
   Loader2,
   Send,
   SkipForward,
@@ -164,9 +163,9 @@ const LessonStepper = ({
 
   const runtimeFlow = useMemo(() => {
     const sorted = [...nodes].sort((a, b) => a.sort_order - b.sort_order);
-    if (sorted.length > 0) return sorted;
+    if (sorted.length > 0) return sorted.filter(n => Boolean(n.node_key));
 
-    const fallbackKeys = Object.keys(contentByKey);
+    const fallbackKeys = Object.keys(contentByKey).filter(Boolean);
     return fallbackKeys.map((key, index) => ({
       node_key: key,
       title: nodeTitleFallback(key),
@@ -377,11 +376,6 @@ const LessonStepper = ({
               {activeNode.title || nodeTitleFallback(activeNode.node_key)}
             </h2>
           </div>
-          {activeContent.estimatedMinutes ? (
-            <div className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2.5 py-1 text-xs text-muted-foreground">
-              <Clock3 size={12} /> ~{activeContent.estimatedMinutes} min
-            </div>
-          ) : null}
         </div>
 
         {/* Block progress dots */}
@@ -535,17 +529,6 @@ const LessonStepper = ({
               </>
             )}
           </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="h-10 w-10 rounded-2xl"
-            onClick={() => setBlockIndex((i) => i + 1)}
-            disabled={!canNextBlock || isSubmitting}
-          >
-            <ChevronRight size={16} />
-          </Button>
         </div>
 
         {/* Tutor chat (last node only) */}
