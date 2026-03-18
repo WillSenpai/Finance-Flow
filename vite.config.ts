@@ -26,11 +26,16 @@ export default defineConfig(() => {
     },
     plugins: [react()],
     optimizeDeps: {
-      // Pre-declare only the core runtime deps. Heavy deps like mermaid and
-      // framer-motion are excluded from the forced-include list so Vite
-      // discovers and bundles them lazily without blocking page serve.
+      // Keep startup prebundle focused on core runtime deps.
       noDiscovery: false,
       holdUntilCrawlEnd: false,
+      exclude: [
+        "mermaid",
+        "cytoscape",
+        "cytoscape-cose-bilkent",
+        "cytoscape-fcose",
+        "katex",
+      ],
       include: [
         "react",
         "react/jsx-runtime",
@@ -39,12 +44,6 @@ export default defineConfig(() => {
         "react-dom/client",
         "react-router-dom",
         "@tanstack/react-query",
-        "recharts",
-        "d3-shape",
-        "d3-scale",
-        "d3-array",
-        "style-to-js",
-        "style-to-object",
         "@supabase/supabase-js",
         "clsx",
         "tailwind-merge",
@@ -62,6 +61,21 @@ export default defineConfig(() => {
               id.includes("node_modules/d3-")
             ) {
               return "vendor-recharts";
+            }
+            if (
+              id.includes("node_modules/mermaid") ||
+              id.includes("node_modules/@mermaid-js") ||
+              id.includes("node_modules/cytoscape") ||
+              id.includes("node_modules/katex")
+            ) {
+              return "vendor-mermaid";
+            }
+            if (
+              id.includes("node_modules/react-markdown") ||
+              id.includes("node_modules/rehype-raw") ||
+              id.includes("node_modules/remark-gfm")
+            ) {
+              return "vendor-markdown";
             }
           },
         },

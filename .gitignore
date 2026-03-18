@@ -34,3 +34,6 @@ docs/guida-testflight-completa.md
 
 # Native build artifacts
 ios/DerivedData/
+ios/DerivedData 2
+android/app/src/main/res/xml/config [0-9]*.xml
+ios/App/App/config [0-9]*.xml
