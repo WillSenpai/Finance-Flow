@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { isNativeBillingPlatform, loadBillingOfferingMetadata, loadBillingOffers } from "@/lib/billing/revenuecat";
+import type { StructuredLessonContent } from "@/components/academy/lesson-structures/types";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type StepType = string;
@@ -115,6 +116,21 @@ const LezioneDetail = () => {
       return data || null;
     },
     staleTime: 30 * 60 * 1000,
+  });
+
+  const { data: lessonNodeDraft } = useQuery({
+    queryKey: ["academy-lesson-node-draft-runtime", lessonId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("academy_lesson_node_drafts" as never)
+        .select("payload")
+        .eq("lesson_id", lessonId)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as { payload?: StructuredLessonContent | null } | null)?.payload ?? null;
+    },
+    enabled: !!user,
+    staleTime: 60 * 1000,
   });
 
   const { data: lessonIntroView, isLoading: introViewLoading } = useQuery({
@@ -506,6 +522,7 @@ const LezioneDetail = () => {
               nodes={nodeRuntime?.nodes || []}
               isLessonCompleted={isLessonCompleted}
               isProUser={planData?.plan === "pro"}
+              contentOverride={lessonNodeDraft}
               onAdvanceNode={async (nodeKey, payload) => {
                 try {
                   await advanceNode(nodeKey, payload);

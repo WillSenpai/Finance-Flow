@@ -1,121 +1,155 @@
 # Product Requirements Document (PRD) - My Money Compass
 
-Aggiornato al 12 marzo 2026.
+Aggiornato al 18 marzo 2026.
+Versione documento: 2.0.
 
 ## 1. Executive Summary
 
-- **Problem Statement**: Le persone percepiscono la finanza personale come complessa, dispersiva e scollegata dalle decisioni quotidiane. I prodotti esistenti separano spesso apprendimento, monitoraggio e azione, riducendo continuita d'uso e impatto comportamentale.
-- **Proposed Solution**: My Money Compass e un'app mobile-first che unisce educazione finanziaria guidata, gestione di patrimonio e spese, AI coach contestuale, contenuti editoriali, patrimonio condiviso e monetizzazione Pro in un unico flusso prodotto. L'obiettivo e trasformare concetti astratti in micro-azioni ripetibili e misurabili.
+- **Problem Statement**: La finanza personale resta frammentata tra apprendimento, monitoraggio e azione operativa; questa separazione riduce continuita d'uso e risultati concreti nel tempo. Gli utenti hanno bisogno di un prodotto unico che trasformi contenuti e analisi in decisioni quotidiane ripetibili.
+- **Proposed Solution**: My Money Compass e una piattaforma mobile-first che unisce onboarding guidato, Accademia finanziaria, gestione di patrimonio/spese/investimenti/salvadanai, AI coach contestuale, workspace condivisi e piano Pro nativo (iOS/Android) con entitlement sincronizzato lato backend.
 - **Success Criteria**:
   - `D7 retention` utenti registrati >= 45%.
   - `D30 retention` utenti registrati >= 30%.
   - Completamento onboarding >= 80% degli utenti che iniziano la registrazione.
   - >= 60% degli utenti attivi completa almeno una skill Accademia entro 14 giorni dal primo accesso.
   - >= 50% delle skill completate rientra almeno una volta nel ciclo review `1-3-7-14`.
-  - Conversione a piano `Pro` >= 4% dei `MAU` su piattaforme native dopo attivazione paywall stabile.
+  - Conversione a piano `Pro` >= 4% dei `MAU` su piattaforme native.
   - `Scroll Integrity` 100% sulle route core senza doppio scroll verticale involontario.
   - `Viewport Compatibility` pass 100% dei test manuali su iPhone e Android per safe-area, keyboard e tab bar.
+
+- **Definizione operativa KPI (strumentazione)**:
+  - `D7 retention`:
+    - Numeratore: utenti registrati con almeno 1 sessione nel giorno `T+7` (finestra 7d +/- 12h).
+    - Denominatore: utenti registrati nel giorno `T`.
+    - Sorgente eventi: tracciamento page/app open con identificazione utente autenticato.
+  - `D30 retention`:
+    - Numeratore: utenti registrati con almeno 1 sessione nel giorno `T+30` (finestra 30d +/- 24h).
+    - Denominatore: utenti registrati nel giorno `T`.
+    - Sorgente eventi: analytics prodotto + identificativo auth stabile.
+  - Completamento onboarding:
+    - Numeratore: utenti con `profiles.has_completed_onboarding=true` entro 24h dalla registrazione.
+    - Denominatore: utenti che hanno creato account nel periodo.
+  - Skill completion 14 giorni:
+    - Numeratore: utenti attivi con almeno 1 skill portata a `mastered` entro 14 giorni dal primo accesso.
+    - Denominatore: utenti attivi nello stesso periodo.
+  - Review re-entry `1-3-7-14`:
+    - Numeratore: skill completate con almeno 1 review successiva in coda review.
+    - Denominatore: skill completate nel periodo.
+  - Conversione Pro nativa:
+    - Numeratore: utenti MAU con passaggio da free a pro confermato da entitlement backend.
+    - Denominatore: MAU mobile iOS/Android.
+  - Scroll Integrity:
+    - Pass/fail per route core su checklist QA (nessuna area bianca extra, nessun doppio asse di scroll).
+  - Viewport Compatibility:
+    - Pass/fail su matrice device minima (iPhone moderno + Android moderno) con test su tastiera, safe-area e tab bar.
 
 ## 2. User Experience & Functionality
 
 - **User Personas**:
-  - Principiante finanziario: vuole capire concetti base e ricevere indicazioni semplici, non gergo tecnico.
-  - Utente in crescita: vuole organizzare spese, obiettivi e primi investimenti in modo concreto.
-  - Utente evoluto: vuole strumenti rapidi, comparazioni e supporto decisionale contestuale.
-  - Coppia o piccolo nucleo: vuole gestire patrimonio e spese condivise in uno spazio collaborativo.
-  - Admin/editor: vuole pubblicare contenuti, lezioni e articoli senza dipendere dal team tecnico.
+  - Principiante finanziario: vuole spiegazioni semplici, percorsi guidati e azioni pratiche immediate.
+  - Utente in crescita: vuole controllo operativo di spese, patrimonio e obiettivi con supporto decisionale.
+  - Utente evoluto: vuole velocita, granularita e confronto tra scenari in pochi passaggi.
+  - Nucleo condiviso (coppia/famiglia): vuole workspace comune con ruoli, inviti e separazione tra dati personali e condivisi.
+  - Admin/editor: vuole creare e aggiornare contenuti Accademia/Esplora/Post senza dipendenze tecniche.
 
 - **User Stories**:
-  - `US-01` As a new user, I want a guided onboarding so that I can receive a personalized financial path.
-  - `US-02` As a learner, I want short and practical lessons so that I can improve my financial literacy without friction.
-  - `US-03` As a user tracking money, I want to manage patrimonio, spese, salvadanai and investimenti so that I can understand my current financial position.
-  - `US-04` As a collaborative user, I want a shared workspace so that I can manage shared money with another person or a small group.
-  - `US-05` As a user seeking guidance, I want an AI coach with my context so that I can receive actionable answers and summaries.
-  - `US-06` As an engaged user, I want points, streaks, badges, challenges and weekly reports so that I stay consistent over time.
-  - `US-07` As a content seeker, I want curated news, explainers and exploration content so that I connect theory with current events.
-  - `US-08` As an admin, I want to manage editorial and academy content so that content quality remains high and current.
-  - `US-09` As a paying user, I want a clear Pro experience so that I understand what is unlocked and can restore my purchases reliably.
-  - `US-10` As a mobile user, I want screens that fit my device correctly so that content is never clipped or artificially scrollable.
+  - `US-01` Come nuovo utente, voglio un onboarding guidato cosi da ottenere un percorso finanziario personalizzato.
+  - `US-02` Come learner, voglio lezioni brevi e pratiche cosi da migliorare la mia alfabetizzazione finanziaria senza attrito.
+  - `US-03` Come utente che traccia il denaro, voglio gestire patrimonio, spese, salvadanai e investimenti cosi da capire la mia situazione reale.
+  - `US-04` Come utente collaborativo, voglio uno spazio condiviso cosi da gestire denaro condiviso con altre persone.
+  - `US-05` Come utente che cerca guida, voglio un AI coach contestuale cosi da ricevere risposte azionabili.
+  - `US-06` Come utente da ingaggiare nel tempo, voglio punti, badge, streak e report cosi da mantenere costanza.
+  - `US-07` Come utente interessato ai mercati, voglio news e spiegazioni curate cosi da collegare teoria e attualita.
+  - `US-08` Come admin, voglio gestire contenuti editoriali e didattici cosi da mantenere qualita e aggiornamento continui.
+  - `US-09` Come utente pagante, voglio una esperienza Pro chiara cosi da capire cosa sblocco e ripristinare acquisti in modo affidabile.
+  - `US-10` Come utente mobile, voglio schermate adattate al mio device cosi da non avere clipping o scroll artefatti.
 
 - **Acceptance Criteria**:
   - Per `US-01`:
-    - Registrazione con email/password, callback auth e reset password funzionanti.
-    - Onboarding obbligatorio prima dell'accesso alle route protette.
-    - Salvataggio profilo base in `profiles` con `has_completed_onboarding=true`.
+    - Registrazione email/password, callback auth e reset password funzionanti end-to-end.
+    - Onboarding obbligatorio prima delle route protette.
+    - Persistenza profilo base con `has_completed_onboarding=true` a fine flusso.
   - Per `US-02`:
-    - Accesso Accademia gated da assessment iniziale.
-    - Grafo skill con stati `locked | available | mastered | fading`.
-    - Runtime lezione basato su nodi ordinati con stati utente `locked | available | completed | skipped`.
-    - Azioni `advance`, `skip`, `submit_optional_quiz` tracciate in modo idempotente.
-    - Chat tutor in-lesson disponibile con risposta streaming.
+    - Accesso Accademia con gate assessment iniziale.
+    - Skill graph con stati `locked | available | mastered | fading`.
+    - Runtime lezioni su nodi ordinati con progress stati utente `locked | available | completed | skipped`.
+    - Eventi `advance`, `skip`, `submit_optional_quiz` idempotenti.
+    - Tutor in-lesson con risposta streaming e fallback UX in caso errore.
   - Per `US-03`:
-    - CRUD patrimonio, investimenti, salvadanai e spese disponibile da UI.
-    - Inserimento spese sia manuale sia tramite parsing in linguaggio naturale.
-    - Simulatore `what-if` disponibile per stimare il raggiungimento obiettivi.
-    - Vista per categorie e periodo disponibile almeno per il mese corrente.
+    - CRUD per patrimonio, investimenti, salvadanai, spese disponibile da UI.
+    - Inserimento spese manuale e parsing linguaggio naturale.
+    - Simulatore `what-if` disponibile per scenari obiettivo.
+    - Vista categorie/periodo disponibile almeno per mese corrente.
   - Per `US-04`:
-    - Creazione di uno `shared workspace` da parte del proprietario.
-    - Invito membri via email con scadenza e accettazione tracciata.
-    - Supporto a patrimonio, investimenti, salvadanai e spese condivisi.
-    - Limite workspace applicato lato backend e coerente con il piano di prodotto.
+    - Creazione shared workspace da owner autenticato.
+    - Invito membri via email con stato e scadenza tracciati.
+    - Supporto entita condivise (patrimonio, investimenti, salvadanai, categorie, spese).
+    - Limiti workspace applicati backend-side in coerenza con piano.
   - Per `US-05`:
     - Coach AI riceve contesto utente strutturato.
-    - Risposte supportano markdown, tabelle, link interni e streaming.
-    - Gestione errori `402`, `429` e fallback UX leggibile lato app.
-    - Quote AI applicate lato backend in base al piano utente.
+    - Risposte con markdown, tabelle, link interni e streaming.
+    - Gestione errori `402`, `429`, `5xx` con UX leggibile.
+    - Quote AI enforce backend-side in base al piano utente.
   - Per `US-06`:
-    - Sistema punti con eventi giornalieri e progressione persistente.
-    - Badge, streak e sfide settimanali visibili in app.
-    - Report finanziario settimanale generabile via funzione dedicata.
+    - Eventi punti giornalieri persistenti e cumulativi.
+    - Badge/streak/challenge visibili in app.
+    - Report settimanale generabile da funzione dedicata.
   - Per `US-07`:
-    - Feed news con cache server-side da sorgenti economiche italiane.
-    - Summary AI on-demand disponibile per articolo.
+    - Feed news con cache server-side da fonti economiche italiane.
+    - Summary AI on-demand disponibile da articolo.
     - Sezione Esplora con ricerca, filtro e dettaglio articolo.
   - Per `US-08`:
     - CRUD admin per post, contenuti Esplora e contenuti Accademia.
     - Ruoli admin protetti da RLS/policy dedicate.
-    - Supporto storage immagini per post, Esplora e illustrazioni lezioni.
+    - Storage immagini per post, Esplora e illustrazioni lezioni.
   - Per `US-09`:
-    - Pagina `Profilo Pro` accessibile in app.
+    - Pagina `Profilo Pro` accessibile su client mobile.
     - Offerte RevenueCat caricate nativamente su iOS/Android.
-    - Acquisto, restore e sync stato abbonamento funzionanti.
-    - Entitlement e piano AI allineati via webhook/sync backend.
+    - Acquisto, restore e sync subscription funzionanti.
+    - Entitlement sincronizzato con webhook/sync backend in `user_ai_plans`.
   - Per `US-10`:
-    - Shell layout con singolo asse di scroll verticale sulle route core.
-    - Uso di safe-area CSS e viewport dinamico su mobile.
-    - Nessuna route core dipende da `100vh` statico senza contesto.
+    - Singolo asse di scroll verticale sulle route core.
+    - Uso safe-area CSS e viewport dinamico su mobile.
+    - Nessuna dipendenza da `100vh` statico sulle route core.
     - Nessuna area bianca extra scrollabile nelle schermate core.
 
 - **Non-Goals**:
   - Trading execution o invio ordini a broker.
   - Consulenza finanziaria personalizzata regolamentata.
-  - Open banking o sincronizzazione bancaria automatica nel perimetro attuale.
-  - Esperienza desktop-first avanzata: il prodotto resta mobile-first.
+  - Open banking/sync bancaria automatica nel perimetro attuale.
+  - Esperienza desktop-first avanzata.
   - Monetizzazione web completa con checkout browser nel perimetro attuale.
   - Supporto multilingua oltre all'italiano nel perimetro attuale.
 
 ## 3. AI System Requirements
 
 - **Tool Requirements**:
-  - Edge Functions Supabase per `chat`, `academy-lesson`, `academy-lesson-nodes`, `academy-assessment`, `academy-graph`, `academy-review-due`, `academy-skill-event`, `parse-spesa`, `news-summary`, `news-generate-cache`, `post-generate`, `report`.
-  - Gateway LLM configurato tramite `AI_API_KEY` o `OPENAI_API_KEY`.
-  - Sistema quote/token per piano utente con enforcement lato backend.
-  - Streaming SSE per i flussi di coaching e tutor contestuale.
-  - Caching contenuti AI dove opportuno per contenere costi e latenza.
+  - Edge Functions Supabase richieste:
+    - `chat`, `report`, `parse-spesa`.
+    - `academy-assessment`, `academy-graph`, `academy-review-due`, `academy-skill-event`, `academy-lesson`, `academy-lesson-nodes`, `academy-generate-cache`.
+    - `news-rss`, `news-generate-cache`, `news-summary`.
+    - `post-generate`.
+    - `ai-usage-admin` (supporto monitoraggio admin AI usage).
+  - Gateway LLM via secret server-side (`AI_API_KEY` o `OPENAI_API_KEY`).
+  - Enforcement quote/backend guardrails per piano utente e consumo AI.
+  - Streaming SSE per coach e tutor contestuale.
+  - Caching risposte/contenuti AI dove appropriato per controllo costi e latenza.
 
 - **Evaluation Strategy**:
   - Coach AI:
-    - P95 prima risposta streaming < 4s su rete stabile.
-    - 0 risposte non gestite lato UX per errori `402/429/500`.
-    - Qualita campionata manualmente su 50 conversazioni/settimana con >= 90% di risposte giudicate utili e contestuali.
+    - P95 time-to-first-token < 4s su rete stabile.
+    - 0 errori non gestiti lato UX su `402/429/5xx`.
+    - Campione manuale minimo 50 conversazioni/settimana con >= 90% valutate utili e contestuali.
   - Parsing spese:
-    - Accuratezza di compilazione campi core (`importo`, `categoria`, `data`) >= 90% su campione interno di 100 input realistici.
-  - Accademia AI:
-    - Allineamento del contenuto lesson-node con lo stato utente >= 95% su test di regressione backend.
-    - Nessun evento duplicato su `advance/skip/optional_quiz` a parita di `event_id`.
+    - Accuratezza campi `importo`, `categoria`, `data` >= 90% su campione interno minimo 100 input realistici.
+  - Runtime Accademia:
+    - Allineamento contenuto nodo con stato utente >= 95% su regression suite backend.
+    - Duplicazione eventi lesson-node = 0 a parita di `event_id`.
   - News summary:
-    - Coerenza con sorgente >= 90% su campione casuale di 50 articoli/settimana.
-    - P95 summary on-demand < 4s.
+    - Coerenza semantica con sorgente >= 90% su campione casuale 50 articoli/settimana.
+    - P95 generazione summary on-demand < 4s.
+  - Costo AI:
+    - Budget mensile monitorato con alert superamento soglia (soglia operativa definita dal team in dashboard costi).
 
 ## 4. Technical Specifications
 
@@ -124,80 +158,86 @@ Aggiornato al 12 marzo 2026.
     - SPA React + TypeScript + Vite.
     - Routing con `react-router-dom`.
     - Stato server con `@tanstack/react-query`.
-    - UI mobile-first con Tailwind, shadcn/ui e framer-motion.
-    - Packaging nativo tramite Capacitor per iOS e Android.
+    - UI mobile-first con Tailwind + shadcn/ui.
+    - Packaging nativo iOS/Android con Capacitor.
   - Backend:
     - Supabase Postgres come datastore primario.
-    - Supabase Auth per email/password e callback auth.
-    - Edge Functions Deno per AI, billing sync, contenuti e workspace operations.
-  - Layout contract:
-    - viewport dinamico con `dvh` e variabili `--safe-*`;
-    - `outer-scroll` come modello standard sulle schermate core;
-    - tab bar integrata nel layout senza riserva artificiale di spazio;
-    - evitato l'uso indiscriminato di `vh/screen`.
-  - Vincoli di progetto:
-    - Stack obbligatorio: React, TypeScript, Vite, Supabase, Capacitor, RevenueCat per billing nativo.
-    - Runtime locale: Node.js `>= 22.0.0`, npm `>= 10`.
-    - Audience primaria: utenti italiani mobile-first, dal livello beginner al pro, con estensione collaborativa per nuclei condivisi.
-    - Monetizzazione: piano `Pro` attivo su canali nativi; il web non e canale principale di conversione nel perimetro attuale.
-    - Deadline: allineamento funzionale continuo al codice esistente; nessuna data di GA globale formalizzata nel repository, quindi resta `TBD`.
+    - Supabase Auth per identita e sessione.
+    - Edge Functions Deno per AI, billing, collaboration, contenuti e automazioni.
+  - Billing:
+    - RevenueCat lato client nativo (offering, purchase, restore).
+    - Webhook e sync backend (`billing-webhook-revenuecat`, `billing-sync`) con projection su `user_ai_plans`.
+  - Layout contract mobile:
+    - viewport dinamico con `dvh` e variabili `--safe-*`.
+    - modello `outer-scroll` sulle route core.
+    - tab bar integrata senza spacer artificiale.
+    - uso limitato/controllato di `vh/screen`.
 
 - **Integration Points**:
-  - Tabelle core utente:
+  - Dominio utente/finanza personale:
     - `profiles`, `patrimonio`, `salvadanai`, `investimenti`, `categorie_spese`, `spese`.
   - Dominio Accademia:
-    - `academy_lessons_cache`, `academy_skills`, `academy_skill_edges`, `academy_assessment_questions`, `user_assessment_runs`, `user_assessment_answers`, `user_skill_mastery`, `user_skill_events`, `user_review_queue`.
+    - `academy_skills`, `academy_skill_edges`, `academy_lessons_cache`.
+    - `academy_assessment_questions`, `user_assessment_runs`, `user_assessment_answers`.
+    - `user_skill_mastery`, `user_skill_events`, `user_review_queue`.
     - `academy_lesson_nodes`, `user_lesson_node_progress`, `user_lesson_node_events`, `user_lesson_optional_quiz_runs`, `user_lesson_intro_views`.
   - Dominio contenuti:
     - `news_cache`, `explore_articles`, `admin_posts`, `post_likes`, `post_views`, `lesson_illustrations`.
   - Dominio billing:
     - `billing_subscriptions`, `billing_events`, `user_ai_plans`.
-    - RevenueCat lato client nativo + webhook `billing-webhook-revenuecat` + sync `billing-sync`.
   - Dominio collaborazione:
-    - `shared_workspaces`, `shared_workspace_members`, `shared_workspace_invites`, `shared_patrimonio`, `shared_investimenti`, `shared_salvadanai`, `shared_categorie_spese`, `shared_spese`.
-    - Edge Functions `workspace-invite-create`, `workspace-invite-list`, `workspace-invite-accept`, `workspace-member-remove`.
+    - `shared_workspaces`, `shared_workspace_members`, `shared_workspace_invites`.
+    - `shared_patrimonio`, `shared_investimenti`, `shared_salvadanai`, `shared_categorie_spese`, `shared_spese`.
   - Storage:
-    - bucket immagini per `admin-posts`, `explore_articles`, `lesson-illustrations`.
+    - Bucket immagini per `admin-posts`, `explore_articles`, `lesson-illustrations`.
 
 - **Security & Privacy**:
-  - RLS attiva sulle tabelle principali con vincolo su `auth.uid()` ove applicabile.
-  - Ruoli admin separati tramite `user_roles` e policy dedicate.
-  - Secret AI, service role e webhook auth gestiti server-side.
-  - Dati personali trattati: nome, email, telefono, data di nascita.
-  - Requisito GDPR: informativa privacy esplicita, retention definita e cancellazione account funzionante.
-  - Requirement operativo: origini CORS ristrette in produzione, niente wildcard.
-  - Requirement billing: eventi provider idempotenti e sincronizzazione abbonamento coerente tra client, store e database.
+  - RLS obbligatoria sulle tabelle business con policy per owner/member/admin secondo dominio.
+  - Separazione privilegi admin tramite `user_roles` + policy dedicate.
+  - Secret AI, service role key e webhook secret solo server-side.
+  - CORS produzione senza wildcard; allowlist origin esplicita.
+  - Billing events idempotenti (dedup provider event id) e gestione out-of-order.
+  - GDPR operativo:
+    - informativa privacy in app,
+    - retention definita per dati sensibili e log,
+    - cancellazione account funzionante end-to-end.
 
 ## 5. Risks & Roadmap
 
 - **Phased Rollout**:
-  - `Stato attuale (12 marzo 2026)`:
-    - Implementati autenticazione, onboarding, dashboard, patrimonio, salvadanai, investimenti, spese e simulatore.
-    - Implementati coach AI, parsing spese, report AI, news cache/summary, Esplora e contenuti admin.
-    - Implementati Skill Graph Accademia V1, assessment, review queue, tutor lezione e runtime nodi.
-    - Implementati workspace condivisi per patrimonio e spese con inviti email e membership rules.
-    - Implementato piano `Pro` nativo con RevenueCat, sync backend e stato subscription persistito.
-    - Implementato hardening layout mobile su route core con safe-area e controllo scroll.
+  - `Stato corrente (18 marzo 2026)`:
+    - Auth + onboarding + dashboard core operativi.
+    - Gestione patrimonio, investimenti, salvadanai, spese e simulatore operativi.
+    - Coach AI, parsing spese, report AI, news cache/summary e sezione Esplora operativi.
+    - Accademia con assessment, skill graph, review queue, lesson runtime a nodi e tutor in-lesson operativi.
+    - Workspace condivisi con inviti email e membership rules operativi.
+    - Pro nativo con RevenueCat + sync backend operativo.
+    - Hardening layout mobile route core implementato.
   - `MVP stabilizzato (0-2 mesi)`:
-    - Consolidare analytics di prodotto per KPI PRD.
-    - Coprire regressioni core con suite E2E su onboarding, patrimonio, Accademia, billing e workspace.
-    - Chiudere i gap Android real-device e validare scenari billing full-cycle.
+    - Consolidare tracciamento KPI PRD in dashboard unica.
+    - Copertura regressioni core con E2E su onboarding, patrimonio, Accademia, billing e workspace.
+    - Validazione Android real-device su scenari billing full-cycle.
   - `v1.1 (2-4 mesi)`:
-    - Rafforzare gating `Pro` lato feature/content oltre al solo stato subscription.
-    - Aggiungere notifiche push end-to-end.
-    - Migliorare explainability AI, osservabilita costi e quality monitoring.
-    - Formalizzare funnel premium e reporting conversione.
+    - Rafforzare gating Pro feature/content oltre al solo stato subscription.
+    - Push notifications end-to-end.
+    - Migliorare explainability AI e quality monitoring continuo.
+    - Reporting funnel premium con breakdown acquisition -> conversion -> retention.
   - `v2.0 (4-8 mesi)`:
-    - Assistente proattivo su obiettivi, spese e suggerimenti predittivi.
-    - Segmentazione avanzata per percorso educativo e coaching.
-    - Import dati esterni opzionali, iniziando da CSV strutturati.
-    - Evoluzione dei workspace condivisi con piu regole, insight e permessi.
+    - Assistente proattivo su obiettivi/spese con suggerimenti predittivi.
+    - Segmentazione avanzata percorsi educativi e coaching.
+    - Import dati esterni opzionale (fase iniziale CSV strutturati).
+    - Evoluzione workspace con regole permessi e insight avanzati.
 
 - **Technical Risks**:
-  - Costi AI variabili su chat, tutoring, summary e generazione contenuti.
-  - Drift di qualita del modello su parsing spese e suggerimenti finanziari.
-  - Fragilita dei feed RSS e dipendenze da sorgenti terze.
-  - Regressioni UI su safe-area, keyboard e nested scroll con nuove schermate.
-  - Gap di misurazione: KPI di retention, funnel premium e completion Accademia non sono ancora completamente osservati end-to-end.
-  - Billing incompleto su canali non nativi: la monetizzazione e reale ma resta centrata su iOS/Android.
-  - Complessita crescente del dominio condiviso, con rischio di incoerenze tra dati personali e workspace se non coperti da test.
+  - Variabilita costi AI su chat/tutoring/summary/contenuti.
+  - Drift qualita modello su parsing spese e suggerimenti.
+  - Fragilita feed RSS esterni e dipendenze da provider terzi.
+  - Regressioni UI mobile (safe-area, keyboard, nested scroll) con nuove schermate.
+  - Gap osservabilita su retention/funnel premium/completion Accademia se analytics non consolidato.
+  - Crescita complessita dominio condiviso con rischio incoerenza tra dati personali e workspace.
+
+- **Mitigazioni prioritarie**:
+  - Budget guardrails AI + caching + fallback deterministici.
+  - Test idempotenza eventi e regression suite su edge functions critiche.
+  - Canary QA mobile su route core prima di release.
+  - Alerting su mismatch entitlement billing e job di riconciliazione periodica.

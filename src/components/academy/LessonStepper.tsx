@@ -16,7 +16,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { resolveLessonDefinition } from "@/components/academy/lesson-structures";
-import type { BlockPollArea, NodeBlock, StructuredNodeContent } from "@/components/academy/lesson-structures/types";
+import type {
+  BlockPollArea,
+  NodeBlock,
+  StructuredLessonContent,
+  StructuredNodeContent,
+} from "@/components/academy/lesson-structures/types";
 
 type StepType = string;
 type NodeStatus = "locked" | "available" | "completed" | "skipped";
@@ -43,6 +48,7 @@ type LessonStepperProps = {
   isChatLoading: boolean;
   onNodeViewChange?: (isInsideNode: boolean) => void;
   backToNodesSignal?: number;
+  contentOverride?: StructuredLessonContent | null;
 };
 
 type PollResponse = {
@@ -143,6 +149,7 @@ const LessonStepper = ({
   isChatLoading,
   onNodeViewChange,
   backToNodesSignal,
+  contentOverride,
 }: LessonStepperProps) => {
   const lessonDefinition = useMemo(() => resolveLessonDefinition(lessonId), [lessonId]);
 
@@ -156,10 +163,25 @@ const LessonStepper = ({
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const contentByKey = useMemo(() => {
+    if (contentOverride && Object.keys(contentOverride).length > 0) {
+      const normalized = Object.fromEntries(
+        Object.entries(contentOverride).map(([nodeKey, node]) => [
+          nodeKey,
+          {
+            ...node,
+            nodeKey: node.nodeKey || nodeKey,
+            blocks: Array.isArray(node.blocks) ? node.blocks : [],
+          },
+        ]),
+      );
+      if (Object.keys(normalized).length > 0) {
+        return normalized;
+      }
+    }
     const dynamic = lessonDefinition.buildDynamicContent?.() ?? [];
     if (dynamic.length > 0) return Object.fromEntries(dynamic.map((node) => [node.nodeKey, node]));
     return lessonDefinition.buildStructuredContent();
-  }, [lessonDefinition]);
+  }, [lessonDefinition, contentOverride]);
 
   const runtimeFlow = useMemo(() => {
     const sorted = [...nodes].sort((a, b) => a.sort_order - b.sort_order);

@@ -12,15 +12,46 @@ type LessonBlueprint = {
   caseStudy: string;
   defensiveLens: string;
   enterprisingLens: string;
-  checklist: [string, string, string, string];
+  checklist: string[];
   decisionScenario: string;
-  decisionOptions: [string, string, string];
+  decisionOptions: string[];
   quizQuestion: string;
-  quizOptions: [string, string, string];
-  actionPlan: [string, string, string];
+  quizOptions: string[];
+  actionPlan: string[];
+  extraNodes?: StructuredNodeContent[];
 };
 
 const lessons: LessonBlueprint[] = [
+  {
+    id: "1",
+    title: "Cos'è la Finanza?",
+    chapterFocus: "La base di tutto",
+    coreIdea: "La finanza è la scienza che studia come allocare risorse scarse nel tempo, gestendo il trade-off tra rischio e rendimento.",
+    whyItMatters: "La finanza è ovunque: nelle decisioni quotidiane, nelle scelte aziendali e nella gestione del patrimonio. Capirla significa prendere decisioni più consapevoli e ridurre l'incertezza.",
+    practicalRule: "Prima di prendere una decisione finanziaria, chiediti: quali sono le alternative? Qual è il trade-off tra rischio e rendimento?",
+    commonMistake: "Confondere un titolo che sale con un investimento migliore, senza verificare utili, cassa o prezzo pagato.",
+    caseStudy: "Durante una fase euforica molti comprano societa senza utili solo perche crescono in Borsa. Quando il sentiment cambia, il prezzo collassa e la tesi non esiste.",
+    defensiveLens: "Il profilo difensivo evita asset con tesi non dimostrabile e privilegia strumenti semplici e diversificati.",
+    enterprisingLens: "Il profilo intraprendente puo operare su inefficienze, ma solo con processo scritto e metriche di controllo.",
+    checklist: ["Tesi verificabile", "Valutazione ragionevole", "Rischio downside", "Orizzonte coerente"],
+    decisionScenario: "Un titolo fa +35% in 6 settimane ma non trovi miglioramenti nei fondamentali. Cosa fai?",
+    decisionOptions: [
+      "Resto fuori finche non ho tesi e prezzo coerenti",
+      "Compro una quota per non perdere il treno",
+      "Entro e incremento se continua a salire",
+    ],
+    quizQuestion: "Quale frase descrive meglio un investimento intelligente?",
+    quizOptions: [
+      "Acquisto con margine di sicurezza e tesi verificabile",
+      "Acquisto perche il prezzo sta salendo",
+      "Acquisto perche ne parlano tutti",
+    ],
+    actionPlan: [
+      "Definisci 3 criteri minimi pre-acquisto",
+      "Rifiuta ogni idea che non supera i 3 criteri",
+      "Rivedi i criteri ogni 30 giorni",
+    ],
+  },
   {
     id: "9",
     title: "Investimento vs Speculazione",
@@ -434,6 +465,20 @@ function introNodes(lesson: LessonBlueprint): StructuredNodeContent[] {
   ];
 }
 
+function buildChecklistContent(items: string[]): string {
+  if (!items.length) {
+    return "Nessun punto checklist configurato.";
+  }
+  return items.map((item, index) => `${index + 1}) ${item}`).join(", ");
+}
+
+function buildActionPlanContent(items: string[]): string {
+  if (!items.length) {
+    return "Definisci almeno un'azione concreta da avviare oggi.";
+  }
+  return items.map((item, index) => `${index + 1}) ${item}`).join("\n");
+}
+
 function buildNodes(lesson: LessonBlueprint): StructuredNodeContent[] {
   const base: StructuredNodeContent[] = [
     ...introNodes(lesson),
@@ -453,7 +498,7 @@ function buildNodes(lesson: LessonBlueprint): StructuredNodeContent[] {
         {
           kind: "explain",
           title: "Cosa osservare",
-          content: `Quando prendi una decisione, verifica questi punti: ${lesson.checklist.join(", ")}.`,
+          content: `Quando prendi una decisione, verifica questi punti: ${buildChecklistContent(lesson.checklist)}.`,
         },
         {
           kind: "exercise",
@@ -510,7 +555,7 @@ function buildNodes(lesson: LessonBlueprint): StructuredNodeContent[] {
         {
           kind: "focus",
           title: "Checklist",
-          content: `Prima di agire controlla: 1) ${lesson.checklist[0]}, 2) ${lesson.checklist[1]}, 3) ${lesson.checklist[2]}, 4) ${lesson.checklist[3]}.`,
+          content: `Prima di agire controlla: ${buildChecklistContent(lesson.checklist)}.`,
         },
         {
           kind: "explain",
@@ -583,7 +628,7 @@ function buildNodes(lesson: LessonBlueprint): StructuredNodeContent[] {
         {
           kind: "focus",
           title: "Piano 7 giorni",
-          content: `1) ${lesson.actionPlan[0]}\n2) ${lesson.actionPlan[1]}\n3) ${lesson.actionPlan[2]}`,
+          content: buildActionPlanContent(lesson.actionPlan),
         },
         {
           kind: "exercise",
@@ -603,6 +648,10 @@ function buildNodes(lesson: LessonBlueprint): StructuredNodeContent[] {
       ],
     },
   ];
+
+  if (lesson.extraNodes?.length) {
+    base.push(...lesson.extraNodes);
+  }
 
   return base;
 }
