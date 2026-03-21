@@ -6,38 +6,95 @@ const content: StructuredLessonContent = {
     nodeKey: "concept",
     criteria: ["foundational", "caring"],
     blocks: [
-      { kind: "focus", title: "Focus", content: "Assicurarsi significa trasferire rischi gravi che non vuoi sostenere da solo." },
+      {
+        kind: "focus",
+        title: "💡 Focus",
+        content: "Assicurarsi significa trasferire rischi gravi che non vuoi sostenere da solo.",
+      },
       {
         kind: "explain",
-        title: "Spiegazione rapida",
-        content: "La priorita va ai rischi ad alto impatto economico: salute, responsabilita civile, reddito, casa.",
+        title: "📌 Priorità ai rischi",
+        content: "La priorità va ai rischi ad alto impatto: salute, responsabilità civile, reddito, casa.",
       },
-      { kind: "question", title: "Approfondimento", content: "Domanda didattica: perche il criterio 'alto impatto, bassa frequenza' e centrale?" },
+      {
+        kind: "question",
+        title: "🧠 Verifica veloce",
+        content: "Perché il criterio 'alto impatto, bassa frequenza' è centrale?",
+        pollAreas: [
+          {
+            id: "concept-verify-8",
+            prompt: "Seleziona la risposta corretta",
+            options: [
+              "Questi eventi sono rari ma devastanti se non coperti",
+              "I rischi frequenti sono più importanti",
+              "Non serve assicurarsi",
+            ],
+            allowText: false,
+          },
+        ],
+      },
+      {
+        kind: "focus",
+        title: "🎯 Mappatura rischi",
+        content: "Mappa i tuoi rischi, ordinali per impatto economico, copri prima i più gravi.",
+      },
       {
         kind: "exercise",
-        title: "Esempio guidato",
+        title: "🛠️ Esempio guidato",
         content:
-          "Scenario: valuti 4 rischi personali con impatto stimato. Passi: 1) ordina per impatto economico massimo, 2) seleziona i primi 2 da coprire subito, 3) definisci budget assicurativo annuo. Soluzione: copertura mirata prima, non dispersione su polizze minori.",
+          "4 rischi personali con impatto stimato. Piano: 1) ordina per impatto massimo, 2) seleziona i primi 2 da coprire, 3) definisci budget assicurativo annuo. Copertura mirata prima.",
+        pollAreas: [
+          {
+            id: "concept-solve-8",
+            prompt: "Qual è il criterio di priorità?",
+            options: [
+              "Impatto economico massimo potenziale",
+              "Frequenza dell'evento",
+              "Costo della polizza più bassa",
+            ],
+            allowText: true,
+          },
+        ],
       },
     ],
-    options: ["Mappo i rischi", "Ordino per impatto", "Definisco priorita di copertura"],
+    options: ["Mappo i rischi", "Ordino per impatto", "Definisco priorità di copertura"],
   },
   widget: {
     nodeKey: "widget",
     criteria: ["application", "integration"],
     blocks: [
-      { kind: "focus", title: "Focus", content: "Una polizza utile si valuta su coperture, esclusioni, franchigie e massimali." },
+      {
+        kind: "focus",
+        title: "🛠️ Focus",
+        content: "Una polizza utile si valuta su coperture, esclusioni, franchigie e massimali.",
+      },
       {
         kind: "explain",
-        title: "Spiegazione rapida",
+        title: "📌 Oltre il prezzo",
         content: "Prezzo basso non basta: devi sapere in quali casi la polizza paga davvero e in quali no.",
       },
-      { kind: "question", title: "Approfondimento", content: "Domanda didattica: quale clausola controlli prima di confrontare il premio?" },
+      {
+        kind: "question",
+        title: "🧠 Verifica veloce",
+        content: "Quale clausola controlli prima di confrontare il premio?",
+        pollAreas: [
+          {
+            id: "widget-verify-8",
+            prompt: "Seleziona la clausola chiave",
+            options: [
+              "Esclusioni e franchigia",
+              "Solo il premio annuale",
+              "Il colore del contratto",
+            ],
+            allowText: false,
+          },
+        ],
+      },
       {
         kind: "exercise",
-        title: "Esempio guidato",
+        title: "🛠️ Scenario pratico",
         content:
-          "Scenario: Polizza A premio 240 euro, franchigia 500; Polizza B premio 320 euro, franchigia 150. Passi: 1) confronta costo annuo, 2) valuta impatto franchigia su sinistro tipico, 3) scegli in base a rischio reale. Soluzione: non sempre la polizza meno cara e la piu conveniente.",
+          "Polizza A: 240€, franchigia 500€. Polizza B: 320€, franchigia 150€. Valuta: 1) costo annuo, 2) impatto franchigia su sinistro tipico, 3) scegli in base a rischio reale. Non sempre la più economica è la migliore.",
       },
     ],
     options: ["Confronto clausole", "Valuto franchigia", "Controllo massimale"],
@@ -46,18 +103,43 @@ const content: StructuredLessonContent = {
     nodeKey: "challenge",
     criteria: ["learning", "application"],
     blocks: [
-      { kind: "focus", title: "Focus", content: "Il rischio tipico e comprare polizze economiche ma piene di esclusioni." },
+      {
+        kind: "focus",
+        title: "⚡ Focus",
+        content: "Il rischio tipico è comprare polizze economiche ma piene di esclusioni.",
+      },
       {
         kind: "explain",
-        title: "Spiegazione rapida",
-        content: "Prima di firmare, usa checklist minima e richiedi sempre chiarimento scritto sulle esclusioni principali.",
+        title: "📌 Checklist minima",
+        content: "Prima di firmare: checklist minima e chiarimento scritto sulle esclusioni principali.",
       },
-      { kind: "question", title: "Approfondimento", content: "Domanda didattica: quali 3 condizioni minime pretendi in una nuova polizza?" },
+      {
+        kind: "question",
+        title: "🧠 Verifica comprensione",
+        content: "Quali 3 condizioni minime pretendi in una nuova polizza?",
+        pollAreas: [
+          {
+            id: "challenge-verify-8",
+            prompt: "Seleziona le condizioni chiave",
+            options: [
+              "Massimale adeguato, franchigia accettabile, esclusioni chiare",
+              "Solo prezzo basso",
+              "Nessuna condizione particolare",
+            ],
+            allowText: false,
+          },
+        ],
+      },
+      {
+        kind: "focus",
+        title: "🛡️ Copertura proporzionata",
+        content: "La copertura deve essere proporzionata al rischio economico da proteggere.",
+      },
       {
         kind: "exercise",
-        title: "Esempio guidato",
+        title: "🛠️ Scenario",
         content:
-          "Scenario: proposta con premio basso ma massimale ridotto. Passi: 1) confronta massimale con danno potenziale, 2) valuta scoperto/franchigia, 3) decidi se copertura e adeguata. Soluzione: copertura deve essere proporzionata al rischio economico da proteggere.",
+          "Proposta con premio basso ma massimale ridotto. Piano: 1) confronta massimale con danno potenziale, 2) valuta scoperto, 3) decidi se copertura è adeguata.",
       },
     ],
   },
@@ -65,38 +147,55 @@ const content: StructuredLessonContent = {
     nodeKey: "quiz",
     criteria: ["integration", "application"],
     blocks: [
-      { kind: "focus", title: "Focus", content: "Quiz finale: verifica se sai scegliere coperture in modo razionale." },
+      {
+        kind: "focus",
+        title: "🧠 Focus",
+        content: "Quiz finale: verifica se sai scegliere coperture in modo razionale.",
+      },
       {
         kind: "explain",
-        title: "Spiegazione rapida",
-        content: "Applica il metodo: priorita rischio, lettura clausole, confronto costo/protezione.",
+        title: "📌 Metodo di scelta",
+        content: "Applica il metodo: priorità rischio, lettura clausole, confronto costo/protezione.",
       },
       {
         kind: "question",
-        title: "Domanda 1",
-        content: "Qual e il primo criterio di scelta di una polizza?",
+        title: "❓ Domanda 1",
+        content: "Qual è il primo criterio di scelta di una polizza?",
         pollAreas: [
           {
-            id: "quiz-q1",
-            prompt: "Seleziona la risposta piu corretta",
-            options: ["Adeguatezza della copertura al rischio da proteggere", "Premio piu basso in assoluto", "Numero di pagine del contratto"],
+            id: "quiz-q1-8",
+            prompt: "Seleziona la risposta più corretta",
+            options: [
+              "Adeguatezza della copertura al rischio da proteggere",
+              "Premio più basso in assoluto",
+              "Numero di pagine del contratto",
+            ],
+            allowText: true,
+          },
+        ],
+      },
+      {
+        kind: "question",
+        title: "❓ Domanda 2",
+        content: "Rischio stimato 120.000€, massimale proposto 40.000€. Qual è il problema?",
+        pollAreas: [
+          {
+            id: "quiz-q2-8",
+            prompt: "Qual è il problema principale?",
+            options: [
+              "Massimale insufficiente rispetto al rischio",
+              "Premio troppo basso",
+              "Contratto troppo breve",
+            ],
             allowText: true,
           },
         ],
       },
       {
         kind: "exercise",
-        title: "Caso pratico",
+        title: "🛠️ Caso pratico",
         content:
-          "Scenario: rischio stimato 120.000 euro, massimale polizza proposta 40.000 euro. Passi: 1) confronta gap copertura, 2) valuta opzione con massimale adeguato, 3) controlla franchigia e esclusioni. Soluzione attesa: scegliere copertura con massimale coerente al rischio reale.",
-        pollAreas: [
-          {
-            id: "quiz-case",
-            prompt: "Qual e il problema principale della proposta?",
-            options: ["Massimale insufficiente rispetto al rischio", "Premio troppo basso", "Contratto troppo breve"],
-            allowText: true,
-          },
-        ],
+          "Gap copertura: 80.000€ scoperti. Piano: 1) valuta opzione con massimale adeguato, 2) controlla franchigia, 3) scegli copertura coerente al rischio reale.",
       },
     ],
     options: ["Prioritizzo rischio", "Confronto clausole", "Scelgo copertura adeguata"],
@@ -105,18 +204,42 @@ const content: StructuredLessonContent = {
     nodeKey: "feedback",
     criteria: ["human", "learning"],
     blocks: [
-      { kind: "focus", title: "Focus", content: "Assicurarsi bene protegge la stabilita tua e della tua famiglia." },
+      {
+        kind: "focus",
+        title: "✅ Focus",
+        content: "Assicurarsi bene protegge la stabilità tua e della tua famiglia.",
+      },
       {
         kind: "explain",
-        title: "Spiegazione rapida",
+        title: "📌 Poche coperture ben comprese",
         content: "Meglio poche coperture comprese bene che molte coperture poco utili.",
       },
-      { kind: "question", title: "Approfondimento", content: "Quale polizza vuoi rivedere per prima con criteri migliori?" },
-      { kind: "exercise", title: "Esempio guidato", content: "Programma una revisione annuale con checklist standard e confronto offerte." },
+      {
+        kind: "question",
+        title: "🎯 La tua revisione",
+        content: "Quale polizza vuoi rivedere per prima con criteri migliori?",
+        pollAreas: [
+          {
+            id: "feedback-rule-8",
+            prompt: "Seleziona la polizza prioritaria",
+            options: [
+              "Assicurazione sanitaria",
+              "Responsabilità civile",
+              "Protezione reddito/casa",
+            ],
+            allowText: true,
+          },
+        ],
+      },
+      {
+        kind: "exercise",
+        title: "✍️ Piano revisione",
+        content: "Programma revisione annuale: checklist standard, confronto offerte, data fissa.",
+      },
     ],
     suggestedPrompts: [
       "Dammi una checklist base per confrontare polizze",
-      "Come valuto se una copertura e davvero adeguata?",
+      "Come valuto se una copertura è davvero adeguata?",
       "Quali clausole devo leggere sempre prima di firmare?",
     ],
   },

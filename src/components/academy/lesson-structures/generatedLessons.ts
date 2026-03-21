@@ -65,45 +65,83 @@ const LESSONS: LessonSeed[] = [
 ];
 
 function conceptText(seed: LessonSeed): string {
-  return `In questa lezione su "${seed.title}", il punto centrale è ${seed.focus}. Seguendo la logica di The Intelligent Investor, non partiamo dalla ricerca del guadagno veloce, ma dalla riduzione degli errori irreversibili. Un investitore disciplinato prende decisioni prima che le emozioni del momento entrino in campo, definendo criteri chiari e verificabili. Anche l'approccio divulgativo di Starting Finance conferma lo stesso principio: le buone scelte economiche nascono da processi semplici, ripetibili e comprensibili, non da intuizioni casuali. Per questo il nodo Concept ti chiede di fissare una regola pratica che puoi applicare subito nel tuo contesto, collegando teoria e realtà personale. Se il principio non è trasformabile in un comportamento concreto, allora non è ancora un apprendimento utile.`;
+  return `💡 In questa lezione su "${seed.title}", il punto centrale è ${seed.focus}. Non partiamo dalla ricerca del guadagno veloce, ma dalla riduzione degli errori irreversibili. 📌 Un investitore disciplinato prende decisioni prima che le emozioni entrino in campo, definendo criteri chiari e verificabili. Le buone scelte economiche nascono da processi semplici, ripetibili e comprensibili. 🎯 Per questo ti chiediamo di fissare una regola pratica che puoi applicare subito, collegando teoria e realtà personale.`;
 }
 
 function widgetText(seed: LessonSeed): string {
-  return `Il nodo Widget traduce il tema "${seed.title}" in una procedura operativa. L'obiettivo non è accumulare nozioni, ma creare un meccanismo decisionale che regga anche nei periodi complessi. Applichiamo tre passaggi: definire una metrica osservabile, impostare una soglia di allerta, scegliere un'azione correttiva standard. Questo schema evita sia il blocco da analisi sia le reazioni impulsive. Nella pratica, puoi usare una revisione settimanale o mensile per confrontare stato reale e obiettivo, poi correggere con piccoli aggiustamenti progressivi. Il vantaggio è cumulativo: quando il processo è stabile, diminuiscono gli errori costosi e aumenta la coerenza tra obiettivi finanziari, rischio sostenibile e tempo disponibile. La disciplina del metodo conta più del risultato del singolo giorno.`;
+  return `🛠️ Il Widget traduce "${seed.title}" in procedura operativa. L'obiettivo non è accumulare nozioni, ma creare un meccanismo decisionale robusto. 📋 Tre passaggi: 1) definire una metrica osservabile, 2) impostare una soglia di allerta, 3) scegliere un'azione correttiva. ✅ Usa revisioni settimanali per confrontare stato reale e obiettivo, poi correggi con piccoli aggiustamenti. La disciplina del metodo conta più del risultato del singolo giorno.`;
 }
 
 function challengeText(seed: LessonSeed): string {
-  return `Nel nodo Challenge mettiamo sotto stress il metodo della lezione "${seed.title}" con uno scenario realistico, simile alle oscillazioni che Graham descrive quando parla di mercato e comportamento. Qui non vince chi indovina, ma chi resta coerente con regole definite in anticipo. Il compito è riconoscere la differenza tra un problema temporaneo e un errore strutturale: nel primo caso correggi l'esecuzione, nel secondo aggiorni il piano. L'esercizio ti porta a quantificare impatto, priorità e trade-off, così da evitare scelte vaghe. Questa abilità è fondamentale: gli investitori perdono valore soprattutto quando cambiano strategia nel momento sbagliato, non quando seguono un processo robusto con pazienza. Il tuo obiettivo è uscire dal nodo con una regola anti-panico chiara.`;
+  return `⚡ Il Challenge mette sotto stress il metodo di "${seed.title}" con uno scenario realistico. 🎯 Non vince chi indovina, ma chi resta coerente con regole definite in anticipo. 🔍 Il compito è riconoscere la differenza tra problema temporaneo ed errore strutturale. Nel primo caso correggi l'esecuzione, nel secondo aggiorni il piano. ⚠️ Gli investitori perdono valore quando cambiano strategia nel momento sbagliato. Il tuo obiettivo: una regola anti-panico chiara.`;
 }
 
 function quizText(seed: LessonSeed): string {
-  return `Il nodo Quiz verifica se hai interiorizzato il principio "${seed.title}" in modo applicabile. Le domande sono progettate per misurare la qualità del ragionamento, non la memoria di definizioni isolate. La sequenza corretta resta sempre la stessa: chiarisci l'obiettivo, valuta i vincoli, confronta alternative, seleziona l'azione con miglior equilibrio rischio-rendimento nel tuo orizzonte temporale. Se una risposta sembra attraente ma richiede assunzioni non verificate, va scartata. Questo approccio riflette la filosofia del margine di sicurezza: preferire decisioni robuste anche quando promettono meno entusiasmo nel breve termine. Alla fine del quiz devi poter spiegare il perché della scelta in linguaggio semplice, con numeri essenziali e conseguenze pratiche comprensibili.`;
+  return `🧠 Il Quiz verifica se hai interiorizzato "${seed.title}" in modo applicabile. Le domande misurano la qualità del ragionamento, non la memoria. 📋 Sequenza corretta: 1) chiarisci obiettivo, 2) valuta vincoli, 3) confronta alternative, 4) seleziona l'azione con miglior equilibrio rischio-rendimento. ⚠️ Se una risposta richiede assunzioni non verificate, va scartata. 🎯 Alla fine devi poter spiegare il perché della scelta in linguaggio semplice.`;
 }
 
 function feedbackText(seed: LessonSeed): string {
-  return `Il nodo Feedback chiude il ciclo della lezione "${seed.title}" e trasforma il contenuto in abitudine. Il risultato atteso non è una risposta perfetta oggi, ma una routine affidabile che migliori nel tempo. Per questo sintetizziamo tre elementi: cosa mantenere, cosa correggere, quando ricontrollare. Se non pianifichi il prossimo controllo, l'apprendimento resta teorico e tende a svanire. Invece, una piccola revisione programmata riduce la frizione e consolida il comportamento, proprio come un ribilanciamento periodico mantiene il portafoglio allineato alla strategia. Usa il tutor per chiarire i dubbi residui e rendere il piano personale, misurabile e sostenibile. La coerenza ripetuta vale più di qualsiasi sprint motivazionale occasionale.`;
+  return `✅ Il Feedback chiude il ciclo di "${seed.title}" e trasforma il contenuto in abitudine. 📋 Sintetizziamo tre elementi: cosa mantenere, cosa correggere, quando ricontrollare. 📅 Se non pianifichi il prossimo controllo, l'apprendimento resta teorico. Una piccola revisione programmata consolida il comportamento. 💡 Usa il tutor per chiarire i dubbi e rendere il piano personale, misurabile e sostenibile. La coerenza ripetuta vale più di sprint motivazionali.`;
 }
 
 function buildNode(seed: LessonSeed, nodeKey: string, title: string, body: string): StructuredNodeContent {
+  const titleEmojis: Record<string, string> = {
+    "Concept": "💡",
+    "Widget": "🛠️",
+    "Challenge": "⚡",
+    "Quiz finale": "🧠",
+    "Feedback": "✅",
+  };
+  const emoji = titleEmojis[title] || "📌";
+
   return {
     nodeKey,
     criteria: ["foundational", "application", "learning"],
     blocks: [
-      { kind: "focus", title: "Focus", content: body },
+      { kind: "focus", title: `${emoji} Focus`, content: body },
+      {
+        kind: "question",
+        title: "🧠 Verifica veloce",
+        content: `Hai compreso il principio chiave di "${seed.title}"?`,
+        pollAreas: [
+          {
+            id: `${nodeKey}-verify-${seed.id}`,
+            prompt: "Seleziona il tuo livello di comprensione",
+            options: [
+              "Ho capito e posso applicarlo",
+              "Ho bisogno di un esempio",
+              "Vorrei rivedere il concetto",
+            ],
+            allowText: false,
+          },
+        ],
+      },
       {
         kind: "explain",
-        title: "Spiegazione rapida",
-        content: `${body} Applica questa logica con un controllo periodico e una soglia numerica, così ogni decisione resta coerente con il tuo piano.`,
+        title: "📌 Applicazione pratica",
+        content: `🎯 Applica questa logica con un controllo periodico e una soglia numerica. Ogni decisione deve restare coerente con il tuo piano.`,
       },
       {
         kind: "question",
-        title: "Approfondimento",
-        content: `Domanda guida: quale regola concreta adotti da oggi per rendere operativa la lezione "${seed.title}" senza dipendere dall'umore del momento?`,
+        title: "🤔 Riflessione",
+        content: `Quale regola concreta adotti da oggi per rendere operativa "${seed.title}"?`,
+        pollAreas: [
+          {
+            id: `${nodeKey}-rule-${seed.id}`,
+            prompt: "Seleziona la tua regola",
+            options: [
+              "Definisco un obiettivo misurabile",
+              "Imposto una soglia di controllo",
+              "Programmo una revisione periodica",
+            ],
+            allowText: true,
+          },
+        ],
       },
       {
         kind: "exercise",
-        title: "Esempio guidato",
-        content: `Caso pratico: definisci un obiettivo, una metrica e un limite massimo di deviazione. Poi scegli un'azione di correzione automatica se superi la soglia. Chiudi con data del prossimo check.`,
+        title: "🛠️ Esercizio pratico",
+        content: `📋 Definisci: 1) un obiettivo, 2) una metrica, 3) un limite di deviazione. Poi scegli un'azione correttiva e fissa la data del prossimo check.`,
       },
     ],
     options: ["Scelgo una regola", "Imposto una soglia", "Programmo il check"],
@@ -115,10 +153,79 @@ function buildLessonContent(seed: LessonSeed): StructuredLessonContent {
     concept: buildNode(seed, "concept", "Concept", conceptText(seed)),
     widget: buildNode(seed, "widget", "Widget", widgetText(seed)),
     challenge: buildNode(seed, "challenge", "Challenge", challengeText(seed)),
-    quiz: buildNode(seed, "quiz", "Quiz finale", quizText(seed)),
+    quiz: {
+      ...buildNode(seed, "quiz", "Quiz finale", quizText(seed)),
+      blocks: [
+        { kind: "focus", title: "🧠 Quiz finale", content: quizText(seed) },
+        {
+          kind: "question",
+          title: "❓ Domanda principale",
+          content: `Verifica la tua comprensione di "${seed.title}"`,
+          pollAreas: [
+            {
+              id: `quiz-main-${seed.id}`,
+              prompt: "Qual è il principio più importante?",
+              options: [
+                "Processo prima del risultato",
+                "Decisioni anticipate, non emotive",
+                "Controllo periodico e correzione",
+              ],
+              allowText: true,
+            },
+          ],
+        },
+        {
+          kind: "question",
+          title: "🧠 Quiz bonus",
+          content: "Quale errore è più comune?",
+          pollAreas: [
+            {
+              id: `quiz-bonus-${seed.id}`,
+              prompt: "Seleziona l'errore da evitare",
+              options: [
+                "Non avere un piano scritto",
+                "Reagire alle emozioni del momento",
+                "Non controllare mai i risultati",
+              ],
+              allowText: true,
+            },
+          ],
+        },
+        {
+          kind: "exercise",
+          title: "🛠️ Applicazione finale",
+          content: "📝 Scrivi la tua regola personale per applicare questa lezione.",
+        },
+      ],
+    },
     feedback: {
       ...buildNode(seed, "feedback", "Feedback", feedbackText(seed)),
       criteria: ["human", "caring", "learning"],
+      blocks: [
+        { kind: "focus", title: "✅ Feedback", content: feedbackText(seed) },
+        {
+          kind: "question",
+          title: "🎯 Piano d'azione",
+          content: "Cosa farai questa settimana?",
+          pollAreas: [
+            {
+              id: `feedback-action-${seed.id}`,
+              prompt: "Seleziona la tua prima azione",
+              options: [
+                "Definisco un obiettivo chiaro",
+                "Imposto una revisione settimanale",
+                "Creo una checklist personale",
+              ],
+              allowText: true,
+            },
+          ],
+        },
+        {
+          kind: "explain",
+          title: "📅 Prossimi passi",
+          content: "🎯 La coerenza ripetuta vale più di sprint motivazionali. Pianifica il prossimo controllo.",
+        },
+      ],
       suggestedPrompts: [
         `Aiutami a trasformare "${seed.title}" in un piano settimanale`,
         "Qual è l'errore principale da evitare nel mio caso?",

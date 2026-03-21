@@ -6,46 +6,95 @@ const content: StructuredLessonContent = {
     nodeKey: "concept",
     criteria: ["foundational", "caring"],
     blocks: [
-      { kind: "focus", title: "Focus", content: "Un debito e buono se crea valore futuro, cattivo se erode margine senza ritorno." },
+      {
+        kind: "focus",
+        title: "💡 Focus",
+        content: "Un debito è buono se crea valore futuro, cattivo se erode margine senza ritorno.",
+      },
       {
         kind: "explain",
-        title: "Spiegazione rapida",
+        title: "📌 Le tre leve",
         content: "Per decidere guarda 3 leve: costo totale, durata, impatto sul cashflow mensile.",
       },
       {
         kind: "question",
-        title: "Approfondimento",
-        content: "Domanda didattica: perche il tasso da solo non basta per giudicare un debito?",
+        title: "🧠 Verifica veloce",
+        content: "Perché il tasso da solo non basta per giudicare un debito?",
+        pollAreas: [
+          {
+            id: "concept-verify-3",
+            prompt: "Seleziona la risposta corretta",
+            options: [
+              "Conta anche la durata e l'impatto mensile",
+              "Il tasso è l'unico indicatore",
+              "La durata non influisce sul costo totale",
+            ],
+            allowText: false,
+          },
+        ],
+      },
+      {
+        kind: "focus",
+        title: "⚖️ Valore vs Consumo",
+        content: "Debito per formazione o casa può creare valore. Debito per consumo immediato spesso erode patrimonio.",
       },
       {
         kind: "exercise",
-        title: "Esempio guidato",
+        title: "🛠️ Esempio guidato",
         content:
-          "Scenario: prestito A rata 180 euro per 48 mesi; prestito B rata 140 euro per 72 mesi. Passi: 1) confronta durata e pressione mensile, 2) valuta costo totale stimato, 3) scegli in base a sostenibilita reale. Soluzione: la scelta dipende dal bilanciamento tra costo complessivo e tenuta mensile del budget.",
+          "Prestito A: 180€/mese per 48 mesi. Prestito B: 140€/mese per 72 mesi. Confronta: 1) durata e pressione mensile, 2) costo totale stimato, 3) sostenibilità reale.",
+        pollAreas: [
+          {
+            id: "concept-solve-3",
+            prompt: "Qual è il criterio decisivo?",
+            options: [
+              "Bilanciamento tra costo complessivo e tenuta mensile",
+              "Solo la rata più bassa",
+              "Solo la durata più corta",
+            ],
+            allowText: true,
+          },
+        ],
       },
     ],
-    options: ["Valuto costo totale", "Valuto sostenibilita mensile", "Distinguo valore da consumo"],
+    options: ["Valuto costo totale", "Valuto sostenibilità mensile", "Distinguo valore da consumo"],
   },
   widget: {
     nodeKey: "widget",
     criteria: ["application", "integration"],
     blocks: [
-      { kind: "focus", title: "Focus", content: "Ordina i debiti: prima quelli con maggiore impatto economico o psicologico." },
+      {
+        kind: "focus",
+        title: "🛠️ Focus",
+        content: "Ordina i debiti: prima quelli con maggiore impatto economico o psicologico.",
+      },
       {
         kind: "explain",
-        title: "Spiegazione rapida",
-        content: "Una strategia semplice: mantieni minimi su tutti, concentri extra-importo su un solo debito target.",
+        title: "📌 Strategia semplice",
+        content: "Una strategia semplice: mantieni minimi su tutti, concentra extra-importo su un solo debito target.",
       },
       {
         kind: "question",
-        title: "Approfondimento",
-        content: "Domanda didattica: quando conviene priorita per tasso e quando per sollievo di cassa?",
+        title: "🧠 Verifica veloce",
+        content: "Quando conviene priorità per tasso e quando per sollievo di cassa?",
+        pollAreas: [
+          {
+            id: "widget-verify-3",
+            prompt: "Seleziona l'approccio migliore",
+            options: [
+              "Dipende dalla pressione mensile e dalla stabilità del reddito",
+              "Sempre per tasso più alto",
+              "Non importa l'ordine",
+            ],
+            allowText: false,
+          },
+        ],
       },
       {
         kind: "exercise",
-        title: "Esempio guidato",
+        title: "🛠️ Scenario pratico",
         content:
-          "Scenario: hai 3 debiti con rate 90, 120, 210 euro e extra budget 80 euro. Passi: 1) scegli debito target, 2) alloca +80 fisso, 3) ricalcola tempo stimato estinzione. Soluzione attesa: piano con un target chiaro e revisione ogni 30 giorni.",
+          "3 debiti: rate 90€, 120€, 210€. Extra budget 80€. Piano: 1) scegli debito target, 2) alloca +80€ fisso, 3) revisione ogni 30 giorni.",
       },
     ],
     options: ["Scelgo debito target", "Aggiungo quota extra", "Rivedo ogni mese"],
@@ -54,22 +103,43 @@ const content: StructuredLessonContent = {
     nodeKey: "challenge",
     criteria: ["learning", "application"],
     blocks: [
-      { kind: "focus", title: "Focus", content: "Il vero rischio e aggiungere nuove rate prima di aver ridotto quelle attuali." },
+      {
+        kind: "focus",
+        title: "⚡ Focus",
+        content: "Il vero rischio è aggiungere nuove rate prima di aver ridotto quelle attuali.",
+      },
       {
         kind: "explain",
-        title: "Spiegazione rapida",
+        title: "📌 Regola anti-nuovo-debito",
         content: "Nuovo debito accettabile solo se non compromette obiettivi e margine di sicurezza.",
       },
       {
         kind: "question",
-        title: "Approfondimento",
-        content: "Domanda didattica: quale vincolo personale imposti prima di accettare una nuova rata?",
+        title: "🧠 Verifica comprensione",
+        content: "Quale vincolo personale imposti prima di accettare una nuova rata?",
+        pollAreas: [
+          {
+            id: "challenge-verify-3",
+            prompt: "Seleziona il vincolo chiave",
+            options: [
+              "Il margine residuo deve coprire imprevisti",
+              "Non serve nessun vincolo",
+              "Accetto sempre se la rata è bassa",
+            ],
+            allowText: false,
+          },
+        ],
+      },
+      {
+        kind: "focus",
+        title: "🛡️ Buffer imprevisti",
+        content: "Se il nuovo debito riduce il buffer a zero, il rischio di stress finanziario aumenta molto.",
       },
       {
         kind: "exercise",
-        title: "Esempio guidato",
+        title: "🛠️ Scenario",
         content:
-          "Scenario: nuova offerta da 75 euro/mese, margine attuale libero 95 euro. Passi: 1) stima nuovo margine (20 euro), 2) verifica se resta buffer imprevisti, 3) decidi. Soluzione: se il buffer diventa troppo basso, rinvia o riduci importo della nuova spesa.",
+          "Nuova offerta 75€/mese, margine attuale 95€. Nuovo margine: 20€. Valuta: se il buffer diventa troppo basso, rinvia o riduci importo.",
       },
     ],
   },
@@ -77,24 +147,45 @@ const content: StructuredLessonContent = {
     nodeKey: "quiz",
     criteria: ["integration", "application"],
     blocks: [
-      { kind: "focus", title: "Focus", content: "Quiz finale: testa la tua capacita di decidere sui debiti con metodo." },
+      {
+        kind: "focus",
+        title: "🧠 Focus",
+        content: "Quiz finale: testa la tua capacità di decidere sui debiti con metodo.",
+      },
       {
         kind: "explain",
-        title: "Spiegazione rapida",
-        content: "La risposta migliore e quella che protegge insieme cashflow, costo e sostenibilita comportamentale.",
+        title: "📌 Criterio guida",
+        content: "La risposta migliore è quella che protegge insieme cashflow, costo e sostenibilità comportamentale.",
       },
       {
         kind: "question",
-        title: "Domanda 1",
-        content: "Hai due prestiti: X tasso alto ma rata piccola, Y tasso medio ma rata molto pesante. Da dove parti?",
+        title: "❓ Domanda 1",
+        content: "Hai due prestiti: X tasso alto ma rata piccola, Y tasso medio ma rata pesante. Da dove parti?",
         pollAreas: [
           {
-            id: "quiz-q1",
-            prompt: "Scelta piu coerente",
+            id: "quiz-q1-3",
+            prompt: "Scelta più coerente",
             options: [
-              "Priorita al debito che libera piu respiro mensile se ridotto",
-              "Priorita casuale senza criterio",
-              "Nuovo prestito per coprire temporaneamente le rate",
+              "Priorità al debito che libera più respiro mensile",
+              "Priorità casuale senza criterio",
+              "Nuovo prestito per coprire le rate",
+            ],
+            allowText: true,
+          },
+        ],
+      },
+      {
+        kind: "question",
+        title: "❓ Domanda 2",
+        content: "Margine libero 220€/mese, extra per debiti 70€. Qual è il pilastro del piano?",
+        pollAreas: [
+          {
+            id: "quiz-q2-3",
+            prompt: "Qual è il pilastro che non deve mancare?",
+            options: [
+              "Importo extra costante sul debito target",
+              "Decisioni improvvisate",
+              "Nessun monitoraggio",
             ],
             allowText: true,
           },
@@ -102,17 +193,9 @@ const content: StructuredLessonContent = {
       },
       {
         kind: "exercise",
-        title: "Caso pratico",
+        title: "🛠️ Caso pratico",
         content:
-          "Scenario: margine libero 220 euro/mese, extra che puoi destinare ai debiti 70 euro. Passi: 1) scegli target, 2) applica extra costante, 3) scrivi regola anti-nuove-rate per 90 giorni. Soluzione attesa: piano con priorita, importo extra fisso e vincolo comportamentale.",
-        pollAreas: [
-          {
-            id: "quiz-case",
-            prompt: "Qual e il pilastro che non deve mancare nel piano?",
-            options: ["Importo extra costante", "Decisioni improvvisate", "Nessun monitoraggio"],
-            allowText: true,
-          },
-        ],
+          "Piano a 90 giorni: 1) scegli debito target, 2) applica extra costante, 3) scrivi regola anti-nuove-rate. Importo extra fisso + vincolo comportamentale.",
       },
     ],
     options: ["Applico criterio", "Difendo il margine", "Chiudo con regola 90 giorni"],
@@ -121,13 +204,41 @@ const content: StructuredLessonContent = {
     nodeKey: "feedback",
     criteria: ["human", "learning"],
     blocks: [
-      { kind: "focus", title: "Focus", content: "Gestire debiti bene significa recuperare controllo economico e mentale." },
-      { kind: "explain", title: "Spiegazione rapida", content: "Scegli una strategia che puoi mantenere 12 mesi, non 12 giorni." },
-      { kind: "question", title: "Approfondimento", content: "Qual e la tua decisione operativa da oggi sui debiti?" },
-      { kind: "exercise", title: "Esempio guidato", content: "Scrivi un piano a 90 giorni: debito target, extra-importo, giorno review." },
+      {
+        kind: "focus",
+        title: "✅ Focus",
+        content: "Gestire debiti bene significa recuperare controllo economico e mentale.",
+      },
+      {
+        kind: "explain",
+        title: "📌 Strategia sostenibile",
+        content: "Scegli una strategia che puoi mantenere 12 mesi, non 12 giorni.",
+      },
+      {
+        kind: "question",
+        title: "🎯 Il tuo piano",
+        content: "Qual è la tua decisione operativa da oggi sui debiti?",
+        pollAreas: [
+          {
+            id: "feedback-rule-3",
+            prompt: "Seleziona la tua priorità",
+            options: [
+              "Identifico il debito target da aggredire",
+              "Definisco l'extra mensile fisso",
+              "Creo regola anti-nuovo-debito",
+            ],
+            allowText: true,
+          },
+        ],
+      },
+      {
+        kind: "exercise",
+        title: "✍️ Piano 90 giorni",
+        content: "Scrivi: debito target, extra-importo, giorno review.",
+      },
     ],
     suggestedPrompts: [
-      "Aiutami a ordinare i debiti per priorita",
+      "Aiutami a ordinare i debiti per priorità",
       "Come definisco una rata davvero sostenibile?",
       "Dammi una regola anti-nuovo-debito",
     ],
