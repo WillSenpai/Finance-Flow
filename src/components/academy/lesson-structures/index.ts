@@ -1,8 +1,14 @@
 import { createDefaultLessonDefinition, getDefaultLessonVisualConfig } from "./defaultLessonDefinition";
 import { generatedLessonDefinitions } from "./generatedLessons";
+import { intelligentInvestorLessonDefinitions } from "./intelligentInvestorLessons";
 import type { LessonDefinition, LessonVisualConfig } from "./types";
 
-const lessonRegistry: Record<string, LessonDefinition> = generatedLessonDefinitions;
+// Merge registries: intelligentInvestorLessonDefinitions override generatedLessonDefinitions
+// for lessons that have more detailed Graham-based content
+const lessonRegistry: Record<string, LessonDefinition> = {
+  ...generatedLessonDefinitions,
+  ...intelligentInvestorLessonDefinitions,
+};
 
 export function resolveLessonDefinition(lessonId: string): LessonDefinition {
   return lessonRegistry[lessonId] || createDefaultLessonDefinition(lessonId);
