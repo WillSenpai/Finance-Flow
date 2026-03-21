@@ -19,6 +19,7 @@ import { resolveLessonDefinition } from "@/components/academy/lesson-structures"
 import type {
   BlockPollArea,
   NodeBlock,
+  PollOption,
   StructuredLessonContent,
   StructuredNodeContent,
 } from "@/components/academy/lesson-structures/types";
@@ -54,6 +55,8 @@ type LessonStepperProps = {
 type PollResponse = {
   selected?: string;
   text?: string;
+  isCorrect?: boolean;
+  showFeedback?: boolean;
 };
 
 function statusLabel(status: NodeStatus) {
@@ -99,7 +102,8 @@ function pollKey(nodeKey: string, blockIndex: number, areaId: string) {
 }
 
 function hasPollAnswer(entry: PollResponse | undefined) {
-  return Boolean(entry?.selected || entry?.text?.trim());
+  // Una risposta è considerata valida solo dopo che l'utente ha visto il feedback
+  return Boolean(entry?.showFeedback || entry?.text?.trim());
 }
 
 // ─── Node status dot ────────────────────────────────────────────────────────
@@ -441,39 +445,128 @@ const LessonStepper = ({
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentBlock.content}</ReactMarkdown>
             </div>
 
-            {/* Poll areas */}
+            {/* Poll areas con feedback branching */}
             {pollAreasForBlock.length > 0 && activeNode ? (
               <div className="mt-3 space-y-3 rounded-xl border border-border/60 bg-card p-3">
                 {pollAreasForBlock.map((area, areaIndex) => {
                   const responseKey = pollKey(activeNode.node_key, blockIndex, area.id);
                   const response = pollResponses[responseKey];
-                  const options =
-                    area.options && area.options.length > 0 ? area.options : ["Si", "No", "Da rivedere"];
+
+                  // Supporto per richOptions (con spiegazioni) o options semplici
+                  const richOptions: PollOption[] = area.richOptions ??
+                    (area.options?.map((opt, idx) => ({
+                      text: opt,
+                      isCorrect: area.correctIndex !== undefined ? idx === area.correctIndex : idx === 0,
+                      explanation: undefined,
+                    })) ?? []);
+
+                  const hasAnswered = response?.showFeedback === true;
+                  const selectedOption = richOptions.find(opt => opt.text === response?.selected);
+                  const isCorrectAnswer = selectedOption?.isCorrect ?? false;
+
+                  // Determina la spiegazione da mostrare
+                  const feedbackExplanation = hasAnswered ? (
+                    isCorrectAnswer
+                      ? (selectedOption?.explanation || area.correctExplanation || "Esatto! Hai colto il punto chiave.")
+                      : (selectedOption?.explanation || area.wrongExplanation || "Non proprio. Vediamo insieme perché...")
+                  ) : null;
 
                   return (
-                    <div key={responseKey} className="space-y-2 rounded-lg border border-border/50 bg-background/50 p-3">
+                    <div key={responseKey} className="space-y-3 rounded-lg border border-border/50 bg-background/50 p-3">
                       <p className="break-words text-sm font-medium">
                         {areaIndex + 1}. {area.prompt}
                       </p>
+
+                      {/* Opzioni di risposta */}
                       <div className="grid gap-2">
-                        {options.map((option) => (
-                          <Button
-                            key={`${responseKey}-${option}`}
-                            type="button"
-                            variant={response?.selected === option ? "default" : "outline"}
-                            className="justify-start rounded-xl text-left break-words whitespace-normal"
-                            onClick={() =>
-                              setPollResponses((prev) => ({
-                                ...prev,
-                                [responseKey]: { ...prev[responseKey], selected: option },
-                              }))
-                            }
-                          >
-                            {option}
-                          </Button>
-                        ))}
+                        {richOptions.map((option) => {
+                          const isSelected = response?.selected === option.text;
+                          const showCorrectHighlight = hasAnswered && option.isCorrect;
+                          const showWrongHighlight = hasAnswered && isSelected && !option.isCorrect;
+
+                          return (
+                            <Button
+                              key={`${responseKey}-${option.text}`}
+                              type="button"
+                              variant={isSelected && !hasAnswered ? "default" : "outline"}
+                              className={`justify-start rounded-xl text-left break-words whitespace-normal transition-all ${
+                                showCorrectHighlight ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400" : ""
+                              } ${
+                                showWrongHighlight ? "border-red-400 bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400" : ""
+                              }`}
+                              onClick={() => {
+                                if (hasAnswered) return; // Non permettere cambio dopo feedback
+                                setPollResponses((prev) => ({
+                                  ...prev,
+                                  [responseKey]: {
+                                    ...prev[responseKey],
+                                    selected: option.text,
+                                    isCorrect: option.isCorrect,
+                                    showFeedback: false,
+                                  },
+                                }));
+                              }}
+                              disabled={hasAnswered}
+                            >
+                              {hasAnswered && option.isCorrect && <CheckCircle2 size={14} className="mr-2 text-emerald-500 shrink-0" />}
+                              {option.text}
+                            </Button>
+                          );
+                        })}
                       </div>
-                      {area.allowText !== false ? (
+
+                      {/* Pulsante Verifica */}
+                      {response?.selected && !hasAnswered && (
+                        <Button
+                          type="button"
+                          className="w-full rounded-xl"
+                          onClick={() => {
+                            setPollResponses((prev) => ({
+                              ...prev,
+                              [responseKey]: {
+                                ...prev[responseKey],
+                                showFeedback: true,
+                              },
+                            }));
+                          }}
+                        >
+                          Verifica risposta
+                        </Button>
+                      )}
+
+                      {/* Feedback branching */}
+                      {hasAnswered && feedbackExplanation && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className={`rounded-xl p-4 ${
+                            isCorrectAnswer
+                              ? "bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-800"
+                              : "bg-amber-50 border border-amber-200 dark:bg-amber-950/20 dark:border-amber-800"
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`shrink-0 text-lg ${isCorrectAnswer ? "text-emerald-500" : "text-amber-500"}`}>
+                              {isCorrectAnswer ? "✓" : "💡"}
+                            </div>
+                            <div className="space-y-2">
+                              <p className={`font-semibold text-sm ${isCorrectAnswer ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"}`}>
+                                {isCorrectAnswer ? "Corretto!" : "Vediamo insieme..."}
+                              </p>
+                              <div className="prose prose-sm max-w-none text-foreground/90">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{feedbackExplanation}</ReactMarkdown>
+                              </div>
+                              {!isCorrectAnswer && (
+                                <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-amber-200 dark:border-amber-800">
+                                  Ora che hai capito il concetto, puoi proseguire con la lezione.
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {area.allowText !== false && hasAnswered ? (
                         <Textarea
                           value={response?.text || ""}
                           onChange={(event) =>
@@ -484,7 +577,7 @@ const LessonStepper = ({
                           }
                           rows={2}
                           className="rounded-xl"
-                          placeholder="Scrivi il tuo ragionamento in breve..."
+                          placeholder="Scrivi una riflessione personale (opzionale)..."
                         />
                       ) : null}
                     </div>

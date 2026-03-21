@@ -39,20 +39,20 @@ const content: StructuredLessonContent = {
         content: "Costi ricorrenti alti erodono il risultato se non giustificati da valore aggiunto reale.",
       },
       {
-        kind: "exercise",
-        title: "🛠️ Esempio guidato",
+        kind: "question",
+        title: "🧠 Verifica: impatto dei costi",
         content:
-          "Fondo A: costo 0,25%. Fondo B: costo 1,40%. Stessa esposizione. Su 20.000€ in 10 anni: Fondo A risparmia migliaia di euro in commissioni.",
+          "Fondo A: costo annuo 0,25%\nFondo B: costo annuo 1,40%\n\nStessa esposizione di mercato.\nCapitale investito: 20.000€ per 10 anni.",
         pollAreas: [
           {
             id: "concept-solve-5",
-            prompt: "Qual è la lezione chiave?",
+            prompt: "Qual è la lezione chiave di questo confronto?",
             options: [
               "Costi ricorrenti alti richiedono giustificazione reale",
               "Il fondo più costoso è sempre migliore",
-              "I costi non influiscono sul risultato",
+              "I costi non influiscono sul risultato finale",
             ],
-            allowText: true,
+            allowText: false,
           },
         ],
       },
@@ -91,10 +91,22 @@ const content: StructuredLessonContent = {
         ],
       },
       {
-        kind: "exercise",
-        title: "🛠️ Scenario pratico",
+        kind: "question",
+        title: "🧠 Verifica: metodo di confronto",
         content:
-          "2 fondi bilanciati da valutare. Piano: 1) compila scheda per entrambi, 2) assegna voto 1-5 a ogni criterio, 3) scegli il fondo con punteggio totale maggiore. Decisione ripetibile.",
+          "Devi confrontare 2 fondi bilanciati.\n\nHai bisogno di un metodo sistematico per decidere.",
+        pollAreas: [
+          {
+            id: "widget-scenario-5",
+            prompt: "Qual è il metodo corretto per confrontare i fondi?",
+            options: [
+              "Compilare una scheda con criteri e assegnare un punteggio",
+              "Scegliere quello con il nome più conosciuto",
+              "Guardare solo il rendimento dell'ultimo mese",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
     options: ["Uso checklist", "Valuto costo-rischio", "Scelgo per punteggio"],
@@ -136,10 +148,22 @@ const content: StructuredLessonContent = {
         content: "Privilegia struttura robusta rispetto al picco recente: i costi bassi lavorano per te nel tempo.",
       },
       {
-        kind: "exercise",
-        title: "🛠️ Scenario",
+        kind: "question",
+        title: "🧠 Verifica: rendimento vs costi",
         content:
-          "Fondo X: +18% ultimo anno, costo 1,8%. Fondo Y: +14%, costo 0,35%. Su 5-10 anni, i costi ricorrenti di X erodono il vantaggio iniziale.",
+          "Fondo X: rendimento +18% ultimo anno, costo 1,8%\nFondo Y: rendimento +14% ultimo anno, costo 0,35%\n\nOrizzonte di investimento: 5-10 anni.",
+        pollAreas: [
+          {
+            id: "challenge-scenario-5",
+            prompt: "Quale fondo è probabilmente migliore nel lungo periodo?",
+            options: [
+              "Fondo Y: i costi bassi vincono nel lungo periodo",
+              "Fondo X: il rendimento recente conta di più",
+              "Sono equivalenti nel lungo periodo",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
   },
@@ -188,10 +212,22 @@ const content: StructuredLessonContent = {
         ],
       },
       {
-        kind: "exercise",
-        title: "🛠️ Caso pratico",
+        kind: "question",
+        title: "🧠 Verifica: calcolo impatto costi",
         content:
-          "330€/anno di differenza. Su 10 anni: 3.300€ + mancato rendimento composto. Costo alto richiede motivazione concreta.",
+          "Capitale: 30.000€\nDifferenza costo tra due fondi: 1,1%\n\nIn euro all'anno la differenza è 330€.",
+        pollAreas: [
+          {
+            id: "quiz-scenario-5",
+            prompt: "Su 10 anni, quanto pesa questa differenza di costo?",
+            options: [
+              "3.300€ + mancato rendimento composto",
+              "Solo 330€ in totale",
+              "Il costo non impatta nel lungo periodo",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
     options: ["Confronto completo", "Calcolo impatto costi", "Scelgo per coerenza"],
@@ -228,9 +264,22 @@ const content: StructuredLessonContent = {
         ],
       },
       {
-        kind: "exercise",
-        title: "✍️ Checklist finale",
-        content: "Definisci la tua checklist in 5 punti e usala su ogni proposta.",
+        kind: "question",
+        title: "🧠 Verifica finale: la tua checklist",
+        content:
+          "Per valutare ogni fondo hai bisogno di una checklist con criteri essenziali.",
+        pollAreas: [
+          {
+            id: "feedback-checklist-5",
+            prompt: "Quali sono i criteri essenziali della checklist?",
+            options: [
+              "Obiettivo + composizione + costo + volatilità + orizzonte",
+              "Solo il rendimento dell'ultimo anno",
+              "Solo il nome del gestore del fondo",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
     suggestedPrompts: [

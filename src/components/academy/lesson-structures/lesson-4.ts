@@ -39,20 +39,20 @@ const content: StructuredLessonContent = {
         content: "Un obiettivo vago genera decisioni vaghe. Un obiettivo numerico con data genera un piano.",
       },
       {
-        kind: "exercise",
-        title: "🛠️ Esempio guidato",
+        kind: "question",
+        title: "🧠 Verifica: piano di investimento",
         content:
-          "Obiettivo: anticipo casa in 8 anni. Capitale iniziale 2.000€, versamento 180€/mese. Piano: 1) definisci orizzonte, 2) scegli contributo sostenibile, 3) imposta regola di revisione.",
+          "Obiettivo: anticipo casa in 8 anni\n\nCapitale iniziale: 2.000€\nVersamento: 180€/mese\n\nDevi scegliere l'approccio corretto.",
         pollAreas: [
           {
             id: "concept-solve-4",
-            prompt: "Qual è l'elemento chiave?",
+            prompt: "Qual è l'elemento chiave del piano?",
             options: [
               "Orizzonte medio-lungo coerente con l'obiettivo",
               "Scegliere sempre l'investimento più rischioso",
               "Cambiare strategia ogni mese",
             ],
-            allowText: true,
+            allowText: false,
           },
         ],
       },
@@ -91,10 +91,22 @@ const content: StructuredLessonContent = {
         ],
       },
       {
-        kind: "exercise",
-        title: "🛠️ Scenario pratico",
+        kind: "question",
+        title: "🧠 Verifica: mercato in calo",
         content:
-          "Versi 120€/mese, il mercato scende del 12%. Piano: 1) verifica sostenibilità del contributo, 2) conferma regola, 3) evita variazioni impulsive. Continui se obiettivo e orizzonte non cambiano.",
+          "Versi 120€/mese da 6 mesi.\n\nIl mercato scende del 12%.\n\nIl tuo obiettivo resta a 10 anni.",
+        pollAreas: [
+          {
+            id: "widget-scenario-4",
+            prompt: "Qual è la mossa corretta?",
+            options: [
+              "Continuare il piano se obiettivo e orizzonte non cambiano",
+              "Vendere tutto per fermare la perdita",
+              "Smettere di investire fino a quando risale",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
     options: ["Contributo periodico", "Regola anti-panico", "Check trimestrale"],
@@ -136,10 +148,22 @@ const content: StructuredLessonContent = {
         content: "Prima di agire, controlla sempre: distanza dall'obiettivo, orizzonte residuo, liquidità extra.",
       },
       {
-        kind: "exercise",
-        title: "🛠️ Scenario",
+        kind: "question",
+        title: "🧠 Verifica: portafoglio in perdita",
         content:
-          "Portafoglio -18% in 4 mesi. Passi: 1) controlla distanza da obiettivo, 2) verifica liquidità, 3) agisci solo se cambia la TUA situazione. Decisione guidata da obiettivo, non dal rumore.",
+          "Il tuo portafoglio è sceso del 18% in 4 mesi.\n\nL'obiettivo resta a 8 anni.\n\nLa tua situazione personale non è cambiata.",
+        pollAreas: [
+          {
+            id: "challenge-scenario-4",
+            prompt: "Cosa devi verificare prima di agire?",
+            options: [
+              "Distanza dall'obiettivo e liquidità personale",
+              "Le previsioni degli analisti sui social",
+              "I consigli degli amici che investono",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
   },
@@ -192,10 +216,22 @@ const content: StructuredLessonContent = {
         ],
       },
       {
-        kind: "exercise",
-        title: "🛠️ Caso pratico",
+        kind: "question",
+        title: "🧠 Verifica: modifica del piano",
         content:
-          "Piano: 1) valuta impatto sul traguardo, 2) cerca alternativa sostenibile (es. 200€), 3) aggiorna regola solo se necessario. Modifica ragionata, non stop impulsivo.",
+          "Vuoi ridurre il contributo mensile da 250€ a 125€ per paura.\n\nL'obiettivo è 90.000€ in 15 anni.",
+        pollAreas: [
+          {
+            id: "quiz-scenario-4",
+            prompt: "Qual è l'errore principale in questa situazione?",
+            options: [
+              "Cambiare piano senza valutare l'impatto sull'obiettivo",
+              "Fare una review con criteri oggettivi",
+              "Cercare un'alternativa sostenibile come 200€/mese",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
     options: ["Confermo il processo", "Misuro l'impatto", "Aggiorno solo con criterio"],
@@ -232,9 +268,22 @@ const content: StructuredLessonContent = {
         ],
       },
       {
-        kind: "exercise",
-        title: "✍️ Protocollo personale",
-        content: "Scrivi il tuo protocollo in 3 righe: trigger, verifica, azione.",
+        kind: "question",
+        title: "🧠 Verifica finale: protocollo anti-panico",
+        content:
+          "Per evitare decisioni impulsive hai bisogno di un protocollo definito in anticipo.",
+        pollAreas: [
+          {
+            id: "feedback-protocollo-4",
+            prompt: "Quali sono i tre elementi del protocollo?",
+            options: [
+              "Trigger + verifica + azione definita",
+              "Solo aspettare che passi la paura",
+              "Chiedere consigli a chi ha panico come te",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
     suggestedPrompts: [

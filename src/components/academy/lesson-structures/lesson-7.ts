@@ -39,20 +39,20 @@ const content: StructuredLessonContent = {
         content: "Crescita a step: prima il livello minimo, poi ampliamento. Evita frustrazione e mantieni routine.",
       },
       {
-        kind: "exercise",
-        title: "🛠️ Esempio guidato",
+        kind: "question",
+        title: "🧠 Verifica: calcolo fondo emergenza",
         content:
-          "Spese essenziali 1.250€/mese. Piano: 1) target livello 1 = 1.250€, 2) target livello 2 = 3.750€ (3 mesi), 3) tempo realistico per raggiungere ogni step.",
+          "Spese essenziali mensili: 1.250€\n\nTarget livello 1: 1.250€ (1 mese)\nTarget livello 2: 3.750€ (3 mesi)",
         pollAreas: [
           {
             id: "concept-solve-7",
             prompt: "Qual è il vantaggio della crescita a step?",
             options: [
               "Mantiene motivazione e routine costante",
-              "Richiede uno sforzo unico enorme",
-              "Non serve pianificare",
+              "Richiede uno sforzo unico enorme all'inizio",
+              "Non serve pianificare i tempi",
             ],
-            allowText: true,
+            allowText: false,
           },
         ],
       },
@@ -91,10 +91,22 @@ const content: StructuredLessonContent = {
         ],
       },
       {
-        kind: "exercise",
-        title: "🛠️ Scenario pratico",
+        kind: "question",
+        title: "🧠 Verifica: piano di accumulo",
         content:
-          "Obiettivo 1.250€ in 10 mesi. Piano: 1) quota media 125€/mese, 2) quota minima 90€ nei mesi critici, 3) recupero pianificato. Sistema elastico ma continuo.",
+          "Obiettivo: 1.250€ in 10 mesi\n\nQuota media: 125€/mese\nQuota minima nei mesi critici: 90€",
+        pollAreas: [
+          {
+            id: "widget-scenario-7",
+            prompt: "Perché è importante avere una quota minima?",
+            options: [
+              "Permette di continuare anche nei mesi difficili senza interrompere",
+              "Non serve, basta saltare i mesi difficili",
+              "La quota minima rallenta troppo l'obiettivo",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
     options: ["Imposto quota base", "Definisco quota minima", "Attivo check mensile"],
@@ -136,10 +148,22 @@ const content: StructuredLessonContent = {
         content: "Mantieni la quota base e aggiungi una quota extra dedicata alla ricostruzione.",
       },
       {
-        kind: "exercise",
-        title: "🛠️ Scenario",
+        kind: "question",
+        title: "🧠 Verifica: ricostruzione fondo",
         content:
-          "Prelievo imprevisto 600€. Piano: 1) obiettivo ricostruzione in 6 mesi, 2) quota extra 100€/mese, 3) quota base invariata. Ricarica completa senza interrompere il sistema.",
+          "Hai dovuto prelevare 600€ dal fondo emergenza.\n\nDevi pianificare la ricostruzione.",
+        pollAreas: [
+          {
+            id: "challenge-scenario-7",
+            prompt: "Qual è il piano corretto di ricostruzione?",
+            options: [
+              "Obiettivo 6 mesi + quota extra 100€/mese + quota base invariata",
+              "Aspettare tempi migliori per ricominciare",
+              "Dimezzare la quota base per compensare",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
   },
@@ -188,10 +212,22 @@ const content: StructuredLessonContent = {
         ],
       },
       {
-        kind: "exercise",
-        title: "🛠️ Caso pratico",
+        kind: "question",
+        title: "🧠 Verifica: calcolo del gap",
         content:
-          "Gap 1.900€ in 12 mesi = 158€/mese. Piano: definisci quota minima e regola di recupero. Piano numerico sostenibile e monitorato.",
+          "Fondo attuale: 900€\nTarget: 2.800€ in 12 mesi\n\nGap da coprire: 1.900€\nQuota mensile necessaria: circa 158€/mese",
+        pollAreas: [
+          {
+            id: "quiz-scenario-7",
+            prompt: "Cosa devi definire oltre alla quota mensile?",
+            options: [
+              "Quota minima per i mesi difficili + regola di recupero",
+              "Solo la quota mensile è sufficiente",
+              "Nessuna regola, decido mese per mese",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
     options: ["Verifico target", "Calcolo il gap", "Definisco piano di ricarica"],
@@ -228,9 +264,22 @@ const content: StructuredLessonContent = {
         ],
       },
       {
-        kind: "exercise",
-        title: "✍️ Patto personale",
-        content: "Scrivi: target finale, quota base mensile, regola dopo prelievo.",
+        kind: "question",
+        title: "🧠 Verifica finale: il tuo patto",
+        content:
+          "Per mantenere il fondo emergenza hai bisogno di un patto con regole chiare.",
+        pollAreas: [
+          {
+            id: "feedback-patto-7",
+            prompt: "Quali elementi deve contenere il tuo patto?",
+            options: [
+              "Target finale + quota base mensile + regola dopo prelievo",
+              "Solo l'importo che vuoi raggiungere",
+              "Nessuna regola, vedrò come va",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
     suggestedPrompts: [

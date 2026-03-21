@@ -39,20 +39,20 @@ const content: StructuredLessonContent = {
         content: "Definisci la tua soglia: quale perdita temporanea puoi tollerare senza cedere al panico?",
       },
       {
-        kind: "exercise",
-        title: "🛠️ Esempio guidato",
+        kind: "question",
+        title: "🧠 Verifica: calcolo soglia di rischio",
         content:
-          "Su 20.000€ tolleri perdita massima del 15% = 3.000€. Piano: 1) calcola perdita nominale, 2) verifica reazione comportamentale, 3) allinea composizione. Il profilo deve rispettare questa soglia.",
+          "Hai un portafoglio di 20.000€.\n\nTolleri una perdita massima del 15% = 3.000€.\n\nDevi verificare se la composizione rispetta questa soglia.",
         pollAreas: [
           {
             id: "concept-solve-6",
-            prompt: "Qual è la verifica chiave?",
+            prompt: "Qual è la verifica chiave da fare?",
             options: [
-              "Reazione emotiva alla perdita ipotetica",
-              "Solo il rendimento atteso",
-              "Il nome degli strumenti",
+              "La tua reazione emotiva a una perdita ipotetica di 3.000€",
+              "Solo il rendimento atteso del portafoglio",
+              "Il nome degli strumenti nel portafoglio",
             ],
-            allowText: true,
+            allowText: false,
           },
         ],
       },
@@ -91,10 +91,22 @@ const content: StructuredLessonContent = {
         ],
       },
       {
-        kind: "exercise",
-        title: "🛠️ Scenario pratico",
+        kind: "question",
+        title: "🧠 Verifica: quando ribilanciare",
         content:
-          "Asset azionario target 60%, attuale 68%. Scostamento +8%. Se soglia è 5%, ribilancia parzialmente per tornare vicino al target.",
+          "Asset azionario target: 60%\nAsset azionario attuale: 68%\n\nScostamento: +8%\nLa tua soglia di ribilanciamento è 5%.",
+        pollAreas: [
+          {
+            id: "widget-scenario-6",
+            prompt: "Cosa devi fare in questa situazione?",
+            options: [
+              "Ribilanciare parzialmente per tornare vicino al target",
+              "Non fare nulla perché l'azionario sta andando bene",
+              "Aumentare ancora l'azionario per guadagnare di più",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
     options: ["Definisco soglia", "Ribilancio con criterio", "Evito concentrazioni"],
@@ -136,10 +148,22 @@ const content: StructuredLessonContent = {
         content: "Mai decisioni immediate: attendi 24h, controlla allineamento, agisci solo se cambia il tuo contesto.",
       },
       {
-        kind: "exercise",
-        title: "🛠️ Scenario",
+        kind: "question",
+        title: "🧠 Verifica: reazione a notizie negative",
         content:
-          "Notizia negativa + calo rapido. Piano: 1) attendi 24h, 2) controlla allineamento con obiettivo, 3) agisci solo se cambia la TUA situazione. Niente decisioni senza verifica.",
+          "Leggi una notizia negativa.\n\nIl mercato sta scendendo rapidamente.\n\nSenti l'urgenza di agire.",
+        pollAreas: [
+          {
+            id: "challenge-scenario-6",
+            prompt: "Qual è il protocollo corretto?",
+            options: [
+              "Attendi 24h, controlla allineamento obiettivo, agisci solo se cambia la TUA situazione",
+              "Vendi immediatamente tutto per limitare le perdite",
+              "Chiedi ai tuoi amici cosa stanno facendo",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
   },
@@ -192,10 +216,22 @@ const content: StructuredLessonContent = {
         ],
       },
       {
-        kind: "exercise",
-        title: "🛠️ Caso pratico",
+        kind: "question",
+        title: "🧠 Verifica: superamento soglia",
         content:
-          "Piano: 1) verifica se tolleranza era realistica, 2) riduci rischio al livello sostenibile, 3) aggiorna protocollo. Ricalibrazione sulla tua soglia reale.",
+          "Soglia perdita tollerata: 12%\nPerdita attuale: 14%\n\nLa perdita ha superato la tua soglia di tolleranza.",
+        pollAreas: [
+          {
+            id: "quiz-scenario-6",
+            prompt: "Quali sono i passi corretti da seguire?",
+            options: [
+              "Verificare se la tolleranza era realistica e ridurre il rischio",
+              "Ignorare e sperare che risalga",
+              "Aumentare il rischio per recuperare più velocemente",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
     options: ["Confronto target-attuale", "Rispetto soglia", "Aggiorno protocollo"],
@@ -232,9 +268,22 @@ const content: StructuredLessonContent = {
         ],
       },
       {
-        kind: "exercise",
-        title: "✍️ Policy personale",
-        content: "Scrivi la tua policy: soglia, frequenza review, azioni consentite.",
+        kind: "question",
+        title: "🧠 Verifica finale: la tua policy",
+        content:
+          "Per gestire il rischio in modo disciplinato hai bisogno di una policy personale.",
+        pollAreas: [
+          {
+            id: "feedback-policy-6",
+            prompt: "Quali elementi deve contenere la tua policy?",
+            options: [
+              "Soglia di perdita + frequenza review + azioni consentite",
+              "Solo il rendimento atteso",
+              "Nessuna regola, decido sul momento",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
     suggestedPrompts: [

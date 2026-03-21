@@ -39,20 +39,20 @@ const content: StructuredLessonContent = {
         content: "Debito per formazione o casa può creare valore. Debito per consumo immediato spesso erode patrimonio.",
       },
       {
-        kind: "exercise",
-        title: "🛠️ Esempio guidato",
+        kind: "question",
+        title: "🧠 Verifica: confronto prestiti",
         content:
-          "Prestito A: 180€/mese per 48 mesi. Prestito B: 140€/mese per 72 mesi. Confronta: 1) durata e pressione mensile, 2) costo totale stimato, 3) sostenibilità reale.",
+          "Prestito A: 180€/mese per 48 mesi = 8.640€ totali\nPrestito B: 140€/mese per 72 mesi = 10.080€ totali\n\nDevi scegliere quale prestito è migliore per te.",
         pollAreas: [
           {
             id: "concept-solve-3",
-            prompt: "Qual è il criterio decisivo?",
+            prompt: "Qual è il criterio decisivo per scegliere?",
             options: [
               "Bilanciamento tra costo complessivo e tenuta mensile",
-              "Solo la rata più bassa",
-              "Solo la durata più corta",
+              "Sempre la rata più bassa possibile",
+              "Sempre la durata più corta possibile",
             ],
-            allowText: true,
+            allowText: false,
           },
         ],
       },
@@ -91,10 +91,22 @@ const content: StructuredLessonContent = {
         ],
       },
       {
-        kind: "exercise",
-        title: "🛠️ Scenario pratico",
+        kind: "question",
+        title: "🧠 Verifica: strategia debiti multipli",
         content:
-          "3 debiti: rate 90€, 120€, 210€. Extra budget 80€. Piano: 1) scegli debito target, 2) alloca +80€ fisso, 3) revisione ogni 30 giorni.",
+          "Hai 3 debiti con rate:\n- Debito 1: 90€/mese\n- Debito 2: 120€/mese\n- Debito 3: 210€/mese\n\nHai 80€ extra da destinare ai debiti.",
+        pollAreas: [
+          {
+            id: "widget-scenario-3",
+            prompt: "Qual è la strategia corretta?",
+            options: [
+              "Scegliere un debito target e allocare tutti gli 80€ su quello",
+              "Dividere gli 80€ equamente tra i tre debiti",
+              "Usare gli 80€ per spese personali e pagare solo i minimi",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
     options: ["Scelgo debito target", "Aggiungo quota extra", "Rivedo ogni mese"],
@@ -136,10 +148,22 @@ const content: StructuredLessonContent = {
         content: "Se il nuovo debito riduce il buffer a zero, il rischio di stress finanziario aumenta molto.",
       },
       {
-        kind: "exercise",
-        title: "🛠️ Scenario",
+        kind: "question",
+        title: "🧠 Verifica: valutazione nuovo debito",
         content:
-          "Nuova offerta 75€/mese, margine attuale 95€. Nuovo margine: 20€. Valuta: se il buffer diventa troppo basso, rinvia o riduci importo.",
+          "Ti propongono un finanziamento con rata 75€/mese.\n\nIl tuo margine mensile attuale è 95€.\n\nAccettando, il nuovo margine sarebbe 20€.",
+        pollAreas: [
+          {
+            id: "challenge-scenario-3",
+            prompt: "Cosa dovresti fare?",
+            options: [
+              "Rinviare o ridurre l'importo perché il buffer diventa troppo basso",
+              "Accettare perché la rata è inferiore al margine disponibile",
+              "Accettare e ridurre altre spese per compensare",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
   },
@@ -192,10 +216,22 @@ const content: StructuredLessonContent = {
         ],
       },
       {
-        kind: "exercise",
-        title: "🛠️ Caso pratico",
+        kind: "question",
+        title: "🧠 Verifica: piano 90 giorni",
         content:
-          "Piano a 90 giorni: 1) scegli debito target, 2) applica extra costante, 3) scrivi regola anti-nuove-rate. Importo extra fisso + vincolo comportamentale.",
+          "Devi creare un piano di 90 giorni per gestire i tuoi debiti.\n\nIl piano deve includere elementi concreti e misurabili.",
+        pollAreas: [
+          {
+            id: "quiz-scenario-3",
+            prompt: "Quali sono i tre elementi essenziali del piano?",
+            options: [
+              "Debito target + extra fisso mensile + regola anti-nuove-rate",
+              "Solo decidere di pagare quando possibile",
+              "Chiedere un nuovo prestito per consolidare",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
     options: ["Applico criterio", "Difendo il margine", "Chiudo con regola 90 giorni"],
@@ -232,9 +268,22 @@ const content: StructuredLessonContent = {
         ],
       },
       {
-        kind: "exercise",
-        title: "✍️ Piano 90 giorni",
-        content: "Scrivi: debito target, extra-importo, giorno review.",
+        kind: "question",
+        title: "🧠 Verifica finale: il tuo piano debiti",
+        content:
+          "Per gestire efficacemente i debiti devi definire un piano con elementi specifici.",
+        pollAreas: [
+          {
+            id: "feedback-piano-3",
+            prompt: "Quali tre informazioni deve contenere il tuo piano?",
+            options: [
+              "Debito target + importo extra mensile + giorno di revisione",
+              "Solo l'importo totale del debito",
+              "Solo la data di estinzione prevista",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
     suggestedPrompts: [

@@ -13,10 +13,24 @@ export type CriterionKey =
 
 export type NodeBlockKind = "focus" | "explain" | "question" | "exercise";
 
+export type PollOption = {
+  text: string;
+  isCorrect?: boolean;
+  explanation?: string;
+};
+
 export type BlockPollArea = {
   id: string;
   prompt: string;
   options?: string[];
+  /** Opzioni avanzate con spiegazioni per il branching didattico */
+  richOptions?: PollOption[];
+  /** Indice della risposta corretta (0-based) se si usano options semplici */
+  correctIndex?: number;
+  /** Spiegazione mostrata se l'utente risponde correttamente */
+  correctExplanation?: string;
+  /** Spiegazione dettagliata mostrata se l'utente sbaglia - guida verso la comprensione */
+  wrongExplanation?: string;
   allowText?: boolean;
 };
 

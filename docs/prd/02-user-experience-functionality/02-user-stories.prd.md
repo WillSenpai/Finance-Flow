@@ -1,0 +1,13 @@
+# 2.2 User Stories
+
+Elementi collegati:
+- [`US-01` Come nuovo utente, voglio un onboarding guidato cosi da ottenere un percorso finanziario personalizzato.](./02-user-stories/01-us-01-come-nuovo-utente-voglio-un-onboarding-guidato-cosi-da-ottenere-un-percorso-finanziario-personalizzato.prd.md)
+- [`US-02` Come learner, voglio lezioni brevi e pratiche cosi da migliorare la mia alfabetizzazione finanziaria senza attrito.](./02-user-stories/02-us-02-come-learner-voglio-lezioni-brevi-e-pratiche-cosi-da-migliorare-la-mia-alfabetizzazione-finanziaria-senza-attrito.prd.md)
+- [`US-03` Come utente che traccia il denaro, voglio gestire patrimonio, spese, salvadanai e investimenti cosi da capire la mia situazione reale.](./02-user-stories/03-us-03-come-utente-che-traccia-il-denaro-voglio-gestire-patrimonio-spese-salvadanai-e-investimenti-cosi-da-capire-la-mia-situazione-reale.prd.md)
+- [`US-04` Come utente collaborativo, voglio uno spazio condiviso cosi da gestire denaro condiviso con altre persone.](./02-user-stories/04-us-04-come-utente-collaborativo-voglio-uno-spazio-condiviso-cosi-da-gestire-denaro-condiviso-con-altre-persone.prd.md)
+- [`US-05` Come utente che cerca guida, voglio un AI coach contestuale cosi da ricevere risposte azionabili.](./02-user-stories/05-us-05-come-utente-che-cerca-guida-voglio-un-ai-coach-contestuale-cosi-da-ricevere-risposte-azionabili.prd.md)
+- [`US-06` Come utente da ingaggiare nel tempo, voglio punti, badge, streak e report cosi da mantenere costanza.](./02-user-stories/06-us-06-come-utente-da-ingaggiare-nel-tempo-voglio-punti-badge-streak-e-report-cosi-da-mantenere-costanza.prd.md)
+- [`US-07` Come utente interessato ai mercati, voglio news e spiegazioni curate cosi da collegare teoria e attualita.](./02-user-stories/07-us-07-come-utente-interessato-ai-mercati-voglio-news-e-spiegazioni-curate-cosi-da-collegare-teoria-e-attualita.prd.md)
+- [`US-08` Come admin, voglio gestire contenuti editoriali e didattici cosi da mantenere qualita e aggiornamento continui.](./02-user-stories/08-us-08-come-admin-voglio-gestire-contenuti-editoriali-e-didattici-cosi-da-mantenere-qualita-e-aggiornamento-continui.prd.md)
+- [`US-09` Come utente pagante, voglio una esperienza Pro chiara cosi da capire cosa sblocco e ripristinare acquisti in modo affidabile.](./02-user-stories/09-us-09-come-utente-pagante-voglio-una-esperienza-pro-chiara-cosi-da-capire-cosa-sblocco-e-ripristinare-acquisti-in-modo-affidabile.prd.md)
+- [`US-10` Come utente mobile, voglio schermate adattate al mio device cosi da non avere clipping o scroll artefatti.](./02-user-stories/10-us-10-come-utente-mobile-voglio-schermate-adattate-al-mio-device-cosi-da-non-avere-clipping-o-scroll-artefatti.prd.md)

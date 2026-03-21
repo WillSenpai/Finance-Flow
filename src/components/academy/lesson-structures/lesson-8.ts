@@ -39,20 +39,20 @@ const content: StructuredLessonContent = {
         content: "Mappa i tuoi rischi, ordinali per impatto economico, copri prima i più gravi.",
       },
       {
-        kind: "exercise",
-        title: "🛠️ Esempio guidato",
+        kind: "question",
+        title: "🧠 Verifica: priorità dei rischi",
         content:
-          "4 rischi personali con impatto stimato. Piano: 1) ordina per impatto massimo, 2) seleziona i primi 2 da coprire, 3) definisci budget assicurativo annuo. Copertura mirata prima.",
+          "Hai identificato 4 rischi personali:\n\n1) Rischio salute: impatto 50.000€\n2) Rischio casa: impatto 30.000€\n3) Rischio auto: impatto 15.000€\n4) Rischio smartphone: impatto 800€",
         pollAreas: [
           {
             id: "concept-solve-8",
-            prompt: "Qual è il criterio di priorità?",
+            prompt: "Qual è il criterio corretto per stabilire le priorità?",
             options: [
               "Impatto economico massimo potenziale",
-              "Frequenza dell'evento",
-              "Costo della polizza più bassa",
+              "Frequenza dell'evento nella vita quotidiana",
+              "Costo della polizza più bassa disponibile",
             ],
-            allowText: true,
+            allowText: false,
           },
         ],
       },
@@ -91,10 +91,22 @@ const content: StructuredLessonContent = {
         ],
       },
       {
-        kind: "exercise",
-        title: "🛠️ Scenario pratico",
+        kind: "question",
+        title: "🧠 Verifica: confronto polizze",
         content:
-          "Polizza A: 240€, franchigia 500€. Polizza B: 320€, franchigia 150€. Valuta: 1) costo annuo, 2) impatto franchigia su sinistro tipico, 3) scegli in base a rischio reale. Non sempre la più economica è la migliore.",
+          "Polizza A: premio 240€/anno, franchigia 500€\nPolizza B: premio 320€/anno, franchigia 150€\n\nSinistro tipico stimato: 1.000€",
+        pollAreas: [
+          {
+            id: "widget-scenario-8",
+            prompt: "Qual è il ragionamento corretto per scegliere?",
+            options: [
+              "Valutare costo annuo + impatto franchigia su sinistro tipico",
+              "Scegliere sempre la polizza con premio più basso",
+              "Scegliere a caso tanto sono simili",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
     options: ["Confronto clausole", "Valuto franchigia", "Controllo massimale"],
@@ -136,10 +148,22 @@ const content: StructuredLessonContent = {
         content: "La copertura deve essere proporzionata al rischio economico da proteggere.",
       },
       {
-        kind: "exercise",
-        title: "🛠️ Scenario",
+        kind: "question",
+        title: "🧠 Verifica: massimale vs rischio",
         content:
-          "Proposta con premio basso ma massimale ridotto. Piano: 1) confronta massimale con danno potenziale, 2) valuta scoperto, 3) decidi se copertura è adeguata.",
+          "Ti propongono una polizza con:\n- Premio molto basso: 80€/anno\n- Massimale: 20.000€\n\nIl tuo rischio potenziale è stimato in 80.000€.",
+        pollAreas: [
+          {
+            id: "challenge-scenario-8",
+            prompt: "Qual è il problema principale di questa polizza?",
+            options: [
+              "Il massimale copre solo il 25% del rischio potenziale",
+              "Il premio è troppo basso, quindi è sospetta",
+              "Non c'è nessun problema, il premio è conveniente",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
   },
@@ -192,10 +216,22 @@ const content: StructuredLessonContent = {
         ],
       },
       {
-        kind: "exercise",
-        title: "🛠️ Caso pratico",
+        kind: "question",
+        title: "🧠 Verifica: gap di copertura",
         content:
-          "Gap copertura: 80.000€ scoperti. Piano: 1) valuta opzione con massimale adeguato, 2) controlla franchigia, 3) scegli copertura coerente al rischio reale.",
+          "Rischio stimato: 120.000€\nMassimale proposto: 40.000€\n\nGap di copertura: 80.000€ scoperti",
+        pollAreas: [
+          {
+            id: "quiz-scenario-8",
+            prompt: "Cosa devi fare con questo gap di copertura?",
+            options: [
+              "Cercare un'opzione con massimale adeguato al rischio reale",
+              "Accettare comunque perché qualcosa è meglio di niente",
+              "Ignorare il gap e sperare che non succeda nulla",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
     options: ["Prioritizzo rischio", "Confronto clausole", "Scelgo copertura adeguata"],
@@ -232,9 +268,22 @@ const content: StructuredLessonContent = {
         ],
       },
       {
-        kind: "exercise",
-        title: "✍️ Piano revisione",
-        content: "Programma revisione annuale: checklist standard, confronto offerte, data fissa.",
+        kind: "question",
+        title: "🧠 Verifica finale: il tuo piano revisione",
+        content:
+          "Per gestire le tue polizze in modo efficace hai bisogno di un piano di revisione annuale.",
+        pollAreas: [
+          {
+            id: "feedback-revisione-8",
+            prompt: "Quali elementi deve contenere il piano di revisione?",
+            options: [
+              "Checklist standard + confronto offerte + data fissa annuale",
+              "Solo controllare se il premio è aumentato",
+              "Nessun piano, le polizze non vanno mai riviste",
+            ],
+            allowText: false,
+          },
+        ],
       },
     ],
     suggestedPrompts: [

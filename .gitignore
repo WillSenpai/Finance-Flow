@@ -41,3 +41,31 @@ ios/App/App/config [0-9]*.xml
 
 # Temporary/generated root artifacts
 vite.config.ts.timestamp-*.mjs
+
+# PDF files (too large for git, use external storage)
+*.pdf
+
+# Capacitor build artifacts (auto-generated on sync)
+ios/App/App/public/
+android/app/src/main/assets/public/
+
+# macOS system files (catch all nested)
+**/.DS_Store
+Thumbs.db
+
+# Cache directories
+.vite/
+.cache/
+*.tmp
+*.swp
+*~
+
+# Large binary files
+*.zip
+*.tar.gz
+*.rar
+*.mp4
+*.mov
+*.avi
+*.sqlite
+*.db

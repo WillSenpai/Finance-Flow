@@ -365,18 +365,21 @@ function introNodes(lesson: LessonBlueprint): StructuredNodeContent[] {
         },
         {
           kind: "question",
-          title: "🧠 Verifica veloce",
-          content: "Quale decisione concreta questa lezione ti aiuta a prendere meglio?",
+          title: "🧠 Verifichiamo: perché serve un metodo?",
+          content: "Qual è il vantaggio principale di avere un processo definito per le decisioni finanziarie?",
           pollAreas: [
             {
               id: `map-check-${lesson.id}`,
-              prompt: "Seleziona il beneficio principale",
+              prompt: "Qual è il vantaggio principale?",
               options: [
-                "Ridurre errori impulsivi",
-                "Avere un processo chiaro",
-                "Prendere decisioni più informate",
+                "Elimina l'influenza delle emozioni sulle decisioni",
+                "Garantisce rendimenti più alti",
+                "Permette di prevedere il mercato",
               ],
-              allowText: true,
+              correctIndex: 0,
+              correctExplanation: "Esatto! Un processo definito **elimina l'emotività**.\n\nQuando hai regole chiare, non devi decidere sul momento sotto pressione. Applichi il processo e le emozioni non possono sabotarti.",
+              wrongExplanation: "Nessun metodo può garantire rendimenti o prevedere il mercato.\n\n**Il vero vantaggio di un processo è eliminare l'emotività:**\n• Paura e euforia non influenzano le decisioni\n• Applichi regole definite in anticipo\n• Riduci errori impulsivi\n\nQuesto vale per ogni decisione finanziaria.",
+              allowText: false,
             },
           ],
         },
@@ -471,9 +474,21 @@ function buildNodes(lesson: LessonBlueprint): StructuredNodeContent[] {
           ],
         },
         {
-          kind: "exercise",
-          title: "🛠️ Micro-esercizio",
-          content: "Prendi un investimento reale o simulato. Valuta se passa almeno 3 punti della checklist.",
+          kind: "question",
+          title: "🧠 Verifica: applicazione checklist",
+          content: "Pensa a un investimento reale o simulato.\n\nDevi verificare se passa i punti della checklist.",
+          pollAreas: [
+            {
+              id: `deep-dive-verify-${lesson.id}`,
+              prompt: "Quanti punti della checklist deve passare un investimento per essere considerato?",
+              options: [
+                "Almeno 3 punti su 4",
+                "Solo 1 punto è sufficiente",
+                "Non serve verificare la checklist",
+              ],
+              allowText: false,
+            },
+          ],
         },
       ],
     },
@@ -570,9 +585,17 @@ function buildNodes(lesson: LessonBlueprint): StructuredNodeContent[] {
           ],
         },
         {
-          kind: "exercise",
-          title: "🛠️ Applicazione",
-          content: "Applica la checklist a una decisione di questa settimana. Annota il punto più difficile.",
+          kind: "question",
+          title: "🧠 Verifica: applicazione pratica",
+          content: "Pensa a una decisione di investimento che devi prendere questa settimana.",
+          pollAreas: [
+            {
+              id: `checklist-apply-${lesson.id}`,
+              prompt: "Quale punto della checklist è più difficile da verificare?",
+              options: lesson.checklist.slice(0, 3),
+              allowText: true,
+            },
+          ],
         },
       ],
     },
@@ -673,9 +696,21 @@ function buildNodes(lesson: LessonBlueprint): StructuredNodeContent[] {
           ],
         },
         {
-          kind: "exercise",
-          title: "✍️ Commitment",
-          content: "📝 Scrivi data, ora e trigger della prima azione. La qualità dipende dall'esecuzione.",
+          kind: "question",
+          title: "🧠 Verifica finale: il tuo commitment",
+          content: "Per rendere concreto il piano hai bisogno di definire elementi specifici.",
+          pollAreas: [
+            {
+              id: `action-commit-${lesson.id}`,
+              prompt: "Quali elementi rendono un commitment efficace?",
+              options: [
+                "Data + ora + trigger specifico dell'azione",
+                "Solo buone intenzioni generiche",
+                "Aspettare il momento giusto senza pianificare",
+              ],
+              allowText: false,
+            },
+          ],
         },
       ],
       suggestedPrompts: [
