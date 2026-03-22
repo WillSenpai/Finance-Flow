@@ -8,13 +8,13 @@ const content: StructuredLessonContent = {
     blocks: [
       {
         kind: "focus",
-        title: "💡 Focus",
-        content: "Risparmiare senza fatica significa ridurre attrito: meno decisioni manuali, più automatismi utili.",
+        title: "💡 Cos'è il risparmio automatico?",
+        content: "Nella lezione precedente sul budget hai imparato a pianificare dove vanno i tuoi soldi. Ora facciamo un passo avanti: **automatizzare** quel piano.\n\nRisparmiare senza fatica significa ridurre l'attrito tra te e i tuoi obiettivi. Ogni volta che devi decidere manualmente 'risparmio questo mese?', c'è il rischio di rimandare, ridurre o saltare del tutto.\n\nL'automatismo elimina questa decisione. Imposti una volta, e il sistema lavora per te ogni mese, senza che tu debba pensarci.\n\n**Il principio chiave:** meno decisioni manuali = più costanza nel tempo.",
       },
       {
         kind: "explain",
-        title: "📌 La regola d'oro",
-        content: "La regola efficace è 'prima risparmio, poi spendo': anche una quota piccola ma fissa crea continuità e fiducia.",
+        title: "📌 La regola d'oro: prima risparmio, poi spendo",
+        content: "Ricordi la lezione sul budget? Abbiamo visto che l'ordine giusto è: prima risparmiare, poi pagare le spese essenziali, infine usare il resto per lo svago.\n\nOra trasformiamo questa regola in un sistema automatico. Appena lo stipendio arriva sul conto, un bonifico automatico trasferisce la quota risparmio su un conto separato.\n\nAnche una quota piccola ma fissa (es. 50€ o 100€ al mese) crea due effetti potenti:\n\n• **Continuità**: non salti mai, perché non devi decidere\n• **Fiducia**: vedi il saldo crescere mese dopo mese\n\nQuesto approccio batte qualsiasi importo alto deciso 'quando ricordo', perché elimina il fattore umano.",
       },
       {
         kind: "question",
@@ -39,7 +39,7 @@ const content: StructuredLessonContent = {
       {
         kind: "focus",
         title: "🎯 Continuità > Volume",
-        content: "La continuità conta più del volume. Un piccolo risparmio costante batte un grande risparmio sporadico.",
+        content: "Uno degli errori più comuni è pensare: 'Quando guadagnerò di più, risparmierò di più'. In realtà, funziona al contrario.\n\nLa **continuità** conta più del volume. Risparmiare 100€ ogni mese per 12 mesi (1.200€) batte risparmiare 500€ tre volte l'anno quando 'te lo ricordi' (1.500€ in teoria, ma spesso meno in pratica).\n\nPerché? Per tre motivi:\n\n• L'abitudine si consolida con la ripetizione\n• Non devi mai 'trovare' i soldi da mettere da parte\n• Il sistema funziona anche quando sei stanco, stressato o demotivato\n\nPensa al risparmio come all'allenamento: meglio 20 minuti ogni giorno che 3 ore una volta al mese.",
       },
       {
         kind: "question",
@@ -71,13 +71,13 @@ const content: StructuredLessonContent = {
     blocks: [
       {
         kind: "focus",
-        title: "🛠️ Focus",
-        content: "Il salvadanaio migliore ha nome chiaro, data fissa e importo realistico.",
+        title: "🛠️ Come costruire il tuo sistema di risparmio",
+        content: "Dopo aver capito il 'perché' del risparmio automatico, passiamo al 'come'. Il sistema perfetto ha tre elementi:\n\n**1. Nome chiaro**: non 'conto risparmio generico', ma 'Fondo vacanza 2025' o 'Anticipo casa'. Un nome specifico ti ricorda perché stai risparmiando.\n\n**2. Data fissa**: il bonifico automatico parte sempre lo stesso giorno, idealmente il giorno dello stipendio o il giorno dopo. Così i soldi 'spariscono' prima che tu possa spenderli.\n\n**3. Importo realistico**: meglio iniziare con 50€ che puoi mantenere sempre, che 200€ che ti costringono a saltare mesi. Come hai visto nella lezione sul budget, la sostenibilità viene prima dell'ambizione.",
       },
       {
         kind: "explain",
-        title: "📌 Obiettivi numerici",
-        content: "Collega ogni obiettivo a una cifra e a una scadenza: obiettivi vaghi generano rinvii, obiettivi numerici guidano azione.",
+        title: "📌 Perché servono obiettivi numerici",
+        content: "Un obiettivo vago come 'voglio risparmiare di più' non funziona. Il cervello non sa cosa fare con questa informazione, quindi la ignora.\n\nUn obiettivo numerico con scadenza cambia tutto. Confronta:\n\n• ❌ 'Voglio mettere da parte qualcosa per le vacanze'\n• ✅ 'Voglio risparmiare 1.200€ entro giugno per le vacanze = 200€/mese per 6 mesi'\n\nIl secondo obiettivo ti dice esattamente **quanto** e **quando**. Puoi verificare ogni mese se sei in linea, e correggere se necessario.\n\nQuesto collegamento tra obiettivo e azione è lo stesso principio del budget: sapere i numeri ti dà controllo.",
       },
       {
         kind: "question",
@@ -129,13 +129,13 @@ const content: StructuredLessonContent = {
     blocks: [
       {
         kind: "focus",
-        title: "⚡ Focus",
-        content: "Il rischio tipico è sospendere il risparmio al primo imprevisto invece di adattarlo.",
+        title: "⚡ Il momento critico: quando arriva l'imprevisto",
+        content: "Hai impostato il tuo sistema automatico, tutto funziona... e poi arriva una bolletta più alta del previsto, una riparazione urgente, o un mese con spese extra.\n\nQuesto è il momento critico. Il rischio non è l'imprevisto in sé, ma la tua reazione.\n\n**L'errore comune**: 'Questo mese sospendo il risparmio, tanto ricomincio il prossimo mese.' Ma il prossimo mese avrà le sue spese, e l'abitudine si spezza.\n\n**L'approccio corretto**: non sospendere, ma **adattare**. Riduci temporaneamente la quota invece di fermarti del tutto. Come hai visto nel budget, la flessibilità intelligente batte la rigidità.",
       },
       {
         kind: "explain",
-        title: "📌 La regola di continuità",
-        content: "La continuità conta più del volume: meglio ridurre temporaneamente che fermare del tutto.",
+        title: "📌 La regola di continuità: ridurre, mai fermarsi",
+        content: "Ecco perché la continuità conta più del volume. Considera questo esempio:\n\n• **Persona A**: risparmia 100€ per 8 mesi, poi salta 4 mesi = 800€\n• **Persona B**: risparmia 100€ per 8 mesi, poi 60€ per 4 mesi = 1.040€\n\nLa persona B ha risparmiato di più, ma soprattutto ha mantenuto l'abitudine attiva. Quando tornerà alla quota piena, non dovrà 'ricominciare da zero'.\n\nQuesto principio lo ritroverai anche nelle prossime lezioni sul fondo emergenza e sugli investimenti: la costanza nel tempo batte sempre i grandi gesti sporadici.\n\n**La regola**: definisci in anticipo una 'versione B' della tua quota per i mesi difficili.",
       },
       {
         kind: "question",
@@ -159,8 +159,8 @@ const content: StructuredLessonContent = {
       },
       {
         kind: "focus",
-        title: "🛡️ Piano di recupero",
-        content: "Quando riduci temporaneamente, pianifica subito il recupero nei mesi successivi.",
+        title: "🛡️ Piano di recupero: come tornare in carreggiata",
+        content: "Hai dovuto ridurre la quota per un mese difficile. Bene, hai fatto la cosa giusta mantenendo l'abitudine. Ma ora serve un piano per recuperare il gap.\n\n**Il metodo è semplice:**\n\n1. Calcola quanto hai mancato (es. 100€ normali - 60€ versati = 40€ di gap)\n2. Distribuisci il recupero sui mesi successivi (es. +20€ per 2 mesi)\n3. Torna alla quota normale quando hai coperto il gap\n\nQuesto approccio è lo stesso che hai visto nel budget per recuperare gli sforamenti. La differenza è che qui parliamo di risparmio, non di spese.\n\n**Importante**: pianifica il recupero SUBITO, non 'quando ci pensi'. Altrimenti il gap si accumula e diventa psicologicamente impossibile da colmare.",
       },
       {
         kind: "question",
@@ -191,13 +191,13 @@ const content: StructuredLessonContent = {
     blocks: [
       {
         kind: "focus",
-        title: "🧠 Focus",
-        content: "Quiz finale: verifica se il tuo sistema di risparmio regge anche sotto stress.",
+        title: "🧠 Quiz finale: il tuo sistema sotto stress",
+        content: "Hai imparato i principi del risparmio automatico: automatizzare, definire obiettivi numerici, mantenere la continuità anche nei mesi difficili.\n\nOra mettiamo tutto insieme con un quiz pratico. Le domande simulano situazioni reali che potresti incontrare.\n\nRicorda i principi chiave:\n• L'automatismo elimina la fatica decisionale\n• La continuità batte il volume\n• Ridurre è meglio che fermarsi\n• Il recupero va pianificato subito\n\nNon preoccuparti se sbagli: ogni errore è un'opportunità per consolidare il concetto.",
       },
       {
         kind: "explain",
-        title: "📌 Criterio di scelta",
-        content: "Scegli sempre l'opzione che massimizza continuità e sostenibilità, non quella più aggressiva.",
+        title: "📌 Come rispondere: il criterio guida",
+        content: "Quando rispondi, applica sempre questo criterio: **massimizza continuità e sostenibilità, non aggressività**.\n\nUna risposta 'aggressiva' (es. 'risparmio il massimo possibile') sembra vincente sulla carta, ma nella realtà porta a fallimenti quando arrivano gli imprevisti.\n\nUna risposta 'sostenibile' (es. 'risparmio una quota che posso mantenere sempre') sembra meno ambiziosa, ma nel lungo termine vince sempre.\n\nQuesto principio è lo stesso del budget: un piano realistico che rispetti batte un piano 'perfetto' che abbandoni dopo due mesi.",
       },
       {
         kind: "question",
@@ -269,13 +269,13 @@ const content: StructuredLessonContent = {
     blocks: [
       {
         kind: "focus",
-        title: "✅ Focus",
-        content: "Risparmiare bene è un sistema replicabile, non una sfida di motivazione.",
+        title: "✅ Cosa hai imparato: dal budget al risparmio automatico",
+        content: "Complimenti! Hai completato la lezione sul risparmio automatico e abitudini. Vediamo cosa hai costruito:\n\n**Nella lezione precedente (Budget)** hai imparato a pianificare dove vanno i tuoi soldi.\n\n**In questa lezione** hai trasformato quel piano in un sistema automatico che funziona senza sforzo mentale.\n\n**Il principio chiave**: risparmiare bene non è una sfida di motivazione o forza di volontà. È un sistema replicabile che funziona anche quando sei stanco, stressato o demotivato.\n\nQuesto approccio 'sistema > motivazione' lo ritroverai in tutte le prossime lezioni: fondo emergenza, gestione debiti, investimenti.",
       },
       {
         kind: "explain",
-        title: "📌 Le poche regole",
-        content: "Mantieni poche regole stabili: quota base, quota minima, check mensile.",
+        title: "📌 Le poche regole da ricordare",
+        content: "Il risparmio automatico funziona con poche regole stabili. Non servono fogli Excel complicati o app costose.\n\n**Le tre regole essenziali:**\n\n1. **Quota base**: l'importo che trasferisci automaticamente ogni mese (es. 100€)\n\n2. **Quota minima**: l'importo ridotto per i mesi difficili (es. 60€), definito IN ANTICIPO\n\n3. **Check mensile**: un controllo veloce per vedere se sei in linea col piano, e attivare il recupero se necessario\n\nCon queste tre regole, il sistema si gestisce quasi da solo. Nella prossima lezione sul fondo emergenza vedrai come applicare lo stesso approccio per costruire il tuo cuscinetto di sicurezza.",
       },
       {
         kind: "question",

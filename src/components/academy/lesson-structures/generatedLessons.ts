@@ -12,7 +12,7 @@ type LessonSeed = {
 
 const LESSONS: LessonSeed[] = [
   // LIVELLO 1: FONDAMENTA (7 lezioni)
-  { id: "1", title: "Cos'è la finanza personale", section: "fondamenta", focus: "comprendere il sistema di gestione delle risorse economiche personali" },
+  { id: "1", title: "Cos'è la finanza personale", section: "fondamenta", focus: "comprendere **cos'è la Finanza** e comprendere il sistema di **gestione delle finanze personali**" },
   { id: "2", title: "Budget e controllo del cash flow", section: "fondamenta", focus: "controllo del flusso di cassa e decisioni anticipate" },
   { id: "3", title: "Risparmio automatico e abitudini", section: "fondamenta", focus: "automazione del risparmio e abitudini sostenibili" },
   { id: "4", title: "Debiti buoni vs cattivi", section: "fondamenta", focus: "costo del debito, leva e priorità di rimborso" },
@@ -65,7 +65,22 @@ const LESSONS: LessonSeed[] = [
 ];
 
 function conceptText(seed: LessonSeed): string {
-  return `💡 In questa lezione su "${seed.title}", il punto centrale è ${seed.focus}. Non partiamo dalla ricerca del guadagno veloce, ma dalla riduzione degli errori irreversibili. 📌 Un investitore disciplinato prende decisioni prima che le emozioni entrino in campo, definendo criteri chiari e verificabili. Le buone scelte economiche nascono da processi semplici, ripetibili e comprensibili. 🎯 Per questo ti chiediamo di fissare una regola pratica che puoi applicare subito, collegando teoria e realtà personale.`;
+  return `In questa lezione su "${seed.title}", i punti centrali sono ${seed.focus}.💡\n\n Non partiremo dalla ricerca del guadagno veloce, ma piuttosto dal capire come ridurre la % di errori commessi da noi stessi😁.`;
+}
+
+function conceptText2(seed: LessonSeed): string {
+  return `La finanza personale è semplicemente il modo in cui gestisci i tuoi soldi ogni giorno per vivere meglio e raggiungere i tuoi sogni (come ad esempio comprare una casa o viaggiare senza preoccupazioni).
+  
+\nImmagina i tuoi soldi come un **budget familiare**: la finanza personale ti aiuta a controllare entrate (lo stipendio o altri guadagni) e uscite (bollette, cibo, svaghi), per evitare di spenderne più di quanto entri.
+\nL'obiettivo è creare un piano chiaro, come una mappa o delle semplici regole, che ti permettano di risparmiare e far crescere i tuoi risparmi nel tempo. `;
+}
+
+function conceptText3(seed: LessonSeed): string {
+  return `Un investitore disciplinato prende decisioni prima che le emozioni entrino in gioco, definendo criteri chiari e verificabili📌.
+
+Questo succede perché le sue scelte economiche e finanziarie nascono da processi semplici, comprensibili e soprattutto **ripetibili**.
+
+Il discorso, quindi, ci porta a capire che la finanza personale non è altro che una questione di metodo e disciplina, come dicevamo prima, dove tu sei artefice e padrone delle scelte sulla gestione dei TUOI soldi🎯.`;
 }
 
 function widgetText(seed: LessonSeed): string {
@@ -94,40 +109,50 @@ function buildNode(seed: LessonSeed, nodeKey: string, title: string, body: strin
   };
   const emoji = titleEmojis[title] || "📌";
 
+  // Blocco extra solo per il nodo "concept"
+  const extraBlock = nodeKey === "concept"
+    ? [{ kind: "explain" as const, title: "Definizione", content: conceptText2(seed) }]
+    : [];
+  const extraBlock2 = nodeKey === "concept"
+    ? [{ kind: "explain" as const, title: "Disciplina e metodo", content: conceptText3(seed) }]
+    : [];
+
   return {
     nodeKey,
     criteria: ["foundational", "application", "learning"],
     blocks: [
       { kind: "focus", title: `${emoji} Focus`, content: body },
+      ...extraBlock,
+      ...extraBlock2,
       {
         kind: "question",
-        title: "🧠 Verifichiamo il concetto",
-        content: `Bene, vediamo se hai colto il principio chiave di "${seed.title}".`,
+        title: "Verifichiamo il concetto",
+        content: `Bene, vediamo se hai capito il concetto principale.`,
         pollAreas: [
           {
             id: `${nodeKey}-verify-${seed.id}`,
-            prompt: "Qual è l'approccio corretto?",
+            prompt: "Cos'è la finanza personale?",
             options: [
-              "Definire criteri chiari PRIMA di agire, non dopo",
-              "Decidere sul momento in base alle emozioni",
-              "Non serve un metodo, basta l'istinto",
+              "Definire criteri chiari prima di agire",
+              "Gestione delle proprie finanze per farle rendere nel tempo",
+              "Lasciare i propri risparmi fermi sul conto corrente",
             ],
-            correctIndex: 0,
-            correctExplanation: "Esatto! Il principio fondamentale è **decidere prima, non dopo**.\n\nQuando definisci i criteri in anticipo, le emozioni non possono sabotarti. Le decisioni diventano meccaniche e ripetibili.",
-            wrongExplanation: "Le decisioni prese 'sul momento' sono quasi sempre influenzate dalle emozioni. L'istinto da solo porta a errori sistematici.\n\n**Il metodo corretto:**\n1. Definisci i criteri in anticipo\n2. Quando arriva il momento di decidere, applica i criteri\n3. Le emozioni non possono sabotarti\n\nQuesto vale per budget, risparmio, investimenti e qualsiasi decisione finanziaria.",
+            correctIndex: 1,
+            correctExplanation: "Esatto! La finanza personale è la gestione delle proprie finanze per farle rendere nel tempo.\n\nCome gli investitori, quando crei un piano e definisci i criteri in anticipo, le emozioni non possono sabotarti dal raggiungere i tuoi obiettivi perché le decisioni diventano meccaniche e ripetibili.",
+            wrongExplanation: "Le decisioni prese 'sul momento' nella finanza sono quasi sempre influenzate dalle emozioni. L'istinto umano da solo porta a commettere errori sistematici.\nPer evitare ciò, segui il **metodo corretto**:\n1. Definisci i criteri in anticipo\n2. Quando arriva il momento di decidere, applica i criteri\n3. Le emozioni non possono sabotarti\n\nQuesto vale per budget, risparmio, investimenti e qualsiasi decisione finanziaria.",
             allowText: false,
           },
         ],
       },
       {
         kind: "explain",
-        title: "📌 Applicazione pratica",
-        content: `🎯 Applica questa logica con un controllo periodico e una soglia numerica. Ogni decisione deve restare coerente con il tuo piano.`,
+        title: "Come applicare questo concetto nella pratica",
+        content: `Il primo metodo per gestire le proprie finanze è il seguente:\n\n**1. Definisci un controllo periodico**: stabilisci una data fissa (settimanale, mensile o trimestrale) per verificare le tue finanze e capire come strutturarle.\n\n**2. Imposta una soglia numerica**: ogni obiettivo deve avere un numero misurabile, un parametro oggettivo e una revisione periodica (ricorda, i soldi non lavorano completamente da soli🤎). Le intenzioni vaghe non funzionano, i numeri concreti sì.\n\n**3. Mantieni la coerenza col piano**: ogni decisione deve passare il filtro 'questo mi avvicina o mi allontana dal mio obiettivo?'.\n\n**4. Collega alle lezioni precedenti**: ricorda i principi del budget (pianificare prima), del risparmio (automatizzare), della gestione rischio (regole definite in anticipo).\n\nQuesto approccio sistematico è lo stesso che abbiamo accennato prima: criteri definiti in anticipo battono sempre le decisioni improvvisate.`,
       },
       {
         kind: "question",
-        title: "🧠 Verifichiamo: l'elemento chiave",
-        content: `Per applicare "${seed.title}" nella vita reale, qual è l'elemento più importante?`,
+        title: "Verifichiamo: l'elemento chiave",
+        content: `Per applicare il concetto nella vita reale:`,
         pollAreas: [
           {
             id: `${nodeKey}-rule-${seed.id}`,
@@ -138,28 +163,28 @@ function buildNode(seed: LessonSeed, nodeKey: string, title: string, body: strin
               "Aspettare il momento giusto per iniziare",
             ],
             correctIndex: 0,
-            correctExplanation: "Perfetto! Un **obiettivo numerico con scadenza** trasforma le intenzioni in azione.\n\n'Voglio risparmiare' → vago, non funziona\n'Voglio risparmiare 3.000€ entro dicembre' → concreto, misurabile, funziona",
-            wrongExplanation: "La motivazione da sola non basta. E il 'momento giusto' non arriva mai.\n\n**Serve un obiettivo concreto:**\n• Numerico: quanto?\n• Temporizzato: entro quando?\n• Misurabile: come verifico?\n\nEsempio: 'Risparmiare 200€/mese per 12 mesi' è un obiettivo che funziona.",
+            correctExplanation: "Perfetto! Un **obiettivo numerico con scadenza** trasforma le intenzioni in azione.\n\n'Voglio risparmiare' → vago, non funziona\n\n'Voglio risparmiare 3.000€ entro dicembre' → concreto, misurabile, funziona",
+            wrongExplanation: "La motivazione da sola non basta. E il 'momento giusto' non arriva mai.\n\n**Serve un obiettivo concreto:**\n\n• Numerico: quanto?\n\n• Temporizzato: entro quando?\n\n• Misurabile: come verifico?\n\nEsempio: 'Risparmiare 200€/mese per 12 mesi' è un obiettivo che funziona.",
             allowText: false,
           },
         ],
       },
       {
         kind: "question",
-        title: "🧠 Verifichiamo: il sistema completo",
-        content: `Per avere un sistema che funziona, di quali elementi hai bisogno?`,
+        title: "Verifichiamo: il sistema completo",
+        content: `Per avere un sistema che funziona:`,
         pollAreas: [
           {
             id: `${nodeKey}-apply-${seed.id}`,
             prompt: "Quali sono i tre elementi essenziali?",
             options: [
-              "Obiettivo numerico + controllo periodico + regola di correzione",
+              "Obiettivo numerico + controllo periodico + regole chiare",
               "Solo buone intenzioni e motivazione",
               "Nessun elemento specifico, si improvvisa",
             ],
             correctIndex: 0,
-            correctExplanation: "Esatto! I tre pilastri di un sistema efficace:\n\n1. **Obiettivo numerico**: sai dove vuoi arrivare\n2. **Controllo periodico**: verifichi se sei in linea\n3. **Regola di correzione**: sai cosa fare se sfori\n\nCon questi tre elementi, qualsiasi piano finanziario diventa gestibile.",
-            wrongExplanation: "Le buone intenzioni senza struttura portano al fallimento. Improvvisare significa reagire alle emozioni.\n\n**I tre elementi essenziali:**\n1. Obiettivo numerico (quanto, entro quando)\n2. Controllo periodico (settimanale o mensile)\n3. Regola di correzione (cosa fai se sfori)\n\nQuesto vale per budget, risparmio, investimenti e qualsiasi obiettivo finanziario.",
+            correctExplanation: "Esatto! I tre pilastri di un sistema efficace:\n\n1. **Obiettivo numerico**: sai dove vuoi arrivare\n\n2. **Controllo periodico**: verifichi se sei in linea\n\n3. **Regole chiare**: sai cosa fare se sfori\n\nCon questi tre elementi, qualsiasi piano finanziario diventa gestibile.",
+            wrongExplanation: "Le buone intenzioni senza struttura portano al fallimento. Improvvisare significa reagire alle emozioni.\n\n**I tre elementi essenziali:**\n1. Obiettivo numerico (quanto, entro quando)\n2. Controllo periodico (settimanale o mensile)\n3. Regole chiare (cosa fai se sfori)\n\nQuesto vale per budget, risparmio, investimenti e qualsiasi obiettivo finanziario.",
             allowText: false,
           },
         ],
@@ -267,8 +292,8 @@ function buildLessonContent(seed: LessonSeed): StructuredLessonContent {
         },
         {
           kind: "explain",
-          title: "📅 Prossimi passi",
-          content: "🎯 La coerenza ripetuta vale più di sprint motivazionali. Pianifica il prossimo controllo.",
+          title: "📅 I tuoi prossimi passi concreti",
+          content: "Hai completato questa lezione. Ora trasforma la teoria in pratica con questi passi:\n\n**1. Scrivi l'obiettivo specifico**: non lasciarlo vago. Definisci cosa, quanto, entro quando.\n\n**2. Pianifica il prossimo controllo**: metti in calendario una data per verificare i progressi. Senza data fissa, il controllo non avviene mai.\n\n**3. Definisci la regola di correzione**: cosa farai se non sei in linea? Avere un piano B evita decisioni emotive.\n\n**Ricorda**: la coerenza ripetuta nel tempo vale molto più degli sprint motivazionali. Un piccolo passo ogni settimana batte un grande sforzo una volta al mese.\n\nCollega questa lezione alle precedenti: usa lo stesso approccio sistematico che hai visto per budget, risparmio e gestione del rischio.",
         },
       ],
       suggestedPrompts: [

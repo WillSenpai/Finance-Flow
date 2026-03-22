@@ -8,13 +8,13 @@ const content: StructuredLessonContent = {
     blocks: [
       {
         kind: "focus",
-        title: "💡 Focus",
-        content: "Investire è comprare tempo: rinunci a consumo oggi per obiettivi futuri.",
+        title: "💡 Cos'è davvero investire?",
+        content: "Nelle lezioni precedenti hai costruito le fondamenta: budget, risparmio automatico, gestione dei debiti. Ora sei pronto per il passo successivo: **investire**.\n\nMa cosa significa davvero?\n\nInvestire è **comprare tempo**: rinunci a consumare i tuoi soldi oggi per avere di più in futuro. È l'opposto del debito per consumo: invece di pagare interessi, li ricevi (o li fai crescere tramite rendimento).\n\n**La differenza chiave** rispetto al semplice risparmio:\n• Risparmiare = mettere da parte (il valore resta più o meno uguale)\n• Investire = far lavorare i soldi (il valore può crescere nel tempo)\n\nQuesto comporta anche rischi, che vedremo nelle prossime lezioni. Per ora, il concetto base: l'investimento è un ponte tra il presente e i tuoi obiettivi futuri.",
       },
       {
         kind: "explain",
-        title: "📌 Tre domande base",
-        content: "Per cosa investi? Per quanto tempo? Con quale oscillazione puoi convivere?",
+        title: "📌 Le tre domande da farti PRIMA di investire",
+        content: "Prima di scegliere qualsiasi strumento di investimento (azioni, fondi, ETF...), devi rispondere a tre domande fondamentali:\n\n**1. Per cosa investi?**\nL'obiettivo deve essere concreto: anticipo casa, pensione integrativa, università dei figli. Come hai imparato nella lezione sul risparmio, gli obiettivi vaghi non funzionano.\n\n**2. Per quanto tempo?**\nL'orizzonte temporale cambia tutto. Con 20 anni davanti puoi accettare più oscillazioni. Con 3 anni, devi essere più prudente.\n\n**3. Con quale oscillazione puoi convivere?**\nQuesto è il 'rischio' in termini pratici: quanto sei disposto a vedere il tuo capitale scendere temporaneamente senza farti prendere dal panico?\n\nQueste tre domande vengono PRIMA dello strumento. Come diceva un grande investitore: 'Lo strumento deve servire l'obiettivo, non viceversa'.",
       },
       {
         kind: "question",
@@ -35,8 +35,8 @@ const content: StructuredLessonContent = {
       },
       {
         kind: "focus",
-        title: "🎯 Obiettivo chiaro",
-        content: "Un obiettivo vago genera decisioni vaghe. Un obiettivo numerico con data genera un piano.",
+        title: "🎯 Perché serve un obiettivo chiaro",
+        content: "Nella lezione sul risparmio hai visto che 'voglio risparmiare' non funziona, mentre 'voglio 3.000€ entro dicembre' sì. Lo stesso principio vale per gli investimenti, amplificato.\n\n**Un obiettivo vago genera:**\n• Decisioni impulsive ('questo titolo sembra interessante')\n• Cambi di strategia continui\n• Impossibilità di misurare i progressi\n\n**Un obiettivo numerico con data genera:**\n• Un piano concreto ('devo accumulare X entro il 2030')\n• Coerenza nelle scelte\n• Capacità di valutare se sei in linea\n\n**Esempio pratico:**\n• ❌ 'Voglio investire per il futuro'\n• ✅ 'Voglio accumulare 50.000€ per l'anticipo casa entro 8 anni = circa 520€/mese'\n\nIl secondo obiettivo ti dice esattamente cosa fare ogni mese.",
       },
       {
         kind: "question",
@@ -65,13 +65,13 @@ const content: StructuredLessonContent = {
     blocks: [
       {
         kind: "focus",
-        title: "🛠️ Focus",
-        content: "La regola operativa batte la previsione perfetta del mercato.",
+        title: "🛠️ Il metodo operativo: regole che battono le previsioni",
+        content: "Molti pensano che per investire bene serva 'indovinare' il momento giusto: comprare quando il mercato è basso, vendere quando è alto. Spoiler: nessuno ci riesce in modo consistente, nemmeno i professionisti.\n\n**La buona notizia**: non serve prevedere nulla.\n\nUna **regola operativa semplice** batte qualsiasi tentativo di previsione perfetta. È lo stesso principio del risparmio automatico: l'automatismo elimina l'emotività.\n\nIl metodo che funziona:\n• Decidi IN ANTICIPO quanto investire ogni mese\n• Decidi IN ANTICIPO come allocare (es. 70% azionario, 30% obbligazionario)\n• Esegui il piano senza cercare di 'fare il timing'\n\nQuesto approccio si chiama 'Dollar Cost Averaging' o Piano di Accumulo (PAC). Ne parleremo approfonditamente nelle lezioni avanzate.",
       },
       {
         kind: "explain",
-        title: "📌 Sistema replicabile",
-        content: "Contributo periodico, data fissa, revisione trimestrale: semplice, replicabile, meno emotivo.",
+        title: "📌 Un sistema semplice e replicabile",
+        content: "Come il tuo sistema di risparmio automatico, anche l'investimento funziona meglio con poche regole stabili:\n\n**1. Contributo periodico**: stessa cifra ogni mese (es. 150€), come il bonifico automatico per il risparmio.\n\n**2. Data fissa**: sempre lo stesso giorno del mese, per eliminare la tentazione di 'aspettare il momento giusto'.\n\n**3. Revisione trimestrale**: ogni 3 mesi controlli se sei in linea con l'obiettivo, se l'allocazione è ancora corretta, se la tua situazione è cambiata.\n\nQuesto sistema è:\n• **Semplice**: non richiede analisi complesse\n• **Replicabile**: funziona ogni mese allo stesso modo\n• **Meno emotivo**: le decisioni sono già prese, devi solo eseguire\n\nRicorda: le emozioni sono il nemico numero uno dell'investitore. Un sistema automatico ti protegge da te stesso.",
       },
       {
         kind: "question",
@@ -117,13 +117,13 @@ const content: StructuredLessonContent = {
     blocks: [
       {
         kind: "focus",
-        title: "⚡ Focus",
-        content: "Il momento critico è quando i prezzi scendono e senti urgenza di uscire.",
+        title: "⚡ Il momento critico: quando il mercato scende",
+        content: "Hai impostato il tuo piano, tutto procede bene... e poi il mercato scende del 15%. Le notizie sono negative, tutti parlano di crisi, il tuo portafoglio è in rosso.\n\nQuesto è il momento critico. Non perché la situazione sia necessariamente grave, ma perché **senti l'urgenza di fare qualcosa** - e quel 'qualcosa' è spesso vendere nel momento peggiore.\n\n**Il paradosso**: il momento in cui senti più forte l'urgenza di uscire è spesso il momento peggiore per farlo.\n\nÈ lo stesso meccanismo del panico che abbiamo visto nella lezione sul budget: le decisioni prese sotto stress emotivo sono quasi sempre sbagliate.\n\nLa soluzione? Un protocollo definito IN ANTICIPO, quando sei lucido e razionale.",
       },
       {
         kind: "explain",
-        title: "📌 Protocollo scritto",
-        content: "Serve un protocollo scritto prima: cosa fai, cosa non fai, quando rivaluti.",
+        title: "📌 Il protocollo anti-panico: decidere prima",
+        content: "Come nella lezione sul risparmio hai definito una 'versione B' per i mesi difficili, negli investimenti ti serve un **protocollo scritto** per i momenti di stress.\n\n**Il protocollo risponde a tre domande:**\n\n**1. Cosa fai quando il mercato scende?**\nEs: 'Se il mercato scende oltre il 10%, verifico se la mia situazione personale è cambiata. Se no, continuo il piano.'\n\n**2. Cosa NON fai mai?**\nEs: 'Non vendo mai in preda al panico. Aspetto sempre 48 ore prima di qualsiasi decisione non pianificata.'\n\n**3. Quando rivaluti il piano?**\nEs: 'Rivaluto SOLO se cambiano i miei obiettivi, il mio orizzonte temporale, o la mia situazione finanziaria. Non perché il mercato è sceso.'\n\nScrivilo e salvalo dove puoi ritrovarlo. Nei momenti di panico, leggerlo ti riporterà alla razionalità.",
       },
       {
         kind: "question",
@@ -144,8 +144,8 @@ const content: StructuredLessonContent = {
       },
       {
         kind: "focus",
-        title: "🛡️ Distanza dall'obiettivo",
-        content: "Prima di agire, controlla sempre: distanza dall'obiettivo, orizzonte residuo, liquidità extra.",
+        title: "🛡️ Il filtro razionale: tre verifiche prima di agire",
+        content: "Quando senti l'urgenza di 'fare qualcosa' con i tuoi investimenti, fermati e fai tre verifiche oggettive:\n\n**1. Distanza dall'obiettivo**: a che punto sei? Se sei a metà strada per la casa e mancano ancora 5 anni, una discesa temporanea è meno rilevante.\n\n**2. Orizzonte residuo**: quanto tempo ti resta? Se l'obiettivo è tra 15 anni, un ribasso oggi non dovrebbe cambiarti il piano.\n\n**3. Liquidità extra**: hai il fondo emergenza intatto? Le tue spese essenziali sono coperte? Se sì, non hai BISOGNO di toccare gli investimenti.\n\nSe tutte e tre le verifiche danno esito positivo (sei in linea, hai tempo, hai liquidità), la risposta corretta è quasi sempre: **continua il piano**.\n\nQuesto filtro ti protegge dalle decisioni emotive, esattamente come le regole del budget ti proteggono dagli acquisti impulsivi.",
       },
       {
         kind: "question",
@@ -173,13 +173,13 @@ const content: StructuredLessonContent = {
     blocks: [
       {
         kind: "focus",
-        title: "🧠 Focus",
-        content: "Quiz finale: verifica se sai investire con processo e non con emozione.",
+        title: "🧠 Quiz finale: investire con processo, non con emozione",
+        content: "Hai imparato i fondamenti dell'investimento: definire obiettivi chiari, costruire un sistema replicabile, avere un protocollo per i momenti difficili.\n\nOra mettiamo tutto insieme con un quiz pratico. Le domande simulano situazioni reali che ogni investitore affronta.\n\n**Ricorda i principi chiave:**\n• Le tre domande (per cosa, per quanto tempo, quale oscillazione)\n• Regola operativa > previsione perfetta\n• Protocollo anti-panico definito in anticipo\n• Filtro razionale: distanza, orizzonte, liquidità\n\nApplica il metodo, non l'istinto. Nelle prossime lezioni approfondirai rischio, rendimento e strumenti specifici.",
       },
       {
         kind: "explain",
-        title: "📌 Coerenza e orizzonte",
-        content: "Scegli sempre l'opzione che protegge coerenza e orizzonte.",
+        title: "📌 Come rispondere: coerenza e orizzonte",
+        content: "Quando rispondi alle domande sugli investimenti, cerca sempre l'opzione che **protegge insieme due elementi**:\n\n**1. Coerenza con il piano**\nLa scelta mantiene il piano originale o lo tradisce? Cambiare strategia ogni volta che il mercato si muove non è coerenza, è reazione emotiva.\n\n**2. Rispetto dell'orizzonte temporale**\nSe hai un obiettivo a 10 anni, una decisione basata su cosa è successo questa settimana non ha senso. L'orizzonte deve guidare le scelte.\n\nQuesto approccio è lo stesso del budget e del risparmio: le regole definite in anticipo battono le decisioni prese sotto pressione emotiva.\n\nNelle prossime lezioni su rischio e rendimento vedrai come questi principi si applicano alla costruzione del portafoglio.",
       },
       {
         kind: "question",
@@ -242,13 +242,13 @@ const content: StructuredLessonContent = {
     blocks: [
       {
         kind: "focus",
-        title: "✅ Focus",
-        content: "Investire bene è gestire comportamento, non inseguire previsioni.",
+        title: "✅ Cosa hai imparato: le basi dell'investimento",
+        content: "Complimenti! Hai completato la lezione introduttiva sugli investimenti. Vediamo il percorso che hai fatto:\n\n**Nelle lezioni precedenti** hai costruito:\n• Budget per controllare dove vanno i soldi\n• Risparmio automatico per accumulare costantemente\n• Gestione debiti per liberare risorse\n\n**In questa lezione** hai aggiunto:\n• Le tre domande fondamentali (obiettivo, tempo, oscillazione)\n• Il sistema operativo (contributo, data, revisione)\n• Il protocollo anti-panico\n\n**Il principio chiave**: investire bene non significa prevedere il mercato o trovare l'affare del secolo. Significa **gestire il proprio comportamento** con regole definite in anticipo.",
       },
       {
         kind: "explain",
-        title: "📌 La vera competenza",
-        content: "La vera competenza è restare nel piano quando è scomodo.",
+        title: "📌 La vera competenza dell'investitore",
+        content: "Sai qual è la differenza tra un investitore che ottiene risultati e uno che fallisce? Non è l'intelligenza, non è l'informazione, non è la fortuna.\n\n**La vera competenza è restare nel piano quando è scomodo.**\n\nQuando il mercato scende e tutti vendono, l'investitore disciplinato continua il piano. Quando il mercato sale e tutti comprano a prezzi alti, l'investitore disciplinato continua il piano.\n\nQuesto richiede:\n• Regole chiare definite in anticipo\n• Un sistema automatico che funziona senza decisioni emotive\n• La capacità di distinguere tra rumore di breve termine e segnali reali\n\nNelle prossime lezioni approfondirai rischio e rendimento, diversificazione, e gli strumenti specifici (azioni, obbligazioni, fondi, ETF). Ma ricorda: gli strumenti sono secondari. Il comportamento viene prima.",
       },
       {
         kind: "question",
