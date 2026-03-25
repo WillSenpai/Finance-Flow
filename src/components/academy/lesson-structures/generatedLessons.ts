@@ -14,11 +14,11 @@ const LESSONS: LessonSeed[] = [
   // LIVELLO 1: FONDAMENTA (7 lezioni)
   { id: "1", title: "Cos'è la finanza personale", section: "fondamenta", focus: "comprendere **cos'è la Finanza** e comprendere il sistema di **gestione delle finanze personali**" },
   { id: "2", title: "Budget e controllo del cash flow", section: "fondamenta", focus: "controllo del flusso di cassa e decisioni anticipate" },
-  { id: "3", title: "Risparmio automatico e abitudini", section: "fondamenta", focus: "automazione del risparmio e abitudini sostenibili" },
+  { id: "3", title: "Risparmio e abitudini", section: "fondamenta", focus: "capire il risparmio e abitudini sostenibili" },
   { id: "4", title: "Debiti buoni vs cattivi", section: "fondamenta", focus: "costo del debito, leva e priorità di rimborso" },
   { id: "5", title: "Obiettivi finanziari SMART", section: "fondamenta", focus: "definire obiettivi Specifici, Misurabili, Achievable, Rilevanti e Temporizzati" },
   { id: "6", title: "Fondo emergenza", section: "fondamenta", focus: "margine di sicurezza personale e liquidità per imprevisti" },
-  { id: "7", title: "Assicurazioni essenziali", section: "fondamenta", focus: "trasferimento del rischio e coperture essenziali" },
+  { id: "7", title: "Assicurazioni", section: "fondamenta", focus: "trasferimento del rischio e coperture essenziali" },
 
   // LIVELLO 2: CONCETTI D'INVESTIMENTO (6 lezioni)
   { id: "8", title: "Cos'è un investimento (vs speculazione)", section: "investire", focus: "differenza tra investimento con tesi verificabile e speculazione sul prezzo" },

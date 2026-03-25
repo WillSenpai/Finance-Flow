@@ -6,6 +6,7 @@
 
 | Tool | Status | Failure Mode | Workaround |
 |------|--------|--------------|------------|
+| `generate_image` | 🔴 Deprecato (per bulk) | `MODEL_CAPACITY_EXHAUSTED` (503) | Non usare per bulk. Generare solo 1 immagine e aspettare ore, oppure fornire i text prompt all'utente |
 
 ---
 

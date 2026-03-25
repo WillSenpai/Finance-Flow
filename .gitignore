@@ -56,9 +56,18 @@ Thumbs.db
 # Cache directories
 .vite/
 .cache/
+.npm-cache/
 *.tmp
 *.swp
 *~
+
+# Claude Code / AI tools
+.claude/
+.agent/
+
+# Temporary work directories
+.tmp/
+supabase/.temp/
 
 # Large binary files
 *.zip
