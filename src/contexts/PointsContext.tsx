@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from "react";
 import { trackEvent, AnalyticsEvents } from "@/lib/posthog";
 
 interface DailyActivities {
@@ -266,12 +266,14 @@ export const PointsProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [persist]);
 
+  const value = useMemo(() => ({
+    points: data.points, streak: data.streak, dailyActivities: data.dailyActivities,
+    badges: data.badges, challenges: data.challenges,
+    awardPoints, updateChallengeProgress, checkBadges,
+  }), [data, awardPoints, updateChallengeProgress, checkBadges]);
+
   return (
-    <PointsContext.Provider value={{
-      points: data.points, streak: data.streak, dailyActivities: data.dailyActivities,
-      badges: data.badges, challenges: data.challenges,
-      awardPoints, updateChallengeProgress, checkBadges,
-    }}>
+    <PointsContext.Provider value={value}>
       {children}
     </PointsContext.Provider>
   );

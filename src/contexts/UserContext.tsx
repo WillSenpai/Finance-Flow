@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useState, useEffect, ReactNode, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
 import { trackEvent, AnalyticsEvents } from "@/lib/posthog";
@@ -239,7 +239,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     loadProfile();
   }, [user]);
 
-  const setUserData = async (data: UserData) => {
+  const setUserData = useCallback(async (data: UserData) => {
     setUserDataState(data);
     if (user) {
       await supabase.from("profiles").update({
@@ -252,9 +252,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         avatar_id: data.avatarId || "user",
       } as any).eq("id", user.id);
     }
-  };
+  }, [user]);
 
-  const setCategorie = async (c: CategoriaPatrimonio[]) => {
+  const setCategorie = useCallback(async (c: CategoriaPatrimonio[]) => {
     setCategorieState(c);
     if (!user) return;
     const now = new Date().toISOString();
@@ -280,9 +280,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         }))
       );
     }
-  };
+  }, [user]);
 
-  const setSalvadanai = async (s: Salvadanaio[]) => {
+  const setSalvadanai = useCallback(async (s: Salvadanaio[]) => {
     setSalvadanaiState(s);
     if (!user) return;
 
@@ -303,9 +303,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         }))
       );
     }
-  };
+  }, [user]);
 
-  const setInvestimenti = async (i: Investimento[]) => {
+  const setInvestimenti = useCallback(async (i: Investimento[]) => {
     setInvestimentiState(i);
     if (!user) return;
 
@@ -326,9 +326,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         }))
       );
     }
-  };
+  }, [user]);
 
-  const setCategorieSpese = async (c: CategoriaSpesa[]) => {
+  const setCategorieSpese = useCallback(async (c: CategoriaSpesa[]) => {
     setCategorieSpeseState(c);
     if (!user) return;
     await supabase.from("categorie_spese").delete().eq("user_id", user.id);
@@ -343,9 +343,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         }))
       );
     }
-  };
+  }, [user]);
 
-  const setSpese = async (s: Spesa[]) => {
+  const setSpese = useCallback(async (s: Spesa[]) => {
     setSpeseState(s);
     if (!user) return;
 
@@ -376,9 +376,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         }))
       );
     }
-  };
+  }, [user]);
 
-  const completeOnboarding = async (data: UserData) => {
+  const completeOnboarding = useCallback(async (data: UserData) => {
     setUserDataState(data);
     setHasCompletedOnboarding(true);
 
@@ -398,9 +398,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         has_completed_onboarding: true,
       }).eq("id", user.id);
     }
-  };
+  }, [user]);
 
-  const resetOnboarding = async () => {
+  const resetOnboarding = useCallback(async () => {
     setUserDataState(defaultUserData);
     setHasCompletedOnboarding(false);
     if (user) {
@@ -408,14 +408,20 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         has_completed_onboarding: false,
       }).eq("id", user.id);
     }
-  };
+  }, [user]);
+
+  const value = useMemo(() => ({
+    userData, setUserData, hasCompletedOnboarding, completeOnboarding, resetOnboarding,
+    categorie, setCategorie, salvadanai, setSalvadanai, investimenti, setInvestimenti, lastPatrimonioUpdate,
+    categorieSpese, setCategorieSpese, spese, setSpese, loadingData, isAdmin,
+  }), [
+    userData, setUserData, hasCompletedOnboarding, completeOnboarding, resetOnboarding,
+    categorie, setCategorie, salvadanai, setSalvadanai, investimenti, setInvestimenti, lastPatrimonioUpdate,
+    categorieSpese, setCategorieSpese, spese, setSpese, loadingData, isAdmin,
+  ]);
 
   return (
-    <UserContext.Provider value={{
-      userData, setUserData, hasCompletedOnboarding, completeOnboarding, resetOnboarding,
-      categorie, setCategorie, salvadanai, setSalvadanai, investimenti, setInvestimenti, lastPatrimonioUpdate,
-      categorieSpese, setCategorieSpese, spese, setSpese, loadingData, isAdmin,
-    }}>
+    <UserContext.Provider value={value}>
       {children}
     </UserContext.Provider>
   );
