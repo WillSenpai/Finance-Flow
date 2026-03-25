@@ -2,6 +2,7 @@ import { useMemo, useState, useCallback, useEffect, useContext } from "react";
 import { useUser } from "@/hooks/useUser";
 import { useSharedWorkspace } from "@/hooks/useSharedWorkspace";
 import { PointsContext } from "@/contexts/PointsContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Notifica {
@@ -10,6 +11,19 @@ export interface Notifica {
   text: string;
   action?: string;
   tipo: "warning" | "info" | "success";
+}
+
+export interface MarkNotification {
+  id: string;
+  user_id: string;
+  type: "urgent" | "important" | "informative";
+  title: string;
+  body: string;
+  action_url: string | null;
+  metadata: Record<string, unknown>;
+  read_at: string | null;
+  pushed_at: string | null;
+  created_at: string;
 }
 
 const DISMISSED_KEY = "notifiche_dismissed";
@@ -43,10 +57,12 @@ const formatEuro = (n: number) =>
 export function useNotifiche() {
   const { salvadanai, lastPatrimonioUpdate, spese, categorieSpese } = useUser();
   const { pendingInvites, hasActiveWorkspace, spese: sharedSpese } = useSharedWorkspace();
+  const { user } = useAuth();
   const pointsCtx = useContext(PointsContext);
   const points = pointsCtx?.points ?? 0;
   const [dismissed, setDismissed] = useState<Set<string>>(getDismissed);
   const [recentPosts, setRecentPosts] = useState<Array<{ id: string; titolo: string; emoji: string }>>([]);
+  const [markNotifications, setMarkNotifications] = useState<MarkNotification[]>([]);
 
   // Fetch recent admin posts for notifications (using useEffect instead of useQuery)
   useEffect(() => {
@@ -70,6 +86,48 @@ export function useNotifiche() {
     fetchPosts();
   }, []);
 
+  // Fetch Mark notifications from database
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchMarkNotifications = async () => {
+      try {
+        const { data } = await supabase
+          .from("mark_notifications")
+          .select("*")
+          .eq("user_id", user.id)
+          .is("read_at", null)
+          .order("created_at", { ascending: false })
+          .limit(20);
+        if (data) setMarkNotifications(data as MarkNotification[]);
+      } catch (e) {
+        console.error("Failed to fetch Mark notifications:", e);
+      }
+    };
+    fetchMarkNotifications();
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel(`mark-notifications-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "mark_notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          fetchMarkNotifications();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
   // Sync dismissed to localStorage
   useEffect(() => {
     saveDismissed(dismissed);
@@ -92,7 +150,20 @@ export function useNotifiche() {
   const allNotifiche = useMemo(() => {
     const notifications: Notifica[] = [];
 
-    // Admin post notifications (shown first)
+    // Mark AI notifications (shown first - urgent ones)
+    markNotifications
+      .filter(n => n.type === "urgent")
+      .forEach(n => {
+        notifications.push({
+          id: `mark-${n.id}`,
+          icon: "🤖",
+          text: n.title,
+          action: n.action_url || "/coach",
+          tipo: "warning",
+        });
+      });
+
+    // Admin post notifications
     recentPosts.forEach(post => {
       notifications.push({
         id: `admin-post-${post.id}`,
@@ -102,6 +173,19 @@ export function useNotifiche() {
         tipo: "info",
       });
     });
+
+    // Mark AI notifications (important ones)
+    markNotifications
+      .filter(n => n.type === "important")
+      .forEach(n => {
+        notifications.push({
+          id: `mark-${n.id}`,
+          icon: "🤖",
+          text: n.title,
+          action: n.action_url || "/coach",
+          tipo: "success",
+        });
+      });
 
     if (lastPatrimonioUpdate) {
       const daysSince = Math.floor((Date.now() - new Date(lastPatrimonioUpdate).getTime()) / 86400000);
@@ -161,8 +245,21 @@ export function useNotifiche() {
       notifications.push({ id: "points-milestone", icon: "🏆", text: `Hai raggiunto ${points} punti! Continua così!`, tipo: "success" });
     }
 
+    // Mark AI notifications (informative ones - at the end)
+    markNotifications
+      .filter(n => n.type === "informative")
+      .forEach(n => {
+        notifications.push({
+          id: `mark-${n.id}`,
+          icon: "🤖",
+          text: n.title,
+          action: n.action_url || "/coach",
+          tipo: "info",
+        });
+      });
+
     return notifications;
-  }, [salvadanai, lastPatrimonioUpdate, spese, categorieSpese, points, recentPosts, pendingInvites.length, hasActiveWorkspace, sharedSpese.length]);
+  }, [salvadanai, lastPatrimonioUpdate, spese, categorieSpese, points, recentPosts, pendingInvites.length, hasActiveWorkspace, sharedSpese.length, markNotifications]);
 
   const notifiche = useMemo(() => allNotifiche.filter(n => !dismissed.has(n.id)), [allNotifiche, dismissed]);
 
@@ -184,5 +281,59 @@ export function useNotifiche() {
 
   const unreadCount = notifiche.length;
 
-  return { notifiche, allNotifiche, dismissed, dismiss, dismissAll, unreadCount };
+  // Mark a Mark notification as read
+  const markAsRead = useCallback(async (notificationId: string) => {
+    if (!user?.id) return;
+
+    // Extract the actual notification ID if it starts with "mark-"
+    const actualId = notificationId.startsWith("mark-")
+      ? notificationId.replace("mark-", "")
+      : notificationId;
+
+    try {
+      await supabase
+        .from("mark_notifications")
+        .update({ read_at: new Date().toISOString() })
+        .eq("id", actualId)
+        .eq("user_id", user.id);
+
+      // Update local state
+      setMarkNotifications(prev => prev.filter(n => n.id !== actualId));
+    } catch (e) {
+      console.error("Error marking notification as read:", e);
+    }
+  }, [user?.id]);
+
+  // Mark all Mark notifications as read
+  const markAllAsRead = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      await supabase
+        .from("mark_notifications")
+        .update({ read_at: new Date().toISOString() })
+        .eq("user_id", user.id)
+        .is("read_at", null);
+
+      setMarkNotifications([]);
+    } catch (e) {
+      console.error("Error marking all notifications as read:", e);
+    }
+  }, [user?.id]);
+
+  // Get unread Mark notifications count
+  const markUnreadCount = markNotifications.length;
+
+  return {
+    notifiche,
+    allNotifiche,
+    dismissed,
+    dismiss,
+    dismissAll,
+    unreadCount,
+    markNotifications,
+    markAsRead,
+    markAllAsRead,
+    markUnreadCount,
+  };
 }

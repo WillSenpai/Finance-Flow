@@ -199,44 +199,74 @@ const Accademia = () => {
                     <motion.button
                       key={lesson.lesson_id}
                       onClick={() => navigate(`/lezione/${lesson.lesson_id}`)}
-                      whileTap={{ scale: 0.96 }}
-                      whileHover={{ scale: 1.03 }}
-                      className={`relative flex h-52 w-44 flex-shrink-0 flex-col justify-end overflow-hidden rounded-2xl border px-4 pb-4 pt-16 text-left transition-shadow hover:shadow-md ${
-                        isCompleted ? "border-primary/30 bg-primary/5" : "border-border/50 bg-card"
+                      whileTap={{ scale: 0.97 }}
+                      whileHover={{ scale: 1.02 }}
+                      className={`group relative flex h-56 w-40 flex-shrink-0 flex-col overflow-hidden rounded-2xl border text-left transition-all duration-200 hover:shadow-lg ${
+                        isCompleted
+                          ? "border-emerald-500/30 bg-gradient-to-b from-emerald-50/50 to-card dark:from-emerald-950/20"
+                          : "border-border/50 bg-card hover:border-primary/30"
                       }`}
                     >
-                      <div className="absolute inset-x-0 top-0 h-[50%]">
+                      {/* Image section - fixed height */}
+                      <div className="relative h-24 w-full flex-shrink-0 overflow-hidden">
                         {lesson.card_image_url ? (
                           <img
                             src={lesson.card_image_url}
                             alt={lesson.titolo}
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                             loading="lazy"
                           />
                         ) : (
                           <div className={`h-full w-full bg-gradient-to-br ${imageFallback}`} />
                         )}
-                        <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-card/95 to-transparent" />
-                      </div>
-
-                      <p className="mb-2 text-sm font-medium leading-snug">
-                        {lesson.titolo || getDefaultLessonTitle(lesson.lesson_id)}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <div className="mr-2 h-1.5 flex-1 rounded-full bg-muted">
-                          <div
-                            className="h-1.5 rounded-full bg-primary transition-all"
-                            style={{ width: `${lessonProgressPct}%` }}
-                          />
-                        </div>
-                        {isCompleted ? (
-                          <CheckCircle2 size={14} className="flex-shrink-0 text-primary" />
-                        ) : (
-                          <span className="whitespace-nowrap text-[10px] text-muted-foreground">{lessonProgressPct}%</span>
+                        {/* Completed badge */}
+                        {isCompleted && (
+                          <div className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 shadow-md">
+                            <CheckCircle2 size={14} className="text-white" />
+                          </div>
                         )}
                       </div>
-                      <div className="mt-3 flex items-center gap-1 text-xs font-medium text-primary">
-                        {isCompleted ? "Rivedi" : "Continua"} <ChevronRight size={14} />
+
+                      {/* Content section - grows to fill remaining space */}
+                      <div className="flex flex-1 flex-col justify-between p-3">
+                        {/* Title - fully visible, no overlap */}
+                        <h3 className="text-[13px] font-semibold leading-tight text-foreground line-clamp-3">
+                          {lesson.titolo || getDefaultLessonTitle(lesson.lesson_id)}
+                        </h3>
+
+                        {/* Bottom section: progress + chevron */}
+                        <div className="mt-2 flex items-end justify-between gap-2">
+                          {/* Progress indicator */}
+                          <div className="flex-1">
+                            <div className="mb-1 flex items-center justify-between">
+                              <span className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
+                                {isCompleted ? "Completata" : "Progresso"}
+                              </span>
+                              <span className="text-[10px] font-semibold text-muted-foreground">
+                                {lessonProgressPct}%
+                              </span>
+                            </div>
+                            <div className="h-1 w-full overflow-hidden rounded-full bg-muted/60">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  isCompleted ? "bg-emerald-500" : "bg-primary"
+                                }`}
+                                style={{ width: `${lessonProgressPct}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Chevron button */}
+                          <div
+                            className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full transition-all duration-200 ${
+                              isCompleted
+                                ? "bg-emerald-500/10 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white dark:text-emerald-400"
+                                : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
+                            }`}
+                          >
+                            <ChevronRight size={16} className="transition-transform duration-200 group-hover:translate-x-0.5" />
+                          </div>
+                        </div>
                       </div>
                     </motion.button>
                   );

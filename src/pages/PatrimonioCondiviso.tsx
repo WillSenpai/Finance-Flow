@@ -1,7 +1,8 @@
-import { ArrowLeft, Landmark, PiggyBank, Receipt, TrendingUp, Trash2 } from "lucide-react";
+import { ArrowLeft, Landmark, PiggyBank, Receipt, TrendingUp, Trash2, Bell, LayoutDashboard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSharedWorkspace } from "@/hooks/useSharedWorkspace";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -16,6 +17,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { ActivityFeed } from "@/components/shared-workspace/ActivityFeed";
+import { ApprovalRequests } from "@/components/shared-workspace/ApprovalRequests";
 
 const formatEuro = (n: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
@@ -80,57 +83,68 @@ const PatrimonioCondiviso = () => {
       <h1 className="text-2xl font-semibold tracking-tight">Patrimonio Condiviso 💞</h1>
       <p className="text-xs text-muted-foreground mt-1">{workspaceName}</p>
 
-      <div className="mt-5 py-4 border-y border-border/40">
-        <p className="text-xs uppercase tracking-wider text-muted-foreground">Totale condiviso</p>
-        <p className="text-3xl font-bold mt-1">{formatEuro(totale)}</p>
-        <p className="mt-2 text-xs text-muted-foreground">
-          Netto aggiornato con {formatExpenseEuro(totaleSpeseStoriche)} di spese condivise storiche.
-        </p>
-      </div>
+      <Tabs defaultValue="overview" className="mt-5">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="overview" className="gap-2">
+            <LayoutDashboard size={16} /> Panoramica
+          </TabsTrigger>
+          <TabsTrigger value="activity" className="gap-2">
+            <Bell size={16} /> Attività
+          </TabsTrigger>
+        </TabsList>
 
-      <div className="grid grid-cols-2 gap-2 mt-3">
-        <Button className="rounded-xl h-10 gap-2" onClick={() => navigate("/patrimonio/condiviso/gestisci")}>
-          <Landmark size={16} /> Categorie
-        </Button>
-        <Button variant="outline" className="rounded-xl h-10 gap-2" onClick={() => navigate("/patrimonio/condiviso/salvadanai")}>
-          <PiggyBank size={16} /> Salvadanai
-        </Button>
-      </div>
+        <TabsContent value="overview" className="mt-4">
+          <div className="py-4 border-y border-border/40">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Totale condiviso</p>
+            <p className="text-3xl font-bold mt-1">{formatEuro(totale)}</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Netto aggiornato con {formatExpenseEuro(totaleSpeseStoriche)} di spese condivise storiche.
+            </p>
+          </div>
 
-      <Button variant="outline" className="rounded-xl h-10 mt-2 w-full gap-2" onClick={() => navigate("/patrimonio/condiviso/investimenti")}>
-        <TrendingUp size={16} /> Investimenti
-      </Button>
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            <Button className="rounded-xl h-10 gap-2" onClick={() => navigate("/patrimonio/condiviso/gestisci")}>
+              <Landmark size={16} /> Categorie
+            </Button>
+            <Button variant="outline" className="rounded-xl h-10 gap-2" onClick={() => navigate("/patrimonio/condiviso/salvadanai")}>
+              <PiggyBank size={16} /> Salvadanai
+            </Button>
+          </div>
 
-      <div className="mt-6 pt-4 border-t border-border/40">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-semibold flex items-center gap-2">
-            <Receipt size={16} /> Spese Condivise (mese corrente)
-          </h2>
-          <Button variant="outline" size="sm" className="rounded-full text-xs" onClick={() => navigate("/patrimonio/condiviso/spese")}>
-            Gestisci
+          <Button variant="outline" className="rounded-xl h-10 mt-2 w-full gap-2" onClick={() => navigate("/patrimonio/condiviso/investimenti")}>
+            <TrendingUp size={16} /> Investimenti
           </Button>
-        </div>
-        <div className="py-2 mb-2 flex items-center justify-between border-b border-border/40">
-          <span className="text-xs text-muted-foreground">Totale mese</span>
-          <span className="text-sm font-semibold text-destructive">{formatExpenseEuro(monthlyTotal)}</span>
-        </div>
-        <div className="space-y-2">
-          {Object.entries(byCat)
-            .slice(0, 4)
-            .map(([catId, value]) => {
-              const cat = categorieSpese.find((c) => c.id === catId);
-              return (
-                <div key={catId} className="px-1 py-2 flex items-center justify-between border-b border-border/30">
-                  <span className="text-xs font-medium">{cat?.emoji ?? "📦"} {cat?.nome ?? "Altro"}</span>
-                  <span className="text-xs font-semibold text-destructive">{formatExpenseEuro(value)}</span>
-                </div>
-              );
-            })}
-          {Object.keys(byCat).length === 0 && <p className="text-xs text-muted-foreground">Nessuna spesa condivisa registrata.</p>}
-        </div>
-      </div>
 
-      {myRole === "owner" ? (
+          <div className="mt-6 pt-4 border-t border-border/40">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                <Receipt size={16} /> Spese Condivise (mese corrente)
+              </h2>
+              <Button variant="outline" size="sm" className="rounded-full text-xs" onClick={() => navigate("/patrimonio/condiviso/spese")}>
+                Gestisci
+              </Button>
+            </div>
+            <div className="py-2 mb-2 flex items-center justify-between border-b border-border/40">
+              <span className="text-xs text-muted-foreground">Totale mese</span>
+              <span className="text-sm font-semibold text-destructive">{formatExpenseEuro(monthlyTotal)}</span>
+            </div>
+            <div className="space-y-2">
+              {Object.entries(byCat)
+                .slice(0, 4)
+                .map(([catId, value]) => {
+                  const cat = categorieSpese.find((c) => c.id === catId);
+                  return (
+                    <div key={catId} className="px-1 py-2 flex items-center justify-between border-b border-border/30">
+                      <span className="text-xs font-medium">{cat?.emoji ?? "📦"} {cat?.nome ?? "Altro"}</span>
+                      <span className="text-xs font-semibold text-destructive">{formatExpenseEuro(value)}</span>
+                    </div>
+                  );
+                })}
+              {Object.keys(byCat).length === 0 && <p className="text-xs text-muted-foreground">Nessuna spesa condivisa registrata.</p>}
+            </div>
+          </div>
+
+          {myRole === "owner" ? (
         <div className="mt-6 rounded-2xl border border-destructive/25 bg-destructive/5 p-4">
           <p className="text-sm font-semibold text-foreground">Zona pericolosa</p>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
@@ -162,7 +176,14 @@ const PatrimonioCondiviso = () => {
             </AlertDialogContent>
           </AlertDialog>
         </div>
-      ) : null}
+          ) : null}
+        </TabsContent>
+
+        <TabsContent value="activity" className="mt-4 space-y-4">
+          <ApprovalRequests onlyPending limit={5} />
+          <ActivityFeed limit={20} />
+        </TabsContent>
+      </Tabs>
     </motion.div>
   );
 };

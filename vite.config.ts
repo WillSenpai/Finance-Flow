@@ -34,6 +34,12 @@ export default defineConfig(() => {
           "**/dist/**",
           "**/.git/**",
         ],
+<<<<<<< HEAD
+=======
+      },
+      hmr: {
+        overlay: true,
+>>>>>>> 6c8f038a135601d721670ce50a860c69236251e8
       },
       hmr: canUseReactRefresh
         ? {

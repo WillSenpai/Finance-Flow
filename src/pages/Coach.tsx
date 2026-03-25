@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Sparkles, Loader2, ArrowDown, History, MessageSquarePlus } from "lucide-react";
+import { Send, Sparkles, Loader2, ArrowDown, History, MessageSquarePlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
 import { useUser } from "@/hooks/useUser";
 import { usePoints } from "@/contexts/PointsContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,6 +18,10 @@ import {
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { triggerProPaywall } from "@/lib/billing/paywallEvents";
+import { OnboardingWorkflow } from "@/components/mark/OnboardingWorkflow";
+import { WeeklyReviewCard } from "@/components/mark/WeeklyReviewCard";
+import { FinancialPlanCard, useFinancialPlans } from "@/components/mark/FinancialPlanCard";
+import { useMarkWorkflow } from "@/hooks/useMarkWorkflow";
 
 interface Messaggio {
   id: string;
@@ -75,6 +80,39 @@ const Coach = () => {
   const { user } = useAuth();
   const { userData, categorie, salvadanai, investimenti, spese, categorieSpese } = useUser();
   const { points, streak, badges, challenges } = usePoints();
+
+  // Pro status check
+  const { data: planData } = useQuery({
+    queryKey: ["user-ai-plan", user?.id],
+    queryFn: async () => {
+      if (!user) return { plan: "free" as "free" | "pro" };
+      const { data } = await supabase
+        .from("user_ai_plans" as never)
+        .select("plan")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      const plan = (data as { plan?: string } | null)?.plan === "pro" ? "pro" : "free";
+      return { plan };
+    },
+    enabled: !!user,
+    staleTime: 60 * 1000,
+  });
+  const isPro = planData?.plan === "pro";
+
+  // Mark workflows
+  const { workflow: onboardingWorkflow, isLoading: onboardingLoading } = useMarkWorkflow("onboarding");
+  const { plans: financialPlans } = useFinancialPlans();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showProFeatures, setShowProFeatures] = useState(false);
+
+  // Check if onboarding should be shown
+  useEffect(() => {
+    if (!user) return;
+    if (onboardingLoading) return;
+    // Show onboarding if no workflow exists or workflow is active
+    const shouldShow = !onboardingWorkflow || onboardingWorkflow.status === "active";
+    setShowOnboarding(shouldShow && !userData.goals?.length);
+  }, [user, onboardingWorkflow, onboardingLoading, userData.goals]);
 
   const [messaggi, setMessaggi] = useState<Messaggio[]>([]);
   const [input, setInput] = useState("");
@@ -570,6 +608,15 @@ const Coach = () => {
     }
   };
 
+  // Show onboarding workflow fullscreen if active
+  if (showOnboarding && user) {
+    return (
+      <div className="flex h-full min-h-full flex-col overflow-hidden">
+        <OnboardingWorkflow onComplete={() => setShowOnboarding(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full min-h-full flex-col overflow-hidden">
       <div className="relative px-5 pb-4 text-center border-b border-border/50 pt-[36px]">
@@ -594,7 +641,66 @@ const Coach = () => {
         </motion.div>
         <h1 className="text-lg font-semibold">Mark, la tua guida AI</h1>
         <p className="text-xs text-muted-foreground">Tabelle · Mappe concettuali · Navigazione 💡</p>
+
+        {/* Pro features toggle */}
+        {isPro && (financialPlans.length > 0 || true) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowProFeatures(!showProFeatures)}
+            className="mt-2 text-xs gap-1.5"
+          >
+            <Sparkles size={14} className="text-amber-500" />
+            {showProFeatures ? "Nascondi" : "I tuoi piani"}
+          </Button>
+        )}
       </div>
+
+      {/* Pro features panel */}
+      <AnimatePresence>
+        {isPro && showProFeatures && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-b border-border/50 overflow-hidden"
+          >
+            <div className="px-5 py-4 space-y-4 max-h-[40vh] overflow-y-auto">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold flex items-center gap-2">
+                  <Sparkles size={14} className="text-amber-500" />
+                  Funzioni Pro
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setShowProFeatures(false)}
+                >
+                  <X size={16} />
+                </Button>
+              </div>
+
+              {/* Weekly Review */}
+              <WeeklyReviewCard />
+
+              {/* Financial Plans */}
+              {financialPlans.map((plan) => (
+                <FinancialPlanCard key={plan.id} plan={plan} />
+              ))}
+
+              {financialPlans.length === 0 && (
+                <div className="text-center py-4 text-sm text-muted-foreground">
+                  <p>Nessun piano finanziario attivo.</p>
+                  <p className="text-xs mt-1">
+                    Chiedi a Mark: "Voglio risparmiare per..."
+                  </p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="relative flex-1 overflow-hidden">
         <div ref={scrollContainerRef} className="h-full overflow-y-auto px-5 py-4 space-y-3">

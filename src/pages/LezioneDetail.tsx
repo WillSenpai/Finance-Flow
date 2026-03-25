@@ -455,7 +455,7 @@ const LezioneDetail = () => {
       setBackToNodesSignal((value) => value + 1);
       return;
     }
-    navigate(-1);
+    navigate("/accademia");
   };
 
   return (
