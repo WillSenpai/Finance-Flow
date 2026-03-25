@@ -1,11 +1,26 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import fs from "node:fs";
 import path from "path";
+
+const reactRefreshRuntimePath = path.resolve(
+  __dirname,
+  "node_modules/@vitejs/plugin-react-swc/refresh-runtime.js",
+);
+
+function hasValidReactRefreshRuntime() {
+  try {
+    return fs.statSync(reactRefreshRuntimePath).size > 0;
+  } catch {
+    return false;
+  }
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(() => {
   const devHost = process.env.VITE_DEV_HOST || "localhost";
   const devPort = Number(process.env.VITE_DEV_PORT || "5173");
+  const canUseReactRefresh = hasValidReactRefreshRuntime();
 
   return {
     server: {
@@ -20,9 +35,11 @@ export default defineConfig(() => {
           "**/.git/**",
         ],
       },
-      hmr: {
-        overlay: true,
-      },
+      hmr: canUseReactRefresh
+        ? {
+            overlay: true,
+          }
+        : false,
     },
     plugins: [react()],
     optimizeDeps: {
