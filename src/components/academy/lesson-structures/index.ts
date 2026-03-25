@@ -1,26 +1,8 @@
 import { createDefaultLessonDefinition, getDefaultLessonVisualConfig } from "./defaultLessonDefinition";
-import lesson1Definition from "./lesson-1";
-import lesson2Definition from "./lesson-2";
-import lesson3Definition from "./lesson-3";
-import lesson4Definition from "./lesson-4";
-import lesson5Definition from "./lesson-5";
-import lesson6Definition from "./lesson-6";
-import lesson7Definition from "./lesson-7";
-import lesson8Definition from "./lesson-8";
-import { intelligentInvestorLessonDefinitions } from "./intelligentInvestorLessons";
+import { generatedLessonDefinitions } from "./generatedLessons";
 import type { LessonDefinition, LessonVisualConfig } from "./types";
 
-const lessonRegistry: Record<string, LessonDefinition> = {
-  "1": lesson1Definition,
-  "2": lesson2Definition,
-  "3": lesson3Definition,
-  "4": lesson4Definition,
-  "5": lesson5Definition,
-  "6": lesson6Definition,
-  "7": lesson7Definition,
-  "8": lesson8Definition,
-  ...intelligentInvestorLessonDefinitions,
-};
+const lessonRegistry: Record<string, LessonDefinition> = generatedLessonDefinitions;
 
 export function resolveLessonDefinition(lessonId: string): LessonDefinition {
   return lessonRegistry[lessonId] || createDefaultLessonDefinition(lessonId);
