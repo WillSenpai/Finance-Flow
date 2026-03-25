@@ -21,7 +21,7 @@ dist-ssr
 !.vscode/extensions.json
 !.vscode/settings.json
 .idea
-.DS_Store
+.DS_Store  
 *.suo
 *.ntvs*
 *.njsproj
@@ -41,8 +41,6 @@ ios/App/App/config [0-9]*.xml
 
 # Temporary/generated root artifacts
 vite.config.ts.timestamp-*.mjs
-<<<<<<< HEAD
-=======
 
 # PDF files (too large for git, use external storage)
 *.pdf
@@ -80,4 +78,4 @@ supabase/.temp/
 *.avi
 *.sqlite
 *.db
->>>>>>> 6c8f038a135601d721670ce50a860c69236251e8
+
