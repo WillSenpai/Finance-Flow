@@ -44,6 +44,7 @@ vite.config.ts.timestamp-*.mjs
 
 # PDF files (too large for git, use external storage)
 *.pdf
+public/libri/
 
 # Capacitor build artifacts (auto-generated on sync)
 ios/App/App/public/
