@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-<<<<<<< HEAD
   ArrowLeft,
   ArrowRight,
-=======
->>>>>>> 6c8f038a135601d721670ce50a860c69236251e8
   CheckCircle2,
   Loader2,
   Send,
@@ -22,10 +19,6 @@ import { resolveLessonDefinition } from "@/components/academy/lesson-structures"
 import type {
   BlockPollArea,
   NodeBlock,
-<<<<<<< HEAD
-=======
-  PollOption,
->>>>>>> 6c8f038a135601d721670ce50a860c69236251e8
   StructuredLessonContent,
   StructuredNodeContent,
 } from "@/components/academy/lesson-structures/types";
@@ -88,7 +81,6 @@ function nodeTitleFallback(key: string) {
 function getPollAreas(nodeKey: string, blockIndex: number, block: NodeBlock): BlockPollArea[] {
   if (block.pollAreas && block.pollAreas.length > 0) return block.pollAreas;
   if (block.kind !== "question" && block.kind !== "exercise") return [];
-<<<<<<< HEAD
 
   return [
     {
@@ -145,98 +137,6 @@ function Connector({ isCompleted, isLast }: { isCompleted: boolean; isLast: bool
     <div className={`mx-1 h-0.5 w-5 shrink-0 rounded-full transition-all ${isCompleted ? "bg-emerald-500" : "bg-border/50"}`} />
   );
 }
-=======
-
-  return [
-    {
-      id: `${nodeKey}-${blockIndex}-default`,
-      prompt: "Qual e il passaggio principale da applicare?",
-      options: [
-        "Definisco il criterio prima di decidere",
-        "Applico il criterio a un caso concreto",
-        "Controllo che la scelta sia coerente col mio piano",
-      ],
-      allowText: true,
-    },
-  ];
-}
-
-function pollKey(nodeKey: string, blockIndex: number, areaId: string) {
-  return `${nodeKey}::${blockIndex}::${areaId}`;
-}
-
-function hasPollAnswer(entry: PollResponse | undefined) {
-  // Una risposta è considerata valida solo dopo che l'utente ha visto il feedback
-  return Boolean(entry?.showFeedback || entry?.text?.trim());
-}
-
-// ─── Node status dot ────────────────────────────────────────────────────────
-function NodeDot({ status, index, isActive, onClick, title }: {
-  status: NodeStatus;
-  index: number;
-  isActive: boolean;
-  onClick: () => void;
-  title?: string;
-}) {
-  const isLocked = status === "locked";
-
-  // Background colors based on status
-  let bg = "bg-muted/80";
-  let borderStyle = "border-2 border-border/40";
-  let textColor = "text-muted-foreground/60";
-  let shadow = "";
-
-  if (status === "completed") {
-    bg = "bg-gradient-to-br from-emerald-400 to-emerald-600";
-    borderStyle = "border-2 border-emerald-300/50";
-    textColor = "text-white";
-    shadow = "shadow-lg shadow-emerald-500/25";
-  } else if (status === "available") {
-    bg = "bg-gradient-to-br from-primary to-primary/80";
-    borderStyle = "border-2 border-primary/30";
-    textColor = "text-primary-foreground";
-    shadow = "shadow-lg shadow-primary/25";
-  } else if (status === "skipped") {
-    bg = "bg-gradient-to-br from-amber-400 to-amber-500";
-    borderStyle = "border-2 border-amber-300/50";
-    textColor = "text-white";
-    shadow = "shadow-lg shadow-amber-500/20";
-  }
-
-  const activeRing = isActive
-    ? "ring-2 ring-offset-2 ring-offset-card ring-primary scale-110"
-    : "";
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={isLocked}
-      className={`
-        relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full
-        text-xs font-bold transition-all duration-200 ease-out
-        ${bg} ${borderStyle} ${textColor} ${shadow} ${activeRing}
-        ${isLocked ? "cursor-not-allowed opacity-60" : "cursor-pointer active:scale-95 hover:scale-105"}
-      `}
-      style={{ touchAction: "manipulation" }}
-      aria-label={`Nodo ${index + 1}: ${title || `Passo ${index + 1}`}`}
-      aria-disabled={isLocked}
-    >
-      {status === "completed" ? (
-        <CheckCircle2 size={18} strokeWidth={2.5} />
-      ) : (
-        <span className="font-semibold">{index + 1}</span>
-      )}
-
-      {/* Pulse animation for available node */}
-      {status === "available" && !isActive && (
-        <span className="absolute inset-0 animate-ping rounded-full bg-primary/30" style={{ animationDuration: "2s" }} />
-      )}
-    </button>
-  );
-}
-
->>>>>>> 6c8f038a135601d721670ce50a860c69236251e8
 
 const LessonStepper = ({
   lessonId,
@@ -434,7 +334,6 @@ const LessonStepper = ({
 
   // ── Render helpers ────────────────────────────────────────────────────────
 
-<<<<<<< HEAD
   /** Serpentine node path rendered inline */
   const renderSnakePath = () => {
     // 3 items per row per una visione più ariosa e meno schiacciata
@@ -481,149 +380,6 @@ const LessonStepper = ({
             </div>
           );
         })}
-=======
-  /** Vertical timeline roadmap */
-  const renderVerticalTimeline = () => {
-    return (
-      <div className="relative">
-        {/* Central timeline line */}
-        <div
-          className="absolute left-6 top-0 bottom-0 w-[3px] rounded-full bg-gradient-to-b from-border/60 via-border/40 to-border/20"
-          style={{ marginLeft: "-1.5px" }}
-        />
-
-        {/* Progress overlay on timeline */}
-        <div
-          className="absolute left-6 top-0 w-[3px] rounded-full bg-gradient-to-b from-emerald-500 via-emerald-400 to-emerald-300 transition-all duration-500"
-          style={{
-            marginLeft: "-1.5px",
-            height: `${Math.max(0, (completedCount / runtimeFlow.length) * 100)}%`,
-          }}
-        />
-
-        {/* Nodes */}
-        <div className="relative flex flex-col">
-          {runtimeFlow.map((node, idx) => {
-            const nodeTitle = node.title || nodeTitleFallback(node.node_key);
-            const isCompleted = node.status === "completed";
-            const isAvailable = node.status === "available";
-            const isSkipped = node.status === "skipped";
-            const isLocked = node.status === "locked";
-            const isActive = activeNodeIndex === idx;
-            const isLast = idx === runtimeFlow.length - 1;
-
-            // Status colors for card accent
-            let accentColor = "border-l-border/40";
-            let statusBadgeBg = "bg-muted/50 text-muted-foreground";
-            if (isCompleted) {
-              accentColor = "border-l-emerald-500";
-              statusBadgeBg = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
-            } else if (isAvailable) {
-              accentColor = "border-l-primary";
-              statusBadgeBg = "bg-primary/10 text-primary";
-            } else if (isSkipped) {
-              accentColor = "border-l-amber-400";
-              statusBadgeBg = "bg-amber-500/10 text-amber-600 dark:text-amber-400";
-            }
-
-            return (
-              <div
-                key={node.node_key}
-                className={`relative flex items-start gap-4 ${!isLast ? "pb-4" : ""}`}
-              >
-                {/* Node dot on timeline */}
-                <div className="relative z-10 flex-shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => openNode(idx)}
-                    disabled={isLocked}
-                    className={`
-                      relative flex h-12 w-12 items-center justify-center rounded-full
-                      text-sm font-bold transition-all duration-200 ease-out
-                      ${isLocked ? "cursor-not-allowed" : "cursor-pointer active:scale-95"}
-                      ${isActive ? "ring-2 ring-offset-2 ring-offset-card ring-primary scale-110" : "hover:scale-105"}
-                      ${isCompleted
-                        ? "bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-500/30"
-                        : isAvailable
-                          ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/30"
-                          : isSkipped
-                            ? "bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-lg shadow-amber-500/25"
-                            : "bg-muted/80 text-muted-foreground/60 border-2 border-border/40"
-                      }
-                    `}
-                    style={{ touchAction: "manipulation" }}
-                    aria-label={`Nodo ${idx + 1}: ${nodeTitle}`}
-                    aria-disabled={isLocked}
-                  >
-                    {isCompleted ? (
-                      <CheckCircle2 size={20} strokeWidth={2.5} />
-                    ) : (
-                      <span className="font-semibold">{idx + 1}</span>
-                    )}
-
-                    {/* Pulse animation for available node */}
-                    {isAvailable && !isActive && (
-                      <span
-                        className="absolute inset-0 animate-ping rounded-full bg-primary/30"
-                        style={{ animationDuration: "2s" }}
-                      />
-                    )}
-                  </button>
-                </div>
-
-                {/* Node content card */}
-                <button
-                  type="button"
-                  onClick={() => !isLocked && openNode(idx)}
-                  disabled={isLocked}
-                  className={`
-                    flex-1 text-left rounded-2xl border bg-card/80 backdrop-blur-sm
-                    p-4 transition-all duration-200 border-l-4
-                    ${accentColor}
-                    ${isLocked
-                      ? "opacity-50 cursor-not-allowed"
-                      : "cursor-pointer hover:bg-card hover:shadow-md active:scale-[0.98]"
-                    }
-                    ${isActive ? "bg-card shadow-md ring-1 ring-primary/20" : ""}
-                  `}
-                  style={{ touchAction: "manipulation" }}
-                >
-                  {/* Status badge */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${statusBadgeBg}`}>
-                      {isCompleted && <CheckCircle2 size={10} />}
-                      {statusLabel(node.status)}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground/60">
-                      Passo {idx + 1} di {runtimeFlow.length}
-                    </span>
-                  </div>
-
-                  {/* Title */}
-                  <h3 className={`font-semibold leading-tight ${isLocked ? "text-muted-foreground/60" : "text-foreground"}`}>
-                    {nodeTitle}
-                  </h3>
-
-                  {/* Description preview if available */}
-                  {node.description && (
-                    <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                      {node.description}
-                    </p>
-                  )}
-
-                  {/* CTA hint for available */}
-                  {isAvailable && (
-                    <div className="mt-2 flex items-center gap-1 text-xs font-medium text-primary">
-                      <span>Inizia ora</span>
-                      <ChevronRight size={12} />
-                    </div>
-                  )}
-                </button>
-              </div>
-            );
-          })}
-        </div>
->>>>>>> 6c8f038a135601d721670ce50a860c69236251e8
       </div>
     );
   };
@@ -687,17 +443,12 @@ const LessonStepper = ({
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentBlock.content}</ReactMarkdown>
             </div>
 
-<<<<<<< HEAD
             {/* Poll areas */}
-=======
-            {/* Poll areas con feedback branching */}
->>>>>>> 6c8f038a135601d721670ce50a860c69236251e8
             {pollAreasForBlock.length > 0 && activeNode ? (
               <div className="mt-3 space-y-3 rounded-xl border border-border/60 bg-card p-3">
                 {pollAreasForBlock.map((area, areaIndex) => {
                   const responseKey = pollKey(activeNode.node_key, blockIndex, area.id);
                   const response = pollResponses[responseKey];
-<<<<<<< HEAD
                   const options =
                     area.options && area.options.length > 0 ? area.options : ["Si", "No", "Da rivedere"];
 
@@ -725,124 +476,6 @@ const LessonStepper = ({
                         ))}
                       </div>
                       {area.allowText !== false ? (
-=======
-
-                  // Supporto per richOptions (con spiegazioni) o options semplici
-                  const richOptions: PollOption[] = area.richOptions ??
-                    (area.options?.map((opt, idx) => ({
-                      text: opt,
-                      isCorrect: area.correctIndex !== undefined ? idx === area.correctIndex : idx === 0,
-                      explanation: undefined,
-                    })) ?? []);
-
-                  const hasAnswered = response?.showFeedback === true;
-                  const selectedOption = richOptions.find(opt => opt.text === response?.selected);
-                  const isCorrectAnswer = selectedOption?.isCorrect ?? false;
-
-                  // Determina la spiegazione da mostrare
-                  const feedbackExplanation = hasAnswered ? (
-                    isCorrectAnswer
-                      ? (selectedOption?.explanation || area.correctExplanation || "Esatto! Hai colto il punto chiave.")
-                      : (selectedOption?.explanation || area.wrongExplanation || "Non proprio. Vediamo insieme perché...")
-                  ) : null;
-
-                  return (
-                    <div key={responseKey} className="space-y-3 rounded-lg border border-border/50 bg-background/50 p-3">
-                      <p className="break-words text-sm font-medium">
-                        {areaIndex + 1}. {area.prompt}
-                      </p>
-
-                      {/* Opzioni di risposta */}
-                      <div className="grid gap-2">
-                        {richOptions.map((option) => {
-                          const isSelected = response?.selected === option.text;
-                          const showCorrectHighlight = hasAnswered && option.isCorrect;
-                          const showWrongHighlight = hasAnswered && isSelected && !option.isCorrect;
-
-                          return (
-                            <Button
-                              key={`${responseKey}-${option.text}`}
-                              type="button"
-                              variant={isSelected && !hasAnswered ? "default" : "outline"}
-                              className={`justify-start rounded-xl text-left break-words whitespace-normal transition-all ${
-                                showCorrectHighlight ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400" : ""
-                              } ${
-                                showWrongHighlight ? "border-red-400 bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400" : ""
-                              }`}
-                              onClick={() => {
-                                if (hasAnswered) return; // Non permettere cambio dopo feedback
-                                setPollResponses((prev) => ({
-                                  ...prev,
-                                  [responseKey]: {
-                                    ...prev[responseKey],
-                                    selected: option.text,
-                                    isCorrect: option.isCorrect,
-                                    showFeedback: false,
-                                  },
-                                }));
-                              }}
-                              disabled={hasAnswered}
-                            >
-                              {hasAnswered && option.isCorrect && <CheckCircle2 size={14} className="mr-2 text-emerald-500 shrink-0" />}
-                              {option.text}
-                            </Button>
-                          );
-                        })}
-                      </div>
-
-                      {/* Pulsante Verifica */}
-                      {response?.selected && !hasAnswered && (
-                        <Button
-                          type="button"
-                          className="w-full rounded-xl"
-                          onClick={() => {
-                            setPollResponses((prev) => ({
-                              ...prev,
-                              [responseKey]: {
-                                ...prev[responseKey],
-                                showFeedback: true,
-                              },
-                            }));
-                          }}
-                        >
-                          Verifica risposta
-                        </Button>
-                      )}
-
-                      {/* Feedback branching */}
-                      {hasAnswered && feedbackExplanation && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className={`rounded-xl p-4 ${
-                            isCorrectAnswer
-                              ? "bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-800"
-                              : "bg-amber-50 border border-amber-200 dark:bg-amber-950/20 dark:border-amber-800"
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className={`shrink-0 text-lg ${isCorrectAnswer ? "text-emerald-500" : "text-amber-500"}`}>
-                              {isCorrectAnswer ? "✓" : "💡"}
-                            </div>
-                            <div className="space-y-2">
-                              <p className={`font-semibold text-sm ${isCorrectAnswer ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"}`}>
-                                {isCorrectAnswer ? "Corretto!" : "Vediamo insieme..."}
-                              </p>
-                              <div className="prose prose-sm max-w-none text-foreground/90">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{feedbackExplanation}</ReactMarkdown>
-                              </div>
-                              {!isCorrectAnswer && (
-                                <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-amber-200 dark:border-amber-800">
-                                  Ora che hai capito il concetto, puoi proseguire con la lezione.
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-
-                      {area.allowText !== false && hasAnswered ? (
->>>>>>> 6c8f038a135601d721670ce50a860c69236251e8
                         <Textarea
                           value={response?.text || ""}
                           onChange={(event) =>
@@ -853,11 +486,7 @@ const LessonStepper = ({
                           }
                           rows={2}
                           className="rounded-xl"
-<<<<<<< HEAD
                           placeholder="Scrivi il tuo ragionamento in breve..."
-=======
-                          placeholder="Scrivi una riflessione personale (opzionale)..."
->>>>>>> 6c8f038a135601d721670ce50a860c69236251e8
                         />
                       ) : null}
                     </div>
@@ -988,7 +617,6 @@ const LessonStepper = ({
               >
                 {isChatLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
               </Button>
-<<<<<<< HEAD
             </div>
           </div>
         ) : null}
@@ -1044,114 +672,6 @@ const LessonStepper = ({
                 ))}
               </div>
             </div>
-=======
-            </div>
-          </div>
-        ) : null}
-
-
-      </div>
-    );
-  };
-
-  // ── Main render ───────────────────────────────────────────────────────────
-  return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-6">
-      <AnimatePresence mode="wait">
-        {activeNodeIndex === null ? (
-          <motion.div
-            key="overview"
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.2 }}
-            className="flex flex-col flex-1"
-          >
-            {/* Progress bar */}
-            <div className="mb-4 rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
-              <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <span>Percorso lezione</span>
-                <span>{progressPct}% completato</span>
-              </div>
-              <div className="h-2.5 w-full overflow-hidden rounded-full bg-secondary/60">
-                <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${progressPct}%` }} />
-              </div>
-            </div>
-
-            {/* Vertical Timeline Roadmap */}
-            <div className="flex-1 flex flex-col rounded-2xl border border-border/60 bg-card/50 backdrop-blur-sm shadow-sm overflow-hidden">
-              {/* Header */}
-              <div className="sticky top-0 z-20 bg-card/95 backdrop-blur-sm border-b border-border/40 px-5 py-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-                        <path d="M12 2v20M2 12h20" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">Roadmap</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {completedCount}/{runtimeFlow.length} completati
-                      </p>
-                    </div>
-                  </div>
-                  {/* Mini progress circle */}
-                  <div className="relative h-10 w-10">
-                    <svg className="h-10 w-10 -rotate-90" viewBox="0 0 36 36">
-                      <circle
-                        cx="18" cy="18" r="15"
-                        fill="none"
-                        className="stroke-border/40"
-                        strokeWidth="3"
-                      />
-                      <circle
-                        cx="18" cy="18" r="15"
-                        fill="none"
-                        className="stroke-primary transition-all duration-500"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeDasharray={`${progressPct * 0.94} 100`}
-                      />
-                    </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-foreground">
-                      {progressPct}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Scrollable vertical timeline - fills available space */}
-              <div
-                className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4"
-                style={{
-                  minHeight: "200px",
-                  maxHeight: "calc(100vh - 280px)",
-                  WebkitOverflowScrolling: "touch",
-                  scrollbarWidth: "thin",
-                }}
-              >
-                {renderVerticalTimeline()}
-              </div>
-
-              {/* Legend footer */}
-              <div className="sticky bottom-0 bg-card/95 backdrop-blur-sm border-t border-border/40 px-4 py-2.5">
-                <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
-                  {[
-                    { color: "bg-emerald-500", label: "Completato" },
-                    { color: "bg-primary", label: "Disponibile" },
-                    { color: "bg-amber-400", label: "Skippato" },
-                    { color: "bg-muted border border-border/60", label: "Bloccato" },
-                  ].map(({ color, label }) => (
-                    <div key={label} className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground">
-                      <div className={`h-2 w-2 rounded-full ${color}`} />
-                      {label}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
->>>>>>> 6c8f038a135601d721670ce50a860c69236251e8
           </motion.div>
         ) : (
           <motion.div
