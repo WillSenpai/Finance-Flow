@@ -48,6 +48,7 @@ vite.config.ts.timestamp-*.mjs
 # Capacitor build artifacts (auto-generated on sync)
 ios/App/App/public/
 android/app/src/main/assets/public/
+assets/generated/
 
 # macOS system files (catch all nested)
 **/.DS_Store
