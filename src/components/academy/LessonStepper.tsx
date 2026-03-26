@@ -1,10 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-<<<<<<< HEAD
-  ArrowLeft,
-  ArrowRight,
-=======
->>>>>>> 6c8f038a135601d721670ce50a860c69236251e8
   CheckCircle2,
   Loader2,
   Send,
@@ -22,10 +17,7 @@ import { resolveLessonDefinition } from "@/components/academy/lesson-structures"
 import type {
   BlockPollArea,
   NodeBlock,
-<<<<<<< HEAD
-=======
   PollOption,
->>>>>>> 6c8f038a135601d721670ce50a860c69236251e8
   StructuredLessonContent,
   StructuredNodeContent,
 } from "@/components/academy/lesson-structures/types";
@@ -88,64 +80,6 @@ function nodeTitleFallback(key: string) {
 function getPollAreas(nodeKey: string, blockIndex: number, block: NodeBlock): BlockPollArea[] {
   if (block.pollAreas && block.pollAreas.length > 0) return block.pollAreas;
   if (block.kind !== "question" && block.kind !== "exercise") return [];
-<<<<<<< HEAD
-
-  return [
-    {
-      id: `${nodeKey}-${blockIndex}-default`,
-      prompt: "Qual e il passaggio principale da applicare?",
-      options: [
-        "Definisco il criterio prima di decidere",
-        "Applico il criterio a un caso concreto",
-        "Controllo che la scelta sia coerente col mio piano",
-      ],
-      allowText: true,
-    },
-  ];
-}
-
-function pollKey(nodeKey: string, blockIndex: number, areaId: string) {
-  return `${nodeKey}::${blockIndex}::${areaId}`;
-}
-
-function hasPollAnswer(entry: PollResponse | undefined) {
-  return Boolean(entry?.selected || entry?.text?.trim());
-}
-
-// ─── Node status dot ────────────────────────────────────────────────────────
-function NodeDot({ status, index, isActive, onClick }: {
-  status: NodeStatus;
-  index: number;
-  isActive: boolean;
-  onClick: () => void;
-}) {
-  const baseRing = isActive ? "ring-2 ring-offset-1 ring-primary" : "";
-  let bg = "bg-muted border border-border/60";
-  if (status === "completed") bg = "bg-emerald-500 border-transparent";
-  else if (status === "available") bg = "bg-primary border-transparent";
-  else if (status === "skipped") bg = "bg-amber-400 border-transparent";
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white transition-all ${bg} ${baseRing}`}
-      style={{ touchAction: "manipulation" }}
-      aria-label={`Nodo ${index + 1}`}
-    >
-      {status === "completed" ? <CheckCircle2 size={14} /> : index + 1}
-    </button>
-  );
-}
-
-// ─── Serpentine path connector ───────────────────────────────────────────────
-function Connector({ isCompleted, isLast }: { isCompleted: boolean; isLast: boolean }) {
-  if (isLast) return null;
-  return (
-    <div className={`mx-1 h-0.5 w-5 shrink-0 rounded-full transition-all ${isCompleted ? "bg-emerald-500" : "bg-border/50"}`} />
-  );
-}
-=======
 
   return [
     {
@@ -236,7 +170,6 @@ function NodeDot({ status, index, isActive, onClick, title }: {
   );
 }
 
->>>>>>> 6c8f038a135601d721670ce50a860c69236251e8
 
 const LessonStepper = ({
   lessonId,
@@ -434,54 +367,6 @@ const LessonStepper = ({
 
   // ── Render helpers ────────────────────────────────────────────────────────
 
-<<<<<<< HEAD
-  /** Serpentine node path rendered inline */
-  const renderSnakePath = () => {
-    // 3 items per row per una visione più ariosa e meno schiacciata
-    const COLS = 3;
-    const rows: LessonNode[][] = [];
-    for (let i = 0; i < runtimeFlow.length; i += COLS) {
-      rows.push(runtimeFlow.slice(i, i + COLS));
-    }
-
-    return (
-      <div className="flex flex-col gap-6 py-4">
-        {rows.map((row, rowIdx) => {
-          const reversed = rowIdx % 2 === 1;
-          const displayRow = reversed ? [...row].reverse() : row;
-          return (
-            <div key={rowIdx} className="flex items-start justify-center">
-              {displayRow.map((node, colIdx) => {
-                const globalIdx = reversed
-                  ? rowIdx * COLS + (row.length - 1 - colIdx)
-                  : rowIdx * COLS + colIdx;
-                
-                return (
-                  <div key={node.node_key} className="flex items-start">
-                    <div className="flex flex-col items-center gap-2 w-[5.6rem]">
-                      <NodeDot
-                        status={node.status}
-                        index={globalIdx}
-                        isActive={activeNodeIndex === globalIdx}
-                        onClick={() => openNode(globalIdx)}
-                      />
-                      <span
-                        className="px-1 text-center text-[10.5px] font-medium leading-tight text-muted-foreground line-clamp-2"
-                        title={node.title || nodeTitleFallback(node.node_key)}
-                      >
-                        {node.title || nodeTitleFallback(node.node_key)}
-                      </span>
-                    </div>
-                    {colIdx < displayRow.length - 1 && (
-                      <div className={`mt-[18px] h-0.5 w-[2rem] shrink-0 rounded-full transition-all ${node.status === "completed" ? "bg-emerald-500" : "bg-border/60"}`} />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
-=======
   /** Vertical timeline roadmap */
   const renderVerticalTimeline = () => {
     return (
@@ -623,7 +508,6 @@ const LessonStepper = ({
             );
           })}
         </div>
->>>>>>> 6c8f038a135601d721670ce50a860c69236251e8
       </div>
     );
   };
@@ -687,45 +571,12 @@ const LessonStepper = ({
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentBlock.content}</ReactMarkdown>
             </div>
 
-<<<<<<< HEAD
-            {/* Poll areas */}
-=======
             {/* Poll areas con feedback branching */}
->>>>>>> 6c8f038a135601d721670ce50a860c69236251e8
             {pollAreasForBlock.length > 0 && activeNode ? (
               <div className="mt-3 space-y-3 rounded-xl border border-border/60 bg-card p-3">
                 {pollAreasForBlock.map((area, areaIndex) => {
                   const responseKey = pollKey(activeNode.node_key, blockIndex, area.id);
                   const response = pollResponses[responseKey];
-<<<<<<< HEAD
-                  const options =
-                    area.options && area.options.length > 0 ? area.options : ["Si", "No", "Da rivedere"];
-
-                  return (
-                    <div key={responseKey} className="space-y-2 rounded-lg border border-border/50 bg-background/50 p-3">
-                      <p className="break-words text-sm font-medium">
-                        {areaIndex + 1}. {area.prompt}
-                      </p>
-                      <div className="grid gap-2">
-                        {options.map((option) => (
-                          <Button
-                            key={`${responseKey}-${option}`}
-                            type="button"
-                            variant={response?.selected === option ? "default" : "outline"}
-                            className="justify-start rounded-xl text-left break-words whitespace-normal"
-                            onClick={() =>
-                              setPollResponses((prev) => ({
-                                ...prev,
-                                [responseKey]: { ...prev[responseKey], selected: option },
-                              }))
-                            }
-                          >
-                            {option}
-                          </Button>
-                        ))}
-                      </div>
-                      {area.allowText !== false ? (
-=======
 
                   // Supporto per richOptions (con spiegazioni) o options semplici
                   const richOptions: PollOption[] = area.richOptions ??
@@ -842,7 +693,6 @@ const LessonStepper = ({
                       )}
 
                       {area.allowText !== false && hasAnswered ? (
->>>>>>> 6c8f038a135601d721670ce50a860c69236251e8
                         <Textarea
                           value={response?.text || ""}
                           onChange={(event) =>
@@ -853,11 +703,7 @@ const LessonStepper = ({
                           }
                           rows={2}
                           className="rounded-xl"
-<<<<<<< HEAD
-                          placeholder="Scrivi il tuo ragionamento in breve..."
-=======
                           placeholder="Scrivi una riflessione personale (opzionale)..."
->>>>>>> 6c8f038a135601d721670ce50a860c69236251e8
                         />
                       ) : null}
                     </div>
@@ -988,63 +834,6 @@ const LessonStepper = ({
               >
                 {isChatLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
               </Button>
-<<<<<<< HEAD
-            </div>
-          </div>
-        ) : null}
-
-
-      </div>
-    );
-  };
-
-  // ── Main render ───────────────────────────────────────────────────────────
-  return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-6">
-      <AnimatePresence mode="wait">
-        {activeNodeIndex === null ? (
-          <motion.div
-            key="overview"
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.2 }}
-            className="flex flex-col flex-1"
-          >
-            {/* Progress bar */}
-            <div className="mb-4 rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
-              <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <span>Percorso lezione</span>
-                <span>{progressPct}% completato</span>
-              </div>
-              <div className="h-2.5 w-full overflow-hidden rounded-full bg-secondary/60">
-                <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${progressPct}%` }} />
-              </div>
-            </div>
-
-            {/* Snake path */}
-            <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
-              <p className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground text-center">
-                Mappa
-              </p>
-              {renderSnakePath()}
-
-              {/* Legend */}
-              <div className="mt-6 flex flex-wrap justify-center gap-4 border-t border-border/40 pt-4">
-                {[
-                  { color: "bg-emerald-500", label: "Completato" },
-                  { color: "bg-primary", label: "Disponibile" },
-                  { color: "bg-amber-400", label: "Skippato" },
-                  { color: "bg-muted border border-border/60", label: "Bloccato" },
-                ].map(({ color, label }) => (
-                  <div key={label} className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-                    <div className={`h-2.5 w-2.5 rounded-full ${color}`} />
-                    {label}
-                  </div>
-                ))}
-              </div>
-            </div>
-=======
             </div>
           </div>
         ) : null}
@@ -1151,7 +940,6 @@ const LessonStepper = ({
                 </div>
               </div>
             </div>
->>>>>>> 6c8f038a135601d721670ce50a860c69236251e8
           </motion.div>
         ) : (
           <motion.div
