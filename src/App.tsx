@@ -115,7 +115,7 @@ const AppRoutes = () => {
   usePostHogPageView();
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setBootstrapTimedOut(true), 12_000);
+    const timer = window.setTimeout(() => setBootstrapTimedOut(true), 8_000);
     return () => window.clearTimeout(timer);
   }, []);
 
