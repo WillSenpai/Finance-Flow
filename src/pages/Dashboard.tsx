@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Newspaper, TrendingUp, ExternalLink, Sparkles, Megaphone, Crown, Heart, Eye, ShieldCheck, Compass } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
@@ -126,9 +126,26 @@ const Dashboard = () => {
     staleTime: 0,
   });
 
-  const getLikeCount = (postId: string) => postLikes.filter(l => l.post_id === postId).length;
-  const isLiked = (postId: string) => user ? postLikes.some(l => l.post_id === postId && l.user_id === user.id) : false;
-  const getViewCount = (postId: string) => postViews.filter(v => v.post_id === postId).length;
+  const likeCountMap = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const l of postLikes) counts.set(l.post_id, (counts.get(l.post_id) || 0) + 1);
+    return counts;
+  }, [postLikes]);
+
+  const likedSet = useMemo(() => {
+    if (!user) return new Set<string>();
+    return new Set(postLikes.filter(l => l.user_id === user.id).map(l => l.post_id));
+  }, [postLikes, user]);
+
+  const viewCountMap = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const v of postViews) counts.set(v.post_id, (counts.get(v.post_id) || 0) + 1);
+    return counts;
+  }, [postViews]);
+
+  const getLikeCount = (postId: string) => likeCountMap.get(postId) || 0;
+  const isLiked = (postId: string) => likedSet.has(postId);
+  const getViewCount = (postId: string) => viewCountMap.get(postId) || 0;
 
   const toggleLike = useMutation({
     mutationFn: async (postId: string) => {
