@@ -78,6 +78,7 @@ export default defineConfig(() => {
       rollupOptions: {
         output: {
           manualChunks(id) {
+            // --- Heavy vendor chunks (loaded on demand) ---
             if (
               id.includes("node_modules/recharts") ||
               id.includes("node_modules/victory-vendor") ||
@@ -99,6 +100,26 @@ export default defineConfig(() => {
               id.includes("node_modules/remark-gfm")
             ) {
               return "vendor-markdown";
+            }
+
+            // --- Core vendor chunks (split for parallel loading & caching) ---
+            if (id.includes("node_modules/@radix-ui")) {
+              return "vendor-radix";
+            }
+            if (
+              id.includes("node_modules/@supabase") ||
+              id.includes("node_modules/@supabase/supabase-js")
+            ) {
+              return "vendor-supabase";
+            }
+            if (
+              id.includes("node_modules/framer-motion") ||
+              id.includes("node_modules/motion-dom")
+            ) {
+              return "vendor-framer";
+            }
+            if (id.includes("node_modules/posthog-js")) {
+              return "vendor-posthog";
             }
           },
         },
