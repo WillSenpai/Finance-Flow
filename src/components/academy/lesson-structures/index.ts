@@ -1,5 +1,10 @@
 import { createDefaultLessonDefinition, getDefaultLessonVisualConfig } from "./defaultLessonDefinition";
 import { generatedLessonDefinitions } from "./generatedLessons";
+<<<<<<< HEAD
+import type { LessonDefinition, LessonVisualConfig } from "./types";
+
+const lessonRegistry: Record<string, LessonDefinition> = generatedLessonDefinitions;
+=======
 import { intelligentInvestorLessonDefinitions } from "./intelligentInvestorLessons";
 import type { LessonDefinition, LessonVisualConfig } from "./types";
 
@@ -96,6 +101,7 @@ const lessonRegistry: Record<string, LessonDefinition> = {
   ...intelligentInvestorLessonDefinitions,
   ...staticLessonDefinitions,
 };
+>>>>>>> 6c8f038a135601d721670ce50a860c69236251e8
 
 export function resolveLessonDefinition(lessonId: string): LessonDefinition {
   return lessonRegistry[lessonId] || createDefaultLessonDefinition(lessonId);
