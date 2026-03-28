@@ -46,6 +46,7 @@ export default defineConfig(() => {
       // Keep startup prebundle focused on core runtime deps.
       noDiscovery: false,
       holdUntilCrawlEnd: false,
+      entries: ["index.html"],
       exclude: [
         "mermaid",
         "cytoscape",

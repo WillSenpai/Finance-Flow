@@ -635,6 +635,8 @@ function buildNodes(lesson: LessonBlueprint): StructuredNodeContent[] {
             },
           ],
         },
+        {
+          kind: "action_plan",
           title: "📅 Piano 7 giorni",
           content: buildActionPlanContent(lesson.actionPlan),
         },
