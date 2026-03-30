@@ -142,6 +142,12 @@
 
   [data-sonner-toaster].toaster {
     padding-inline: 0.75rem;
+    overflow: visible !important;
+  }
+
+  /* Prevent horizontal scrollbar from toast container */
+  [data-sonner-toaster] ol {
+    overflow: visible !important;
   }
 
   [data-sonner-toaster][data-y-position="top"] {
@@ -155,38 +161,43 @@
   /* ── Toast card ── */
   [data-sonner-toast].financeflow-toast {
     position: relative;
-    overflow: hidden;
+    overflow: hidden !important;
+    box-sizing: border-box;
+    max-width: min(90vw, 400px);
   }
 
-  /* ── Close button — force into top-right corner ── */
-  [data-sonner-toast].financeflow-toast .financeflow-toast-close,
+  /* ── Close button ── */
   [data-sonner-toast].financeflow-toast [data-close-button] {
-    all: unset;
+    all: unset !important;
+    box-sizing: border-box !important;
     position: absolute !important;
-    right: 0.75rem !important;
-    top: 50% !important;
-    left: auto !important;
-    bottom: auto !important;
-    transform: translateY(-50%) !important;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
-    border-radius: 9999px;
-    color: hsl(var(--muted-foreground));
-    opacity: 0.5;
-    cursor: pointer;
-    z-index: 3;
+    inset: auto !important;
+    right: 0.65rem !important;
+    top: 0.65rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 1.35rem !important;
+    height: 1.35rem !important;
+    border-radius: 9999px !important;
+    background: hsl(var(--muted)) !important;
+    color: hsl(var(--muted-foreground)) !important;
+    cursor: pointer !important;
+    z-index: 10 !important;
+    flex-shrink: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-size: 0.65rem !important;
+    line-height: 1 !important;
+    opacity: 0.7;
     transition: opacity 0.15s, background 0.15s;
-    font-size: 0.8rem;
-    line-height: 1;
   }
 
-  [data-sonner-toast].financeflow-toast .financeflow-toast-close:hover,
   [data-sonner-toast].financeflow-toast [data-close-button]:hover {
     opacity: 1;
-    background: hsl(var(--muted));
+    background: hsl(var(--muted-foreground) / 0.18) !important;
   }
 
   /* ── Icon pill ── */
@@ -205,10 +216,18 @@
 
   [data-sonner-toast].financeflow-toast [data-content] {
     min-width: 0;
+    overflow: hidden;
   }
 
   [data-sonner-toast].financeflow-toast [data-title] {
-    padding-right: 1.25rem;
+    padding-right: 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  [data-sonner-toast].financeflow-toast [data-description] {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   /* ── Type-specific icon tints ── */
