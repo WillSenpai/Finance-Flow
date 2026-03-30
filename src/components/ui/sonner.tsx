@@ -12,7 +12,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       theme={theme as ToasterProps["theme"]}
-      position="top-center"
+      position="bottom-center"
       closeButton
       expand
       visibleToasts={3}
@@ -22,16 +22,15 @@ const Toaster = ({ ...props }: ToasterProps) => {
         unstyled: true,
         classNames: {
           toast:
-            "financeflow-toast group pointer-events-auto relative flex w-[min(90vw,420px)] items-start gap-3 overflow-visible rounded-[1.35rem] border border-border/80 bg-background px-4 py-3.5 text-foreground shadow-[0_18px_42px_-30px_hsl(var(--foreground)/0.4)] backdrop-blur-md",
+            "financeflow-toast group pointer-events-auto relative flex w-[min(92vw,420px)] items-center gap-3 overflow-hidden rounded-2xl border border-border/50 bg-background px-4 py-3.5 pb-[1.15rem] text-foreground shadow-[0_8px_40px_-12px_hsl(var(--foreground)/0.22),0_2px_12px_-4px_hsl(var(--foreground)/0.10)] backdrop-blur-xl",
           content: "flex min-w-0 flex-1 flex-col items-start justify-center",
-          title: "text-sm font-semibold leading-5 tracking-tight text-foreground",
-          description: "mt-1 text-[13px] leading-5 text-muted-foreground",
+          title: "text-[13.5px] font-semibold leading-snug tracking-tight text-foreground",
+          description: "mt-0.5 text-[12.5px] leading-snug text-muted-foreground",
           actionButton:
-            "mt-2 inline-flex h-8 shrink-0 items-center justify-center rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground transition-colors hover:opacity-90",
+            "mt-2 inline-flex h-[28px] shrink-0 items-center justify-center rounded-lg bg-primary px-3 text-[11px] font-semibold text-primary-foreground shadow-sm transition-all hover:opacity-90 active:scale-[0.97]",
           cancelButton:
-            "mt-2 inline-flex h-8 shrink-0 items-center justify-center rounded-lg bg-muted px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent",
-          closeButton:
-            "absolute -right-3 -top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border/80 bg-background text-muted-foreground shadow-[0_12px_28px_-18px_hsl(var(--foreground)/0.5)] transition-colors hover:bg-accent hover:text-foreground",
+            "mt-2 inline-flex h-[28px] shrink-0 items-center justify-center rounded-lg bg-muted px-3 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent active:scale-[0.97]",
+          closeButton: "financeflow-toast-close",
           success: "financeflow-toast-success",
           error: "financeflow-toast-error",
           warning: "financeflow-toast-warning",

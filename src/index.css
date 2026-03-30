@@ -148,27 +148,59 @@
     top: calc(0.75rem + var(--safe-top));
   }
 
+  [data-sonner-toaster][data-y-position="bottom"] {
+    bottom: calc(0.75rem + var(--safe-bottom));
+  }
+
+  /* ── Toast card ── */
   [data-sonner-toast].financeflow-toast {
     position: relative;
-    padding-top: 0.95rem;
-    box-shadow: 0 18px 42px -30px hsl(var(--foreground) / 0.4);
+    overflow: hidden;
   }
 
-  [data-sonner-toast].financeflow-toast [data-close-button="true"] {
-    z-index: 2;
+  /* ── Close button — force into top-right corner ── */
+  [data-sonner-toast].financeflow-toast .financeflow-toast-close,
+  [data-sonner-toast].financeflow-toast [data-close-button] {
+    all: unset;
+    position: absolute !important;
+    right: 0.75rem !important;
+    top: 50% !important;
+    left: auto !important;
+    bottom: auto !important;
+    transform: translateY(-50%) !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 9999px;
+    color: hsl(var(--muted-foreground));
+    opacity: 0.5;
+    cursor: pointer;
+    z-index: 3;
+    transition: opacity 0.15s, background 0.15s;
+    font-size: 0.8rem;
+    line-height: 1;
   }
 
+  [data-sonner-toast].financeflow-toast .financeflow-toast-close:hover,
+  [data-sonner-toast].financeflow-toast [data-close-button]:hover {
+    opacity: 1;
+    background: hsl(var(--muted));
+  }
+
+  /* ── Icon pill ── */
   [data-sonner-toast].financeflow-toast [data-icon] {
     display: inline-flex;
-    height: 2.15rem;
-    width: 2.15rem;
+    height: 2.25rem;
+    width: 2.25rem;
     flex: 0 0 auto;
     align-items: center;
     justify-content: center;
-    border-radius: 9999px;
+    border-radius: 0.7rem;
     background: hsl(var(--muted));
     color: hsl(var(--foreground));
-    box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.35);
+    font-size: 1rem;
   }
 
   [data-sonner-toast].financeflow-toast [data-content] {
@@ -176,22 +208,31 @@
   }
 
   [data-sonner-toast].financeflow-toast [data-title] {
-    padding-right: 0.25rem;
+    padding-right: 1.25rem;
   }
 
+  /* ── Type-specific icon tints ── */
   [data-sonner-toast].financeflow-toast-success [data-icon] {
-    background: hsl(var(--accent));
-    color: hsl(var(--secondary));
+    background: hsl(101 20% 42% / 0.14);
+    color: hsl(101 20% 38%);
+  }
+  .dark [data-sonner-toast].financeflow-toast-success [data-icon] {
+    background: hsl(101 18% 30% / 0.3);
+    color: hsl(101 25% 60%);
   }
 
   [data-sonner-toast].financeflow-toast-error [data-icon] {
-    background: hsl(var(--destructive) / 0.14);
+    background: hsl(var(--destructive) / 0.12);
     color: hsl(var(--destructive));
   }
 
   [data-sonner-toast].financeflow-toast-warning [data-icon] {
-    background: hsl(36 27% 43% / 0.16);
-    color: hsl(36 27% 43%);
+    background: hsl(36 50% 52% / 0.15);
+    color: hsl(36 55% 40%);
+  }
+  .dark [data-sonner-toast].financeflow-toast-warning [data-icon] {
+    background: hsl(36 40% 50% / 0.2);
+    color: hsl(36 45% 62%);
   }
 
   [data-sonner-toast].financeflow-toast-info [data-icon] {
@@ -199,38 +240,38 @@
     color: hsl(var(--primary));
   }
 
-  [data-sonner-toast].financeflow-toast::before {
+  /* ── Progress bar (bottom edge) ── */
+  [data-sonner-toast].financeflow-toast::after {
     content: "";
     position: absolute;
-    left: 0.75rem;
-    right: 0.75rem;
-    top: 0.35rem;
-    height: 3px;
+    left: 0.875rem;
+    right: 0.875rem;
+    bottom: 0.4rem;
+    height: 2px;
     border-radius: 9999px;
-    background: hsl(var(--primary));
+    background: hsl(var(--primary) / 0.3);
     transform-origin: left center;
     animation: financeflow-toast-timer var(--toast-duration, 4200ms) linear forwards;
-    opacity: 0.95;
   }
 
-  [data-sonner-toast].financeflow-toast-success::before,
-  [data-sonner-toast][data-type="success"]::before {
-    background: hsl(var(--secondary));
+  [data-sonner-toast].financeflow-toast-success::after,
+  [data-sonner-toast][data-type="success"]::after {
+    background: hsl(101 20% 42% / 0.35);
   }
 
-  [data-sonner-toast].financeflow-toast-error::before,
-  [data-sonner-toast][data-type="error"]::before {
-    background: hsl(var(--destructive));
+  [data-sonner-toast].financeflow-toast-error::after,
+  [data-sonner-toast][data-type="error"]::after {
+    background: hsl(var(--destructive) / 0.3);
   }
 
-  [data-sonner-toast].financeflow-toast-warning::before,
-  [data-sonner-toast][data-type="warning"]::before {
-    background: hsl(36 27% 43%);
+  [data-sonner-toast].financeflow-toast-warning::after,
+  [data-sonner-toast][data-type="warning"]::after {
+    background: hsl(36 50% 52% / 0.3);
   }
 
-  [data-sonner-toast].financeflow-toast-info::before,
-  [data-sonner-toast][data-type="info"]::before {
-    background: hsl(var(--primary));
+  [data-sonner-toast].financeflow-toast-info::after,
+  [data-sonner-toast][data-type="info"]::after {
+    background: hsl(var(--primary) / 0.3);
   }
 }
 

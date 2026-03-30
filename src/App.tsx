@@ -32,6 +32,7 @@ import ProPaywallProvider from "@/components/billing/ProPaywallProvider";
 import { initPostHog, trackEvent, AnalyticsEvents } from "@/lib/posthog";
 import { usePostHogIdentify } from "@/hooks/usePostHogIdentify";
 import { usePostHogPageView } from "@/hooks/usePostHogPageView";
+import { usePushNotifications } from "@/hooks/notifications/usePushNotifications";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const GestisciPatrimonio = lazy(() => import("./pages/GestisciPatrimonio"));
@@ -113,6 +114,8 @@ const AppRoutes = () => {
 
   // PostHog automatic page-view tracking on route change
   usePostHogPageView();
+  // Register for push notifications on native platforms
+  usePushNotifications();
 
   useEffect(() => {
     const timer = window.setTimeout(() => setBootstrapTimedOut(true), 8_000);

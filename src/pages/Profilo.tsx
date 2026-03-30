@@ -6,6 +6,7 @@ import { usePoints } from "@/contexts/PointsContext";
 import { useNavigate } from "react-router-dom";
 import BadgeLivello from "@/components/BadgeLivello";
 import { useNotifiche } from "@/hooks/useNotifiche";
+import { NotificationCard, SwipeableNotification } from "@/components/notifications";
 import AvatarPicker from "@/components/AvatarPicker";
 import { useEffect, useState } from "react";
 import { Badge as BadgeType } from "@/contexts/PointsContext";
@@ -44,7 +45,7 @@ const Profilo = () => {
   const { points, streak, badges } = usePoints();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { notifiche, dismiss, dismissAll, unreadCount } = useNotifiche();
+  const { notifiche, dismiss, dismissAll, unreadCount, markAsRead } = useNotifiche();
   const [selectedBadge, setSelectedBadge] = useState<BadgeType | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -188,29 +189,13 @@ const Profilo = () => {
                   exit={{ opacity: 0, x: -60, height: 0 }}
                   transition={{ type: "spring", stiffness: 300, damping: 25 }}
                 >
-                  <div
-                    className={`rounded-2xl p-3.5 flex items-center gap-3 text-left border ${n.tipo === "warning" ? "bg-destructive/5 border-destructive/20" :
-                      n.tipo === "success" ? "bg-primary/5 border-primary/20" :
-                        "bg-card border-border/50"
-                      }`}
-                  >
-                    <motion.button
-                      whileTap={{ scale: 0.85 }}
-                      onClick={() => n.action && navigate(n.action)}
-                      className="flex items-center gap-3 flex-1 min-w-0"
-                    >
-                      <span className="text-lg flex-shrink-0">{n.icon}</span>
-                      <span className="text-xs flex-1">{n.text}</span>
-                      {n.action && <ArrowUpRight size={14} className="text-muted-foreground flex-shrink-0" />}
-                    </motion.button>
-                    <motion.button
-                      whileTap={{ scale: 0.8 }}
-                      onClick={() => dismiss(n.id)}
-                      className="p-1 rounded-full text-muted-foreground/50 hover:text-foreground hover:bg-muted transition-colors flex-shrink-0"
-                    >
-                      <X size={14} />
-                    </motion.button>
-                  </div>
+                  <SwipeableNotification id={n.id} onDismiss={dismiss}>
+                    <NotificationCard
+                      notification={n}
+                      onDismiss={dismiss}
+                      onMarkAsRead={markAsRead}
+                    />
+                  </SwipeableNotification>
                 </motion.div>
               ))}
             </AnimatePresence>

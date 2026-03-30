@@ -305,17 +305,74 @@ serve(async (req) => {
   }
 });
 
-// Helper function to send push notification
-// This is a placeholder - actual implementation depends on FCM/APNs setup
+// Send push notification via FCM HTTP v1 API
 async function sendPushNotification(
   client: ReturnType<typeof createClient>,
   userId: string,
-  notification: { title: string; body: string }
+  notification: { title: string; body: string; action_url?: string }
 ) {
-  // Get user's push token from profiles or a dedicated table
-  // For now, we just mark the notification as "pushed"
   try {
-    // Update the notification to mark it as pushed
+    // Get user's device tokens
+    const { data: tokens } = await client
+      .from("device_push_tokens")
+      .select("token, platform")
+      .eq("user_id", userId);
+
+    if (!tokens || tokens.length === 0) {
+      console.log(`[Push] No device tokens for user ${userId}`);
+      return;
+    }
+
+    const FCM_SERVER_KEY = Deno.env.get("FCM_SERVER_KEY");
+    if (!FCM_SERVER_KEY) {
+      console.warn("[Push] FCM_SERVER_KEY not configured, skipping push");
+      return;
+    }
+
+    const invalidTokens: string[] = [];
+
+    for (const { token } of tokens) {
+      try {
+        const res = await fetch("https://fcm.googleapis.com/fcm/send", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `key=${FCM_SERVER_KEY}`,
+          },
+          body: JSON.stringify({
+            to: token,
+            notification: {
+              title: notification.title,
+              body: notification.body,
+            },
+            data: {
+              action_url: notification.action_url || "",
+            },
+          }),
+        });
+
+        const result = await res.json();
+
+        // Handle invalid/unregistered tokens
+        if (result.failure && result.results?.[0]?.error === "NotRegistered") {
+          invalidTokens.push(token);
+        }
+      } catch (err) {
+        console.error(`[Push] Error sending to token ${token.slice(0, 10)}...:`, err);
+      }
+    }
+
+    // Clean up invalid tokens
+    if (invalidTokens.length > 0) {
+      await client
+        .from("device_push_tokens")
+        .delete()
+        .eq("user_id", userId)
+        .in("token", invalidTokens);
+      console.log(`[Push] Removed ${invalidTokens.length} invalid tokens for user ${userId}`);
+    }
+
+    // Mark notifications as pushed
     await client
       .from("mark_notifications")
       .update({ pushed_at: new Date().toISOString() })
@@ -324,28 +381,7 @@ async function sendPushNotification(
       .order("created_at", { ascending: false })
       .limit(1);
 
-    // TODO: Implement actual push notification sending via FCM/APNs
-    // This would involve:
-    // 1. Getting the user's device token from a device_tokens table
-    // 2. Sending the notification via FCM or APNs
-    // Example with FCM:
-    // const FCM_SERVER_KEY = Deno.env.get("FCM_SERVER_KEY");
-    // await fetch("https://fcm.googleapis.com/fcm/send", {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //     "Authorization": `key=${FCM_SERVER_KEY}`,
-    //   },
-    //   body: JSON.stringify({
-    //     to: deviceToken,
-    //     notification: {
-    //       title: notification.title,
-    //       body: notification.body,
-    //     },
-    //   }),
-    // });
-
-    console.log(`[Push] Would send to user ${userId}: ${notification.title}`);
+    console.log(`[Push] Sent to ${tokens.length - invalidTokens.length} devices for user ${userId}`);
   } catch (err) {
     console.error("Error sending push notification:", err);
   }
