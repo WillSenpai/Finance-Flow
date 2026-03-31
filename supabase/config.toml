@@ -94,3 +94,15 @@ verify_jwt = true
 
 [functions.ai-usage-admin]
 verify_jwt = false
+
+[functions.game-campaign]
+verify_jwt = false
+
+[functions.game-missions]
+verify_jwt = false
+
+[functions.game-telemetry]
+verify_jwt = false
+
+[functions.game-world]
+verify_jwt = false

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
 import type { Notifica, NotificationCategory } from "@/hooks/useNotifiche";
+import { AnalyticsEvents, trackEvent } from "@/lib/posthog";
 
 const CATEGORY_STYLES: Record<
   NotificationCategory,
@@ -52,6 +53,9 @@ export function NotificationCard({
       setExpanded((prev) => !prev);
     }
     if (n.action) {
+      if (n.id === "shared-weekly-inactive") {
+        trackEvent(AnalyticsEvents.SHARED_WEEKLY_REMINDER_CLICK, { source: "notifications" });
+      }
       onMarkAsRead?.(n.id);
       navigate(n.action);
     }

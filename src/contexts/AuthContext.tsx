@@ -12,13 +12,44 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const NETWORK_COOLDOWN_MS = 60_000;
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const manualSignOutRef = useRef(false);
   const recoveryRunningRef = useRef(false);
+  const networkCooldownUntilRef = useRef(0);
   const userRef = useRef<User | null>(null);
   const sessionRef = useRef<Session | null>(null);
+
+  const isNetworkFailure = (error: unknown): boolean => {
+    const rawMessage =
+      typeof error === "string"
+        ? error
+        : error && typeof error === "object" && "message" in error
+          ? String(error.message ?? "")
+          : "";
+    const message = rawMessage.toLowerCase();
+    const code =
+      error && typeof error === "object" && "code" in error
+        ? String(error.code ?? "").toLowerCase()
+        : "";
+
+    return (
+      message.includes("failed to fetch") ||
+      message.includes("network request failed") ||
+      message.includes("load failed") ||
+      message.includes("network") ||
+      message.includes("fetch") ||
+      message.includes("err_name_not_resolved") ||
+      code.includes("eai_again") ||
+      code.includes("enotfound")
+    );
+  };
+
+  const setNetworkCooldown = () => {
+    networkCooldownUntilRef.current = Date.now() + NETWORK_COOLDOWN_MS;
+  };
 
   const applySignedInState = (nextSession: Session) => {
     setSession(nextSession);
@@ -38,6 +69,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const recoverSessionOrKeepState = async (): Promise<boolean> => {
     if (recoveryRunningRef.current) return false;
+    if (Date.now() < networkCooldownUntilRef.current) return false;
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      setNetworkCooldown();
+      return false;
+    }
     recoveryRunningRef.current = true;
     try {
       const { data: persisted } = await supabase.auth.getSession();
@@ -51,10 +87,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         applySignedInState(refreshed.session);
         return true;
       }
+      if (isNetworkFailure(refreshError)) {
+        // Avoid tight retry loops when DNS/network is unavailable.
+        setNetworkCooldown();
+      }
 
       // Keep current state on transient auth/network issues to avoid false logout during native purchase flows.
       return false;
-    } catch {
+    } catch (error) {
+      if (isNetworkFailure(error)) {
+        setNetworkCooldown();
+      }
       return false;
     } finally {
       recoveryRunningRef.current = false;
@@ -93,6 +136,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     );
 
+    const handleOnline = () => {
+      networkCooldownUntilRef.current = 0;
+      if (userRef.current && sessionRef.current) {
+        void recoverSessionOrKeepState();
+      }
+    };
+    window.addEventListener("online", handleOnline);
+
     // Validate persisted session on startup to avoid stale "logged-in" states.
     void (async () => {
       const { data: { session }, error } = await supabase.auth.getSession();
@@ -112,6 +163,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!refreshError && refreshed.session?.access_token && refreshed.session.user) {
         applySignedInState(refreshed.session);
       } else {
+        if (isNetworkFailure(refreshError)) {
+          setNetworkCooldown();
+          setLoading(false);
+          return;
+        }
         // Fail-safe: avoid stale "logged-in" state that causes repeated 401 calls.
         applySignedOutState();
       }
@@ -119,6 +175,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => {
       window.clearTimeout(authWatchdog);
+      window.removeEventListener("online", handleOnline);
       subscription.unsubscribe();
     };
   }, []);
@@ -128,10 +185,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.auth.signOut();
     applySignedOutState();
   }, []);
-
-  useEffect(() => {
-    supabase.functions.setAuth(session?.access_token ?? "");
-  }, [session?.access_token]);
 
   const value = useMemo(() => ({ user, session, loading, signOut }), [user, session, loading, signOut]);
 

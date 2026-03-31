@@ -1,13 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   BookOpen,
   Calculator,
+  CheckCircle2,
   Ellipsis,
+  Mail,
   PiggyBank,
+  Plus,
   Receipt,
   Sparkles,
   TrendingUp,
+  Users,
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Sector, Tooltip } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,6 +35,7 @@ import type { CategoriaSpesa, Salvadanaio, Spesa } from "@/contexts/UserContext"
 import { useNavigate } from "react-router-dom";
 import { useSharedWorkspace } from "@/hooks/useSharedWorkspace";
 import { cn } from "@/lib/utils";
+import { AnalyticsEvents, trackEvent } from "@/lib/posthog";
 import {
   getPatrimonioSectionPreference,
   setPatrimonioSectionPreference,
@@ -879,16 +884,168 @@ function WhatIfModule({
 function SharedWealthModule({
   hasActiveWorkspace,
   pendingInvites,
+  activeMembers,
+  sharedSpese,
   onOpenSharing,
   onOpenShared,
   onOpenInvites,
+  onOpenQuickAdd,
 }: {
   hasActiveWorkspace: boolean;
   pendingInvites: number;
+  activeMembers: number;
+  sharedSpese: Array<{ data: string; importo: number }>;
   onOpenSharing: () => void;
   onOpenShared: () => void;
   onOpenInvites: () => void;
+  onOpenQuickAdd: () => void;
 }) {
+  const now = Date.now();
+  const oneWeekMs = 7 * 86400000;
+
+  const lastSharedExpenseAt = useMemo(() => {
+    const timestamps = sharedSpese
+      .map((expense) => new Date(expense.data).getTime())
+      .filter((timestamp) => Number.isFinite(timestamp));
+    if (!timestamps.length) return null;
+    return Math.max(...timestamps);
+  }, [sharedSpese]);
+
+  const monthlySharedSpend = useMemo(() => {
+    const current = new Date();
+    const thisMonth = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}`;
+    return sharedSpese
+      .filter((expense) => expense.data.startsWith(thisMonth))
+      .reduce((acc, expense) => acc + expense.importo, 0);
+  }, [sharedSpese]);
+
+  const weeklySharedSpend = useMemo(
+    () =>
+      sharedSpese
+        .filter((expense) => {
+          const timestamp = new Date(expense.data).getTime();
+          return Number.isFinite(timestamp) && now - timestamp <= oneWeekMs;
+        })
+        .reduce((acc, expense) => acc + expense.importo, 0),
+    [sharedSpese, now, oneWeekMs],
+  );
+
+  const hasRecentActivity = lastSharedExpenseAt ? now - lastSharedExpenseAt < oneWeekMs : false;
+  const inactivityDays = lastSharedExpenseAt ? Math.floor((now - lastSharedExpenseAt) / 86400000) : null;
+
+  type SharedModuleState = "no_workspace" | "pending_invites" | "inactive" | "active";
+  const moduleState: SharedModuleState = !hasActiveWorkspace
+    ? pendingInvites > 0
+      ? "pending_invites"
+      : "no_workspace"
+    : hasRecentActivity
+      ? "active"
+      : "inactive";
+
+  const badgeLabel =
+    moduleState === "active" ? "Attivo" : moduleState === "pending_invites" ? "Inviti in attesa" : "Da configurare";
+  const badgeTone =
+    moduleState === "active"
+      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+      : moduleState === "pending_invites"
+        ? "bg-primary/15 text-primary"
+        : "bg-muted text-muted-foreground";
+
+  const stateLabel =
+    !hasActiveWorkspace
+      ? pendingInvites > 0
+        ? `${pendingInvites} invito${pendingInvites > 1 ? "i" : ""} da gestire`
+        : "Nessuno spazio attivo"
+      : `${activeMembers} membri attivi • ${inactivityDays === null ? "nessuna attivita recente" : inactivityDays === 0 ? "attivita oggi" : `ultima attivita ${inactivityDays} giorni fa`}`;
+
+  const focusLabel = hasActiveWorkspace
+    ? weeklySharedSpend > 0
+      ? `Focus settimana: ${formatExpenseEuro(weeklySharedSpend)}`
+      : "Focus settimana: nessuna spesa registrata"
+    : "Focus settimana: crea lo spazio per iniziare";
+
+  const primaryAction = (() => {
+    if (!hasActiveWorkspace && pendingInvites > 0) {
+      return {
+        label: "Controlla inviti",
+        hint: "Apri subito gli inviti e scegli se accettare o rifiutare.",
+        action: onOpenInvites,
+      };
+    }
+    if (!hasActiveWorkspace) {
+      return {
+        label: "Crea spazio condiviso",
+        hint: "Configura lo spazio per gestire spese e obiettivi di coppia.",
+        action: onOpenSharing,
+      };
+    }
+    if (!hasRecentActivity) {
+      return {
+        label: "Aggiungi spesa",
+        hint: "Manca movimento recente: registra una spesa condivisa adesso.",
+        action: onOpenQuickAdd,
+      };
+    }
+    return {
+      label: "Vai al riepilogo condiviso",
+      hint: "Apri la dashboard condivisa per vedere numeri e attivita.",
+      action: onOpenShared,
+    };
+  })();
+
+  const storyboardFrames = [
+    {
+      title: "1. Inserisci una spesa condivisa",
+      body: "Cena 42 EUR • categoria Casa",
+    },
+    {
+      title: "2. Totale aggiornato in tempo reale",
+      body: `Spese mese condivise: ${formatExpenseEuro(monthlySharedSpend)}`,
+    },
+    {
+      title: "3. Tutti allineati senza frizioni",
+      body: "Storico unico e visibile a entrambi.",
+    },
+  ];
+
+  const [frameIndex, setFrameIndex] = useState(0);
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setFrameIndex((current) => (current + 1) % storyboardFrames.length);
+    }, 2600);
+    return () => window.clearInterval(interval);
+  }, [storyboardFrames.length]);
+
+  const lastTracked = useRef<string | null>(null);
+  useEffect(() => {
+    const signature = `${moduleState}:${pendingInvites}:${activeMembers}:${hasRecentActivity}`;
+    if (lastTracked.current === signature) return;
+    lastTracked.current = signature;
+
+    trackEvent(AnalyticsEvents.SHARED_CARD_VIEW, {
+      state: moduleState,
+      pending_invites: pendingInvites,
+      active_members: activeMembers,
+      has_recent_activity: hasRecentActivity,
+    });
+  }, [moduleState, pendingInvites, activeMembers, hasRecentActivity]);
+
+  const handlePrimaryAction = () => {
+    trackEvent(AnalyticsEvents.SHARED_CARD_PRIMARY_CTA_CLICK, {
+      state: moduleState,
+      cta_label: primaryAction.label,
+    });
+    primaryAction.action();
+  };
+
+  const handleQuickAdd = () => {
+    trackEvent(AnalyticsEvents.SHARED_QUICK_ADD_OPEN, {
+      source: "shared_card",
+      state: moduleState,
+    });
+    onOpenQuickAdd();
+  };
+
   return (
     <motion.section
       variants={item}
@@ -898,48 +1055,70 @@ function SharedWealthModule({
         <div>
           <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">Feature condivisa</p>
           <h2 className="mt-1 text-lg font-semibold">Patrimonio condiviso</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            {hasActiveWorkspace
-              ? "Hai gia uno spazio condiviso attivo. Usalo per tenere allineati obiettivi, spese e patrimonio di coppia o famiglia."
-              : "Quando vuoi fare un salto di livello, qui puoi aprire uno spazio condiviso con partner, amici o famiglia."}
-          </p>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">Coordinate soldi e obiettivi di coppia in un unico spazio.</p>
         </div>
         <div className={`flex h-11 w-11 items-center justify-center ${innerSurface} bg-primary/12 text-primary`}>
           <Sparkles size={20} />
         </div>
       </div>
 
-      {pendingInvites > 0 ? (
-        <button
-          onClick={onOpenInvites}
-          className={`mt-4 ${capsule} bg-primary px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary-foreground`}
-        >
-          {pendingInvites} invito{pendingInvites > 1 ? "i" : ""} in attesa
-        </button>
-      ) : null}
+      <div className={`mt-4 ${innerSurface} border border-border/60 bg-background/70 p-3.5`}>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className={`${capsule} px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${badgeTone}`}>{badgeLabel}</span>
+          <span className="text-[11px] text-muted-foreground">{stateLabel}</span>
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground">{focusLabel}</p>
+      </div>
 
-      {hasActiveWorkspace ? (
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <Button variant="outline" className="h-11 rounded-[1.2rem]" onClick={onOpenSharing}>
-            Gestisci
-          </Button>
-          <Button className="h-11 rounded-[1.2rem]" onClick={onOpenShared}>
-            Apri condiviso
-          </Button>
+      <div className={`mt-3 ${innerSurface} border border-border/60 bg-muted/40 p-3.5`}>
+        <div className="flex items-start gap-2.5">
+          <div className={`flex h-8 w-8 shrink-0 items-center justify-center ${innerSurface} bg-primary/12 text-primary`}>
+            <Users size={16} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold">Esempio reale</p>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={frameIndex}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+              >
+                <p className="mt-1 text-xs text-foreground">{storyboardFrames[frameIndex]?.title}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">{storyboardFrames[frameIndex]?.body}</p>
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
-      ) : pendingInvites > 0 ? (
-        <div className="mt-5">
-          <Button className="h-11 w-full rounded-[1.2rem]" onClick={onOpenInvites}>
-            Vedi gli inviti
-          </Button>
+        <div className="mt-3 flex items-center gap-1.5">
+          {storyboardFrames.map((_, index) => (
+            <span
+              key={`frame-${index}`}
+              className={cn("h-1.5 rounded-full transition-all", frameIndex === index ? "w-5 bg-primary" : "w-2 bg-border")}
+            />
+          ))}
         </div>
-      ) : (
-        <div className="mt-5">
-          <Button className="h-11 w-full rounded-[1.2rem]" onClick={onOpenSharing}>
-            Scopri la feature
+      </div>
+
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <Button className="h-11 rounded-[1.2rem] gap-2" onClick={handlePrimaryAction}>
+          {primaryAction.label === "Aggiungi spesa" ? <Plus size={16} /> : primaryAction.label === "Controlla inviti" ? <Mail size={16} /> : <ArrowRight size={16} />}
+          <span className="truncate">{primaryAction.label}</span>
+        </Button>
+        <Button variant="outline" className="h-11 rounded-[1.2rem]" onClick={onOpenSharing}>
+          Gestisci membri e regole
+        </Button>
+      </div>
+
+      <div className="mt-3 flex items-start justify-between gap-3">
+        <p className="text-[11px] leading-5 text-muted-foreground">{primaryAction.hint}</p>
+        {hasActiveWorkspace ? (
+          <Button variant="ghost" size="sm" className="h-8 rounded-full px-3 text-xs" onClick={handleQuickAdd}>
+            <CheckCircle2 size={14} /> Quick Add
           </Button>
-        </div>
-      )}
+        ) : null}
+      </div>
     </motion.section>
   );
 }
@@ -951,7 +1130,12 @@ const Patrimonio = () => {
     useUser();
   const { awardPoints } = usePoints();
   const navigate = useNavigate();
-  const { hasActiveWorkspace, pendingInvites } = useSharedWorkspace();
+  const {
+    hasActiveWorkspace,
+    pendingInvites,
+    members: sharedMembers,
+    spese: sharedSpese,
+  } = useSharedWorkspace();
   const [activeSection, setActiveSection] = useState<PatrimonioSection>(() => getPatrimonioSectionPreference(user?.id));
   const isBeginner = userData.level === "beginner";
 
@@ -1074,9 +1258,12 @@ const Patrimonio = () => {
       <SharedWealthModule
         hasActiveWorkspace={hasActiveWorkspace}
         pendingInvites={pendingInvites.length}
+        activeMembers={sharedMembers.filter((member) => member.status === "active").length}
+        sharedSpese={sharedSpese}
         onOpenSharing={() => navigate("/patrimonio/condivisione")}
         onOpenShared={() => navigate("/patrimonio/condiviso")}
         onOpenInvites={() => navigate("/patrimonio/inviti")}
+        onOpenQuickAdd={() => navigate("/patrimonio/condiviso/spese?quickAdd=1")}
       />
 
       <Drawer open={simulatorOpen} onOpenChange={setSimulatorOpen}>

@@ -15,6 +15,7 @@ import { useSharedWorkspace } from "@/hooks/useSharedWorkspace";
 import { PointsContext } from "@/contexts/PointsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { AnalyticsEvents, trackEvent } from "@/lib/posthog";
 import type { Notifica, MarkNotification } from "./types";
 
 const formatEuro = (n: number) =>
@@ -310,19 +311,44 @@ export function useNotificationSources() {
       });
     }
 
-    // Spese condivise vuote
-    if (hasActiveWorkspace && sharedSpese.length === 0) {
-      push({
-        id: "shared-spese-empty",
-        category: "social",
-        iconComponent: Users,
-        icon: "🤝",
-        title: "Aggiungi la prima spesa nel patrimonio condiviso",
-        timestamp: now,
-        action: "/patrimonio/condiviso/spese",
-        priority: "low",
-        tipo: "info",
-      });
+    // Reminder condiviso settimanale
+    if (hasActiveWorkspace) {
+      if (sharedSpese.length === 0) {
+        push({
+          id: "shared-spese-empty",
+          category: "social",
+          iconComponent: Users,
+          icon: "🤝",
+          title: "Aggiungi la prima spesa nel patrimonio condiviso",
+          timestamp: now,
+          action: "/patrimonio/condiviso/spese?quickAdd=1",
+          priority: "low",
+          tipo: "info",
+        });
+      } else {
+        const latestSharedExpenseTs = sharedSpese
+          .map((expense) => new Date(expense.data).getTime())
+          .filter((ts) => Number.isFinite(ts))
+          .reduce((max, ts) => Math.max(max, ts), 0);
+
+        if (latestSharedExpenseTs > 0) {
+          const inactivityDays = Math.floor((Date.now() - latestSharedExpenseTs) / 86400000);
+          if (inactivityDays >= 7) {
+            push({
+              id: "shared-weekly-inactive",
+              category: "social",
+              iconComponent: Users,
+              icon: "🤝",
+              title: `Nessun movimento condiviso da ${inactivityDays} giorni`,
+              body: "Aggiungi una spesa per riallineare il bilancio di coppia questa settimana.",
+              timestamp: now,
+              action: "/patrimonio/condiviso/spese?quickAdd=1",
+              priority: "normal",
+              tipo: "info",
+            });
+          }
+        }
+      }
     }
 
     // Punti milestone
@@ -367,9 +393,19 @@ export function useNotificationSources() {
     recentPosts,
     pendingInvites.length,
     hasActiveWorkspace,
-    sharedSpese.length,
+    sharedSpese,
     markNotifications,
   ]);
+
+  const hasWeeklyReminder = useMemo(
+    () => allNotifiche.some((notification) => notification.id === "shared-weekly-inactive"),
+    [allNotifiche],
+  );
+
+  useEffect(() => {
+    if (!hasWeeklyReminder) return;
+    trackEvent(AnalyticsEvents.SHARED_WEEKLY_REMINDER_SHOWN, { source: "notifications" });
+  }, [hasWeeklyReminder]);
 
   return {
     allNotifiche,

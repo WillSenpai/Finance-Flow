@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Plus, X, Tag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,6 +24,7 @@ const formatEuro = (n: number) =>
 
 const GestisciSpeseCondivise = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { spese, setSpese, categorieSpese } = useSharedWorkspace();
   const [showForm, setShowForm] = useState(false);
@@ -36,6 +37,23 @@ const GestisciSpeseCondivise = () => {
   const [badges, setBadges] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingCreatedBy, setEditingCreatedBy] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (searchParams.get("quickAdd") !== "1") return;
+    setImporto("");
+    setCategoriaId("");
+    setRicorrenza("once");
+    setData(new Date().toISOString().split("T")[0]);
+    setNota("");
+    setBadges([]);
+    setBadgeInput("");
+    setEditingId(null);
+    setEditingCreatedBy(null);
+    setShowForm(true);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("quickAdd");
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const resetForm = () => {
     setImporto("");

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Newspaper, TrendingUp, ExternalLink, Sparkles, Megaphone, Crown, Heart, Eye, ShieldCheck, Compass, FlaskConical } from "lucide-react";
+import { Newspaper, TrendingUp, ExternalLink, Sparkles, Megaphone, Crown, Heart, Eye, ShieldCheck, Compass } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { usePoints } from "@/contexts/PointsContext";
 import { useNavigate } from "react-router-dom";
@@ -8,7 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import DOMPurify from "dompurify";
 
@@ -439,37 +438,6 @@ const Dashboard = () => {
             </div>
           </>
         )}
-      </motion.div>
-
-      {/* ── TEST TOAST (TEMPORANEO – rimuovere dopo verifica) ── */}
-      <motion.div variants={item} className="mt-8 mb-2">
-        <button
-          type="button"
-          onClick={() => {
-            toast.success("Spesa aggiunta", {
-              description: "La spesa di €42,50 è stata registrata nel tuo patrimonio.",
-            });
-            setTimeout(() => {
-              toast.error("Pagamento fallito", {
-                description: "La carta **** 4829 è stata rifiutata. Riprova con un altro metodo.",
-              });
-            }, 800);
-            setTimeout(() => {
-              toast.warning("Salvadanaio quasi pieno", {
-                description: "Il salvadanaio \"Vacanze\" ha raggiunto il 95% dell'obiettivo!",
-              });
-            }, 1600);
-            setTimeout(() => {
-              toast.info("Nuovo report disponibile", {
-                description: "Il report mensile di marzo è pronto. Aprilo dal tuo profilo.",
-              });
-            }, 2400);
-          }}
-          className="w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 py-3.5 text-sm font-medium text-primary active:scale-[0.97] transition-transform"
-        >
-          <FlaskConical size={18} />
-          Test Notifiche Toast
-        </button>
       </motion.div>
 
       {/* News Summary Drawer */}

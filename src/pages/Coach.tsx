@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Sparkles, Loader2, ArrowDown, History, MessageSquarePlus, X } from "lucide-react";
+import { Send, Sparkles, Loader2, ArrowDown, History, MessageSquarePlus, X, Trash2, MessageCircle, Pencil, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,6 +16,16 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { triggerProPaywall } from "@/lib/billing/paywallEvents";
 import { OnboardingWorkflow } from "@/components/mark/OnboardingWorkflow";
@@ -122,6 +132,11 @@ const Coach = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [deletingConvId, setDeletingConvId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [editingConvId, setEditingConvId] = useState<string | null>(null);
+  const [editingConvTitle, setEditingConvTitle] = useState("");
+  const [renamingConvId, setRenamingConvId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>(fallbackSuggestions);
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
 
@@ -352,6 +367,99 @@ const Coach = () => {
     setIsHistoryOpen(false);
     await createConversation({ withGreeting: true });
   }, [createConversation]);
+
+  const handleDeleteConversation = useCallback(async (conversationId: string) => {
+    if (!user || deletingConvId) return;
+
+    setDeletingConvId(conversationId);
+    try {
+      const { error: deleteMessagesError } = await supabase
+        .from("coach_messages")
+        .delete()
+        .eq("conversation_id", conversationId)
+        .eq("user_id", user.id);
+
+      if (deleteMessagesError) throw deleteMessagesError;
+
+      const { error: deleteConversationError } = await supabase
+        .from("coach_conversations")
+        .delete()
+        .eq("id", conversationId)
+        .eq("user_id", user.id);
+
+      if (deleteConversationError) throw deleteConversationError;
+
+      const remainingConversations = conversations.filter((conv) => conv.id !== conversationId);
+      setConversations(remainingConversations);
+
+      if (currentConversationId === conversationId) {
+        if (remainingConversations.length > 0) {
+          await loadMessagesForConversation(remainingConversations[0].id);
+        } else {
+          await createConversation({ withGreeting: true });
+        }
+      }
+
+      setConfirmDeleteId(null);
+      toast.success("Chat eliminata");
+    } catch (error) {
+      console.error("Failed to delete conversation", error);
+      toast.error("Impossibile eliminare la chat");
+    } finally {
+      setDeletingConvId(null);
+    }
+  }, [conversations, createConversation, currentConversationId, deletingConvId, loadMessagesForConversation, user]);
+
+  const handleStartRenameConversation = useCallback((conversation: Conversation) => {
+    if (deletingConvId || renamingConvId) return;
+    setEditingConvId(conversation.id);
+    setEditingConvTitle(conversation.title);
+  }, [deletingConvId, renamingConvId]);
+
+  const handleCancelRenameConversation = useCallback(() => {
+    if (renamingConvId) return;
+    setEditingConvId(null);
+    setEditingConvTitle("");
+  }, [renamingConvId]);
+
+  const handleSaveRenameConversation = useCallback(async (conversationId: string) => {
+    if (!user || renamingConvId) return;
+
+    const nextTitle = editingConvTitle.trim();
+    if (!nextTitle) {
+      toast.error("Il titolo non puÃ² essere vuoto");
+      return;
+    }
+
+    setRenamingConvId(conversationId);
+    try {
+      const { data, error } = await supabase
+        .from("coach_conversations")
+        .update({ title: nextTitle })
+        .eq("id", conversationId)
+        .eq("user_id", user.id)
+        .select("updated_at")
+        .single();
+
+      if (error) throw error;
+
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv.id === conversationId
+            ? { ...conv, title: nextTitle, updated_at: data?.updated_at ?? conv.updated_at }
+            : conv,
+        ),
+      );
+      setEditingConvId(null);
+      setEditingConvTitle("");
+      toast.success("Titolo aggiornato");
+    } catch (error) {
+      console.error("Failed to rename conversation", error);
+      toast.error("Impossibile aggiornare il titolo");
+    } finally {
+      setRenamingConvId(null);
+    }
+  }, [editingConvTitle, renamingConvId, user]);
 
   useEffect(() => {
     if (!user) {
@@ -799,45 +907,184 @@ const Coach = () => {
       </div>
 
       <Sheet open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-        <SheetContent side="right" className="w-[90vw] max-w-sm p-0 pt-[env(safe-area-inset-top)]">
-          <SheetHeader className="px-4 py-3 border-b border-border/50 space-y-0.5">
+        <SheetContent side="right" className="w-[94vw] max-w-md overflow-x-hidden p-0 pt-[env(safe-area-inset-top)]">
+          <SheetHeader className="px-4 py-3 border-b border-border/50 space-y-1">
             <SheetTitle className="text-base">Storico conversazioni</SheetTitle>
             <SheetDescription className="text-xs">Conservazione massima: 30 giorni</SheetDescription>
+            <p className="text-[11px] text-muted-foreground/90">
+              {conversations.length} {conversations.length === 1 ? "chat salvata" : "chat salvate"}
+            </p>
           </SheetHeader>
 
           <div className="px-3 py-2.5 border-b border-border/50">
-            <Button onClick={handleCreateNewChat} className="w-full h-9 rounded-full gap-1.5 text-[13px]">
+            <Button onClick={handleCreateNewChat} className="w-full h-10 rounded-full gap-1.5 text-[13px]">
               <MessageSquarePlus size={14} />
               Nuova chat
             </Button>
           </div>
 
-          <div className="max-h-[calc(var(--app-height)-10rem-env(safe-area-inset-top))] overflow-y-auto p-1.5">
+          <div className="max-h-[calc(var(--app-height)-11rem-env(safe-area-inset-top))] overflow-y-auto overflow-x-hidden px-2 py-2">
             {conversations.length === 0 ? (
               <div className="text-xs text-muted-foreground px-2.5 py-3">Nessuna conversazione salvata.</div>
             ) : (
               conversations.map((conv) => (
-                <button
+                <div
                   key={conv.id}
-                  type="button"
-                  onClick={() => {
-                    setIsHistoryOpen(false);
-                    void loadMessagesForConversation(conv.id);
-                  }}
-                  className={`w-full text-left rounded-lg px-2.5 py-2 mb-0.5 border transition-colors ${
+                  className={`mb-1 w-full max-w-full overflow-hidden rounded-xl border p-1.5 transition-[background-color,border-color,box-shadow] duration-200 ease-out ${
                     conv.id === currentConversationId
-                      ? "bg-primary/10 border-primary/30"
-                      : "bg-card border-border/40 hover:bg-muted/40"
+                      ? "bg-primary/10 border-primary/35 shadow-sm"
+                      : "bg-card border-border/50 hover:bg-muted/40"
                   }`}
                 >
-                  <p className="text-[13px] font-medium truncate">{conv.title}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{formatConversationDate(conv.updated_at)}</p>
-                </button>
+                  <div className="flex min-w-0 items-start gap-2">
+                    <div className="min-w-0 flex-1 rounded-lg px-2 py-1.5">
+                      {editingConvId === conv.id ? (
+                        <div className="space-y-2">
+                          <Input
+                            value={editingConvTitle}
+                            onChange={(event) => setEditingConvTitle(event.target.value)}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter") {
+                                event.preventDefault();
+                                void handleSaveRenameConversation(conv.id);
+                              }
+                              if (event.key === "Escape") {
+                                event.preventDefault();
+                                handleCancelRenameConversation();
+                              }
+                            }}
+                            className="h-9 w-full min-w-0 border-border/60 text-[13px]"
+                            placeholder="Inserisci il nuovo titolo"
+                            disabled={renamingConvId === conv.id}
+                            autoFocus
+                          />
+                          <p className="mt-1 max-w-full truncate text-[11px] text-muted-foreground">
+                            Ultimo aggiornamento: {formatConversationDate(conv.updated_at)}
+                          </p>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsHistoryOpen(false);
+                            void loadMessagesForConversation(conv.id);
+                          }}
+                          className="w-full min-w-0 text-left"
+                        >
+                          <div className="flex min-w-0 items-center gap-2">
+                            <MessageCircle size={14} className="text-muted-foreground shrink-0" />
+                            <p
+                              className="max-w-full overflow-hidden break-words text-[13px] font-medium leading-5"
+                              style={{
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                              }}
+                            >
+                              {conv.title}
+                            </p>
+                          </div>
+                          <p className="mt-1 max-w-full truncate pl-6 text-[11px] text-muted-foreground">{formatConversationDate(conv.updated_at)}</p>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-1">
+                      {editingConvId === conv.id ? (
+                        <>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => void handleSaveRenameConversation(conv.id)}
+                            className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/70"
+                            aria-label="Salva nuovo titolo"
+                            disabled={renamingConvId === conv.id}
+                          >
+                            {renamingConvId === conv.id ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleCancelRenameConversation}
+                            className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/70"
+                            aria-label="Annulla modifica titolo"
+                            disabled={renamingConvId === conv.id}
+                          >
+                            <X size={15} />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleStartRenameConversation(conv)}
+                            className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/70"
+                            aria-label={`Modifica titolo chat ${conv.title}`}
+                            disabled={deletingConvId === conv.id || !!renamingConvId}
+                          >
+                            <Pencil size={15} />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setConfirmDeleteId(conv.id)}
+                            className="h-8 w-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            aria-label={`Elimina chat ${conv.title}`}
+                            disabled={deletingConvId === conv.id || !!renamingConvId}
+                          >
+                            {deletingConvId === conv.id ? (
+                              <Loader2 size={15} className="animate-spin" />
+                            ) : (
+                              <Trash2 size={15} />
+                            )}
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
               ))
             )}
           </div>
         </SheetContent>
       </Sheet>
+
+      <AlertDialog open={!!confirmDeleteId} onOpenChange={(open) => !open && setConfirmDeleteId(null)}>
+        <AlertDialogContent className="max-w-sm rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminare questa chat?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Questa azione rimuove definitivamente conversazione e messaggi associati.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={!!deletingConvId}>Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={!confirmDeleteId || !!deletingConvId}
+              onClick={(event) => {
+                event.preventDefault();
+                if (!confirmDeleteId) return;
+                void handleDeleteConversation(confirmDeleteId);
+              }}
+            >
+              {deletingConvId ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Loader2 size={14} className="animate-spin" />
+                  Eliminazione...
+                </span>
+              ) : (
+                "Elimina chat"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

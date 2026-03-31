@@ -92,8 +92,8 @@ const SharedWorkspaceContext = createContext<SharedWorkspaceContextValue | undef
 const asDb = () => supabase as any;
 const FUNCTIONS_BASE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 const SUPABASE_FUNCTIONS_API_KEY =
-  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ??
-  (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined);
+  (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ??
+  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined);
 
 const getFunctionsErrorMessage = async (error: unknown, fallback: string) => {
   if (!error || typeof error !== "object") return fallback;

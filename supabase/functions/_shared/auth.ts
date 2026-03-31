@@ -24,7 +24,7 @@ export async function requireAuthenticatedUser(req: Request, corsHeaders: Header
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
   if (!supabaseUrl || !supabaseAnonKey) {
     return {
       ok: false,
@@ -35,14 +35,12 @@ export async function requireAuthenticatedUser(req: Request, corsHeaders: Header
     };
   }
 
-  const client = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: `Bearer ${token}` } },
-  });
+  const client = createClient(supabaseUrl, supabaseAnonKey);
 
   const {
     data: { user },
     error,
-  } = await client.auth.getUser();
+  } = await client.auth.getUser(token);
 
   if (error || !user) {
     return {
