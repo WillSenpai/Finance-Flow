@@ -4,18 +4,27 @@ import {
   BookOpen,
   Calculator,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Ellipsis,
   Mail,
+  Minus,
   PiggyBank,
   Plus,
   Receipt,
   Sparkles,
+  Trash2,
+  TrendingDown,
   TrendingUp,
   Users,
 } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Sector, Tooltip } from "recharts";
+import {
+  PieChart, Pie, Cell, ResponsiveContainer, Sector, Tooltip,
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+} from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,11 +40,13 @@ import WhatIfSimulator from "@/components/WhatIfSimulator";
 import { useUser } from "@/hooks/useUser";
 import { usePoints } from "@/contexts/PointsContext";
 import { useAuth } from "@/contexts/AuthContext";
-import type { CategoriaSpesa, Salvadanaio, Spesa } from "@/contexts/UserContext";
+import type { CategoriaSpesa, Passivita, Salvadanaio, Spesa } from "@/contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 import { useSharedWorkspace } from "@/hooks/useSharedWorkspace";
 import { cn } from "@/lib/utils";
 import { AnalyticsEvents, trackEvent } from "@/lib/posthog";
+import { createPassivita } from "@/lib/passivita";
+import { maybeRecordSnapshot, loadSnapshots } from "@/lib/patrimonioSnapshots";
 import {
   getPatrimonioSectionPreference,
   setPatrimonioSectionPreference,
@@ -82,12 +93,14 @@ function clampPercentage(value: number) {
 function formatFreshness(date: string | null) {
   if (!date) return "Aggiorna per vedere il quadro reale";
 
-  const diffMs = Date.now() - new Date(date).getTime();
+  const d = new Date(date);
+  const diffMs = Date.now() - d.getTime();
   const days = Math.max(0, Math.floor(diffMs / 86400000));
 
   if (days === 0) return "Aggiornato oggi";
   if (days === 1) return "Aggiornato ieri";
-  return `Aggiornato ${days} giorni fa`;
+  const label = d.toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" });
+  return `Aggiornato il ${label}`;
 }
 
 function formatMonthLabel() {
@@ -179,10 +192,11 @@ function renderActiveAllocationShape(props: ActiveAllocationShapeProps) {
 }
 
 function WealthHero({
-  total,
+  netWorth,
+  totalAssets,
+  totalLiabilities,
   freshnessLabel,
   heroTitle,
-  heroDescription,
   actionLabel,
   onPrimaryAction,
   monthlySpending,
@@ -190,10 +204,11 @@ function WealthHero({
   activeAssets,
   primaryActionHint,
 }: {
-  total: number;
+  netWorth: number;
+  totalAssets: number;
+  totalLiabilities: number;
   freshnessLabel: string;
   heroTitle: string;
-  heroDescription: string;
   actionLabel: string;
   onPrimaryAction: () => void;
   monthlySpending: number;
@@ -218,13 +233,19 @@ function WealthHero({
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <div className="mt-3 flex items-end gap-3">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-primary-foreground/60">Patrimonio Netto</p>
+                <div className="mt-2 flex items-end gap-3">
                   <h1 className="text-[2.85rem] font-semibold leading-none tracking-[-0.05em] sm:text-[3.4rem]">
-                    {formatEuro(total)}
+                    {formatEuro(netWorth)}
                   </h1>
                   <span className="mb-1 hidden rounded-full border border-white/12 bg-white/8 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-primary-foreground/72 sm:inline-flex">
                     Snapshot
                   </span>
+                </div>
+                <div className="mt-2 flex items-center gap-3 text-[12px] text-primary-foreground/75">
+                  <span>Asset: <span className="font-semibold text-primary-foreground">{formatEuro(totalAssets)}</span></span>
+                  <span className="opacity-40">|</span>
+                  <span>Passività: <span className="font-semibold text-primary-foreground/85">{totalLiabilities > 0 ? `−${formatEuro(totalLiabilities)}` : formatEuro(0)}</span></span>
                 </div>
                 <p className="mt-3 max-w-[20rem] text-sm leading-6 text-primary-foreground/84 sm:text-[15px]">{heroTitle}</p>
               </div>
@@ -1123,10 +1144,329 @@ function SharedWealthModule({
   );
 }
 
+const TIPO_LABELS: Record<Passivita["tipo"], string> = {
+  mutuo: "Mutuo",
+  finanziamento: "Finanziamento",
+  carta: "Carta di credito",
+};
+
+function AssetCategoriesSection({
+  categorie,
+  totalAssets,
+}: {
+  categorie: { nome: string; valore: number; colore: string; emoji: string }[];
+  totalAssets: number;
+}) {
+  return (
+    <motion.section variants={item} className={`mt-6 ${shellSurface} p-5`}>
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">Distribuzione Asset</p>
+          <h2 className="mt-1 text-lg font-semibold">Le tue 6 categorie</h2>
+        </div>
+        <div className={`${capsule} bg-muted px-3 py-1 text-[11px] font-medium text-muted-foreground`}>
+          {formatEuro(totalAssets)}
+        </div>
+      </div>
+
+      <div className="mt-4 space-y-2.5">
+        {categorie.map((cat) => {
+          const share = totalAssets > 0 ? Math.max(0, Math.min(100, Math.round((cat.valore / totalAssets) * 100))) : 0;
+          return (
+            <div key={cat.nome} className={`${innerSurface} border border-border/60 bg-background/80 px-3.5 py-3`}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-lg leading-none">{cat.emoji}</span>
+                  <span className="text-sm font-medium">{cat.nome}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-muted-foreground">{share}%</span>
+                  <span className="text-sm font-semibold">{formatEuro(cat.valore)}</span>
+                </div>
+              </div>
+              <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${share}%`, backgroundColor: cat.colore }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </motion.section>
+  );
+}
+
+function PassivitaSection({
+  passivita,
+  onAdd,
+  onDelete,
+}: {
+  passivita: Passivita[];
+  onAdd: (p: Omit<Passivita, "id">) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [nome, setNome] = useState("");
+  const [tipo, setTipo] = useState<Passivita["tipo"]>("finanziamento");
+  const [importoResiduo, setImportoResiduo] = useState("");
+  const [rataMensile, setRataMensile] = useState("");
+  const [dataFine, setDataFine] = useState("");
+
+  const totaleLiabilities = passivita.reduce((s, p) => s + p.importoResiduo, 0);
+
+  const handleSubmit = () => {
+    const nome_ = nome.trim();
+    if (!nome_) return;
+    const importo = parseFloat(importoResiduo) || 0;
+    const rata = parseFloat(rataMensile) || 0;
+    if (importo <= 0) return;
+    onAdd({ nome: nome_, tipo, importoResiduo: importo, rataMensile: rata, dataFine });
+    setNome("");
+    setImportoResiduo("");
+    setRataMensile("");
+    setDataFine("");
+    setShowForm(false);
+  };
+
+  return (
+    <motion.section variants={item} className={`mt-6 ${shellSurface} p-5`}>
+      <button
+        type="button"
+        className="flex w-full items-center justify-between gap-3"
+        onClick={() => setExpanded((v) => !v)}
+      >
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground text-left">Passività</p>
+          <h2 className="mt-1 text-lg font-semibold text-left">Debiti e rate</h2>
+        </div>
+        <div className="flex items-center gap-2">
+          {totaleLiabilities > 0 && (
+            <span className={`${capsule} bg-destructive/12 px-3 py-1 text-[11px] font-semibold text-destructive`}>
+              −{formatEuro(totaleLiabilities)}
+            </span>
+          )}
+          {expanded ? <ChevronUp size={18} className="text-muted-foreground" /> : <ChevronDown size={18} className="text-muted-foreground" />}
+        </div>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="mt-4 space-y-2.5">
+              {passivita.length === 0 && !showForm && (
+                <div className={`${innerSurface} border border-dashed border-border bg-background/70 p-4`}>
+                  <div className="flex items-center gap-3">
+                    <TrendingDown size={20} className="text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Nessuna passività registrata.</p>
+                  </div>
+                </div>
+              )}
+
+              {passivita.map((p) => (
+                <div key={p.id} className={`${innerSurface} border border-border/60 bg-background/80 px-3.5 py-3`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold">{p.nome}</p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        {TIPO_LABELS[p.tipo]}{p.rataMensile > 0 ? ` • rata ${formatEuro(p.rataMensile)}/mese` : ""}{p.dataFine ? ` • fino al ${new Date(p.dataFine).toLocaleDateString("it-IT", { month: "short", year: "numeric" })}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-destructive">−{formatEuro(p.importoResiduo)}</span>
+                      <button
+                        type="button"
+                        onClick={() => onDelete(p.id)}
+                        className="text-muted-foreground/50 hover:text-destructive transition-colors p-0.5"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {showForm ? (
+                <div className={`${innerSurface} border border-border/60 bg-background/80 p-4 space-y-3`}>
+                  <Input
+                    placeholder="Nome (es. Mutuo casa)"
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                    className="rounded-xl bg-background"
+                  />
+                  <div className="grid grid-cols-3 gap-2">
+                    {(["mutuo", "finanziamento", "carta"] as Passivita["tipo"][]).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setTipo(t)}
+                        className={cn(
+                          `${capsule} px-3 py-2 text-xs font-medium border transition-colors`,
+                          tipo === t ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border text-muted-foreground"
+                        )}
+                      >
+                        {TIPO_LABELS[t]}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">€</span>
+                      <Input
+                        type="number"
+                        placeholder="Importo residuo"
+                        value={importoResiduo}
+                        onChange={(e) => setImportoResiduo(e.target.value)}
+                        className="pl-7 rounded-xl bg-background"
+                      />
+                    </div>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">€</span>
+                      <Input
+                        type="number"
+                        placeholder="Rata mensile"
+                        value={rataMensile}
+                        onChange={(e) => setRataMensile(e.target.value)}
+                        className="pl-7 rounded-xl bg-background"
+                      />
+                    </div>
+                  </div>
+                  <Input
+                    type="date"
+                    placeholder="Data fine (opzionale)"
+                    value={dataFine}
+                    onChange={(e) => setDataFine(e.target.value)}
+                    className="rounded-xl bg-background"
+                  />
+                  <div className="flex gap-2">
+                    <Button onClick={handleSubmit} className="flex-1 rounded-xl h-10">Aggiungi</Button>
+                    <Button variant="outline" onClick={() => setShowForm(false)} className="rounded-xl h-10">
+                      <Minus size={14} />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="h-11 w-full rounded-[1.2rem] gap-2"
+                  onClick={() => setShowForm(true)}
+                >
+                  <Plus size={16} /> Aggiungi passività
+                </Button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.section>
+  );
+}
+
+function TrendChart({ snapshots }: { snapshots: ReturnType<typeof loadSnapshots> }) {
+  if (snapshots.length < 2) {
+    const singleValue = snapshots[0]?.netWorth;
+    return (
+      <motion.section variants={item} className={`mt-6 ${shellSurface} p-5`}>
+        <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">Andamento</p>
+        <h2 className="mt-1 text-lg font-semibold">Trend patrimonio netto</h2>
+        <div className={`mt-4 ${innerSurface} border border-dashed border-border bg-background/70 p-4 text-center`}>
+          {singleValue !== undefined ? (
+            <p className="text-sm text-muted-foreground">
+              Primo accesso registrato: <span className="font-semibold text-foreground">{formatEuro(singleValue)}</span>.
+              Il grafico apparirà dal mese prossimo.
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Il grafico si costruisce automaticamente mese per mese.
+            </p>
+          )}
+        </div>
+      </motion.section>
+    );
+  }
+
+  const data = snapshots.map((s) => {
+    const [year, month] = s.month.split("-");
+    const label = new Date(Number(year), Number(month) - 1).toLocaleDateString("it-IT", { month: "short", year: "2-digit" });
+    return { label, valore: s.netWorth };
+  });
+
+  const minValue = Math.min(...data.map((d) => d.valore));
+  const maxValue = Math.max(...data.map((d) => d.valore));
+  const isGrowing = data[data.length - 1].valore >= data[0].valore;
+
+  return (
+    <motion.section variants={item} className={`mt-6 ${shellSurface} p-5`}>
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">Andamento</p>
+          <h2 className="mt-1 text-lg font-semibold">Trend patrimonio netto</h2>
+        </div>
+        <div className={cn(`${capsule} px-3 py-1 text-[11px] font-semibold flex items-center gap-1`, isGrowing ? "bg-emerald-500/12 text-emerald-700" : "bg-destructive/12 text-destructive")}>
+          {isGrowing ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+          {isGrowing ? "In crescita" : "In calo"}
+        </div>
+      </div>
+
+      <div className="mt-4 h-36">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis dataKey="label" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+            <YAxis
+              domain={[minValue * 0.95, maxValue * 1.05]}
+              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`}
+              width={32}
+            />
+            <Tooltip
+              formatter={(v: number) => [formatEuro(v), "Patrimonio netto"]}
+              contentStyle={{
+                borderRadius: "1rem",
+                border: "1px solid hsl(var(--border))",
+                background: "hsl(var(--card))",
+                fontSize: 12,
+              }}
+            />
+            <Line
+              type="monotone"
+              dataKey="valore"
+              stroke="hsl(var(--primary))"
+              strokeWidth={2.5}
+              dot={{ r: 3, fill: "hsl(var(--primary))" }}
+              activeDot={{ r: 5 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </motion.section>
+  );
+}
+
+// Known income/non-asset keywords to exclude from allocation chart (fix "Stipendio" bug)
+const ASSET_CATEGORY_NAMES = new Set([
+  "liquidità", "investimenti", "immobili", "crypto", "pensione", "tfr", "pensione / tfr",
+  "beni", "liquidita", "soldi al lavoro", "cose di valore",
+]);
+
+function isAssetCategory(nome: string): boolean {
+  return ASSET_CATEGORY_NAMES.has(nome.toLowerCase());
+}
+
 const Patrimonio = () => {
   const [simulatorOpen, setSimulatorOpen] = useState(false);
   const { user } = useAuth();
-  const { userData, categorie, salvadanai, investimenti, spese, categorieSpese, lastPatrimonioUpdate } =
+  const { userData, categorie, salvadanai, investimenti, spese, categorieSpese, lastPatrimonioUpdate, passivita, setPassivita } =
     useUser();
   const { awardPoints } = usePoints();
   const navigate = useNavigate();
@@ -1138,6 +1478,9 @@ const Patrimonio = () => {
   } = useSharedWorkspace();
   const [activeSection, setActiveSection] = useState<PatrimonioSection>(() => getPatrimonioSectionPreference(user?.id));
   const isBeginner = userData.level === "beginner";
+
+  // Trend snapshots: record once per month on first render with data
+  const snapshots = useMemo(() => loadSnapshots(), []);
 
   useEffect(() => {
     awardPoints("review_patrimonio");
@@ -1154,58 +1497,75 @@ const Patrimonio = () => {
     }
   };
 
-  const totalCategories = categorie.reduce((acc, category) => acc + category.valore, 0);
-  const totalInvestments = investimenti.reduce((acc, investment) => acc + investment.valore, 0);
-  const totalHistoricalSpending = spese.reduce((acc, expense) => acc + expense.importo, 0);
-  const totalAssets = totalCategories + totalInvestments;
-  const total = totalAssets - totalHistoricalSpending;
+  // Asset totals — use only known asset categories to avoid income entries (fix "Stipendio" bug)
+  const totalCategories = categorie
+    .filter((c) => isAssetCategory(c.nome))
+    .reduce((acc, c) => acc + c.valore, 0);
+  const totalCategoriesRaw = categorie.reduce((acc, c) => acc + c.valore, 0);
+  const totalInvestments = investimenti.reduce((acc, i) => acc + i.valore, 0);
+  const totalAssets = totalCategoriesRaw + totalInvestments;
+  const totalLiabilities = passivita.reduce((acc, p) => acc + p.importoResiduo, 0);
+  const netWorth = totalAssets - totalLiabilities;
+
   const activeAssets =
-    categorie.filter((category) => category.valore > 0).length + investimenti.filter((investment) => investment.valore > 0).length;
+    categorie.filter((c) => c.valore > 0).length + investimenti.filter((i) => i.valore > 0).length;
 
   const now = new Date();
   const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const monthlyExpenses = spese.filter((expense) => expense.data.startsWith(thisMonth));
-  const monthlySpending = monthlyExpenses.reduce((acc, expense) => acc + expense.importo, 0);
+  const monthlySpending = spese
+    .filter((e) => e.data.startsWith(thisMonth))
+    .reduce((acc, e) => acc + e.importo, 0);
 
   const totalGoals = salvadanai.length;
-  const totalGoalsValue = salvadanai.reduce((acc, saving) => acc + saving.obiettivo, 0);
-  const currentGoalsValue = salvadanai.reduce((acc, saving) => acc + saving.attuale, 0);
+  const totalGoalsValue = salvadanai.reduce((acc, s) => acc + s.obiettivo, 0);
+  const currentGoalsValue = salvadanai.reduce((acc, s) => acc + s.attuale, 0);
   const goalsProgress = clampPercentage((currentGoalsValue / Math.max(totalGoalsValue, 1)) * 100);
 
-  const allChartData = [
-    ...categorie.map((category) => ({ nome: category.nome, valore: category.valore, colore: category.colore })),
-    ...(totalInvestments > 0 ? [{ nome: "Investimenti", valore: totalInvestments, colore: "hsl(var(--primary))" }] : []),
-  ]
-    .filter((entry) => entry.valore > 0)
+  // Record monthly snapshot after assets are computed
+  useEffect(() => {
+    if (totalAssets > 0 || totalLiabilities > 0) {
+      maybeRecordSnapshot(totalAssets, totalLiabilities);
+    }
+  }, [totalAssets, totalLiabilities]);
+
+  // Allocation chart — exclude income/non-asset categories
+  const allChartData = categorie
+    .filter((c) => c.valore > 0 && isAssetCategory(c.nome))
+    .map((c) => ({ nome: c.nome, valore: c.valore, colore: c.colore }))
+    .concat(totalInvestments > 0 && !categorie.some((c) => c.nome.toLowerCase() === "investimenti")
+      ? [{ nome: "Investimenti", valore: totalInvestments, colore: "hsl(var(--primary))" }]
+      : [])
     .sort((a, b) => b.valore - a.valore);
 
   const chartData = allChartData.slice(0, 4);
   const hiddenBuckets = allChartData.slice(4);
-  const hiddenBucketsValue = hiddenBuckets.reduce((sum, entry) => sum + entry.valore, 0);
-
-  const chartDataSafe =
-    chartData.length > 0
-      ? chartData
-      : [{ nome: "Da impostare", valore: 1, colore: "hsl(var(--muted))" }];
-
+  const hiddenBucketsValue = hiddenBuckets.reduce((sum, e) => sum + e.valore, 0);
+  const chartDataSafe = chartData.length > 0
+    ? chartData
+    : [{ nome: "Da impostare", valore: 1, colore: "hsl(var(--muted))" }];
   const topBucket = chartData[0] ?? { nome: "Da impostare", valore: 0 };
+
   const freshnessLabel = formatFreshness(lastPatrimonioUpdate);
   const heroTitle = isBeginner
     ? "Una vista semplice per iniziare a capire quanto possiedi e dove stai andando."
-    : "Gestire i tuoi soldi è come prendersi cura di un bonsai, richiede pazienza, precisione e la capacità di guardare lontano.";
-  const heroDescription = isBeginner
-    ? `Hai ${totalGoals} obiettiv${totalGoals === 1 ? "o" : "i"} attiv${totalGoals === 1 ? "o" : "i"} e ${goalsProgress}% di progresso sui salvadanai attuali.`
-    : `Il patrimonio netto include ${formatExpenseEuro(totalHistoricalSpending)} di spese storiche e ${activeAssets} bucket con valore attivo.`;
+    : "Gestire i tuoi soldi è come prendersi cura di un bonsai: richiede pazienza, precisione e la capacità di guardare lontano.";
+
+  const handleAddPassivita = (data: Omit<Passivita, "id">) => {
+    setPassivita([...passivita, createPassivita(data)]);
+  };
+  const handleDeletePassivita = (id: string) => {
+    setPassivita(passivita.filter((p) => p.id !== id));
+  };
 
   return (
     <motion.div className="px-5 pt-14 pb-4" variants={container} initial="hidden" animate="show">
 
-
       <WealthHero
-        total={total}
+        netWorth={netWorth}
+        totalAssets={totalAssets}
+        totalLiabilities={totalLiabilities}
         freshnessLabel={freshnessLabel}
         heroTitle={heroTitle}
-        heroDescription={heroDescription}
         actionLabel={isBeginner ? "Imposta patrimonio" : "Aggiorna patrimonio"}
         onPrimaryAction={() => navigate("/patrimonio/gestisci")}
         monthlySpending={monthlySpending}
@@ -1229,6 +1589,8 @@ const Patrimonio = () => {
         hasGoals={salvadanai.length > 0}
       />
 
+      <AssetCategoriesSection categorie={categorie} totalAssets={totalAssets} />
+
       <AllocationSnapshot
         total={totalAssets}
         chartData={chartDataSafe}
@@ -1238,6 +1600,14 @@ const Patrimonio = () => {
         hiddenBucketsCount={hiddenBuckets.length}
         hiddenBucketsValue={hiddenBucketsValue}
       />
+
+      <PassivitaSection
+        passivita={passivita}
+        onAdd={handleAddPassivita}
+        onDelete={handleDeletePassivita}
+      />
+
+      <TrendChart snapshots={snapshots} />
 
       <GuidedInsight isBeginner={isBeginner} onOpenLesson={() => navigate("/lezione/1")} />
 
@@ -1258,7 +1628,7 @@ const Patrimonio = () => {
       <SharedWealthModule
         hasActiveWorkspace={hasActiveWorkspace}
         pendingInvites={pendingInvites.length}
-        activeMembers={sharedMembers.filter((member) => member.status === "active").length}
+        activeMembers={sharedMembers.filter((m) => m.status === "active").length}
         sharedSpese={sharedSpese}
         onOpenSharing={() => navigate("/patrimonio/condivisione")}
         onOpenShared={() => navigate("/patrimonio/condiviso")}
