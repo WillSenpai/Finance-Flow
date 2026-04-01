@@ -2,6 +2,7 @@ import { createContext, useState, useEffect, ReactNode, useCallback, useMemo } f
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
 import { trackEvent, AnalyticsEvents } from "@/lib/posthog";
+import { type Passivita, loadPassivita, savePassivita } from "@/lib/passivita";
 
 export interface CategoriaPatrimonio {
   nome: string;
@@ -41,6 +42,8 @@ export interface Spesa {
   ricorrenza: "once" | "daily" | "weekly" | "monthly" | "yearly";
 }
 
+export type { Passivita };
+
 export interface UserData {
   name: string;
   email?: string;
@@ -68,6 +71,8 @@ interface UserContextType {
   setCategorieSpese: (c: CategoriaSpesa[]) => void;
   spese: Spesa[];
   setSpese: (s: Spesa[]) => void;
+  passivita: Passivita[];
+  setPassivita: (p: Passivita[]) => void;
   loadingData: boolean;
   isAdmin: boolean;
 }
@@ -79,9 +84,12 @@ const defaultUserData: UserData = {
 };
 
 const defaultCategorie: CategoriaPatrimonio[] = [
-  { nome: "Liquidità", valore: 0, colore: "hsl(36, 27%, 43%)", emoji: "🏦" },
-  { nome: "Soldi al Lavoro", valore: 0, colore: "hsl(101, 10%, 54%)", emoji: "📈" },
-  { nome: "Cose di Valore", valore: 0, colore: "hsl(39, 39%, 75%)", emoji: "🏠" },
+  { nome: "Liquidità", valore: 0, colore: "hsl(36, 27%, 43%)", emoji: "💰" },
+  { nome: "Investimenti", valore: 0, colore: "hsl(101, 10%, 54%)", emoji: "📈" },
+  { nome: "Immobili", valore: 0, colore: "hsl(39, 39%, 75%)", emoji: "🏠" },
+  { nome: "Crypto", valore: 0, colore: "hsl(270, 50%, 55%)", emoji: "₿" },
+  { nome: "Pensione / TFR", valore: 0, colore: "hsl(210, 50%, 45%)", emoji: "🏦" },
+  { nome: "Beni", valore: 0, colore: "hsl(330, 40%, 55%)", emoji: "💎" },
 ];
 
 const defaultInvestimenti: Investimento[] = [
@@ -116,6 +124,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [spese, setSpeseState] = useState<Spesa[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [passivita, setPassivitaState] = useState<Passivita[]>(() => loadPassivita());
 
   // Load data from Supabase when user is authenticated
   useEffect(() => {
@@ -378,6 +387,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user]);
 
+  const setPassivita = useCallback((p: Passivita[]) => {
+    setPassivitaState(p);
+    savePassivita(p);
+  }, []);
+
   const completeOnboarding = useCallback(async (data: UserData) => {
     setUserDataState(data);
     setHasCompletedOnboarding(true);
@@ -413,11 +427,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const value = useMemo(() => ({
     userData, setUserData, hasCompletedOnboarding, completeOnboarding, resetOnboarding,
     categorie, setCategorie, salvadanai, setSalvadanai, investimenti, setInvestimenti, lastPatrimonioUpdate,
-    categorieSpese, setCategorieSpese, spese, setSpese, loadingData, isAdmin,
+    categorieSpese, setCategorieSpese, spese, setSpese, passivita, setPassivita, loadingData, isAdmin,
   }), [
     userData, setUserData, hasCompletedOnboarding, completeOnboarding, resetOnboarding,
     categorie, setCategorie, salvadanai, setSalvadanai, investimenti, setInvestimenti, lastPatrimonioUpdate,
-    categorieSpese, setCategorieSpese, spese, setSpese, loadingData, isAdmin,
+    categorieSpese, setCategorieSpese, spese, setSpese, passivita, setPassivita, loadingData, isAdmin,
   ]);
 
   return (
