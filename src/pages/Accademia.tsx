@@ -201,19 +201,19 @@ const Accademia = () => {
                       onClick={() => navigate(`/lezione/${lesson.lesson_id}`)}
                       whileTap={{ scale: 0.97 }}
                       whileHover={{ scale: 1.02 }}
-                      className={`group relative flex h-56 w-40 flex-shrink-0 flex-col overflow-hidden rounded-2xl border text-left transition-all duration-200 hover:shadow-lg ${
+                      className={`group relative flex w-[42vw] max-w-[180px] flex-shrink-0 flex-col overflow-hidden rounded-2xl border text-left transition-all duration-200 hover:shadow-lg ${
                         isCompleted
                           ? "border-emerald-500/30 bg-gradient-to-b from-emerald-50/50 to-card dark:from-emerald-950/20"
                           : "border-border/50 bg-card hover:border-primary/30"
                       }`}
                     >
-                      {/* Image section - fixed height */}
-                      <div className="relative h-24 w-full flex-shrink-0 overflow-hidden">
+                      {/* Image section - preserves original aspect ratio */}
+                      <div className="relative aspect-[16/10] w-full flex-shrink-0 overflow-hidden bg-black/5 dark:bg-white/5">
                         {lesson.card_image_url ? (
                           <img
                             src={lesson.card_image_url}
                             alt={lesson.titolo}
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
                             loading="lazy"
                           />
                         ) : (

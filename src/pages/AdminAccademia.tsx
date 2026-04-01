@@ -203,6 +203,9 @@ const AdminAccademia = () => {
   const [structuredInitialHash, setStructuredInitialHash] = useState("");
   const [activeNode, setActiveNode] = useState<string>("concept");
 
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null);
+
   const [newSectionTitle, setNewSectionTitle] = useState("");
   const [newSectionDescription, setNewSectionDescription] = useState("");
 
@@ -338,9 +341,10 @@ const AdminAccademia = () => {
     return (
       titolo.trim() !== selectedLesson.titolo ||
       structuredHash !== structuredInitialHash ||
-      sectionIdForLesson !== selectedLessonSectionId
+      sectionIdForLesson !== selectedLessonSectionId ||
+      pendingImageFile !== null
     );
-  }, [sectionIdForLesson, selectedLesson, selectedLessonSectionId, structuredContent, structuredInitialHash, titolo]);
+  }, [sectionIdForLesson, selectedLesson, selectedLessonSectionId, structuredContent, structuredInitialHash, titolo, pendingImageFile]);
 
   const getAuthHeaders = async () => {
     const session = await supabase.auth.getSession();
@@ -364,6 +368,31 @@ const AdminAccademia = () => {
       if (!selectedLesson) throw new Error("Seleziona una lezione");
       if (!structuredContent) throw new Error("Contenuto nodi non disponibile");
       const nowIso = new Date().toISOString();
+
+      // Upload pending image if present
+      if (pendingImageFile) {
+        const ext = pendingImageFile.name.split(".").pop()?.toLowerCase() || "jpg";
+        const filePath = `cards/manual-lesson-${selectedLesson.lesson_id}-${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("lesson-illustrations")
+          .upload(filePath, pendingImageFile, {
+            contentType: pendingImageFile.type || "image/jpeg",
+            upsert: true,
+          });
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage.from("lesson-illustrations").getPublicUrl(filePath);
+        const { error: imgUpdateError } = await supabase
+          .from("academy_lessons_cache")
+          .update({
+            card_image_url: urlData.publicUrl,
+            card_image_updated_at: nowIso,
+            updated_at: nowIso,
+          } as any)
+          .eq("id", selectedLesson.id);
+        if (imgUpdateError) throw imgUpdateError;
+      }
+
       const payload: Record<string, unknown> = {
         titolo: titolo.trim(),
         content: lessonPlaceholderContent(selectedLesson.lesson_id),
@@ -416,30 +445,18 @@ const AdminAccademia = () => {
         updated_at: nowIso,
       }));
 
-      const { error: upsertNodeError } = await supabase
+      // Delete existing nodes for this lesson, then re-insert fresh rows.
+      // This avoids 409 conflicts when the table lacks a UNIQUE constraint on (lesson_id, node_key).
+      const { error: deleteNodesError } = await supabase
         .from("academy_lesson_nodes" as any)
-        .upsert(nodeRows as any, { onConflict: "lesson_id,node_key" });
-      if (upsertNodeError) throw upsertNodeError;
-
-      const { data: existingNodes, error: existingNodesError } = await supabase
-        .from("academy_lesson_nodes" as any)
-        .select("node_key")
+        .delete()
         .eq("lesson_id", selectedLesson.lesson_id);
-      if (existingNodesError) throw existingNodesError;
+      if (deleteNodesError) throw deleteNodesError;
 
-      const activeSet = new Set(orderedNodeKeys);
-      const obsoleteKeys = ((existingNodes || []) as Array<{ node_key: string }>)
-        .map((row) => row.node_key)
-        .filter((key) => !activeSet.has(key));
-
-      if (obsoleteKeys.length > 0) {
-        const { error: deactivateError } = await supabase
-          .from("academy_lesson_nodes" as any)
-          .update({ is_active: false, updated_at: nowIso } as any)
-          .eq("lesson_id", selectedLesson.lesson_id)
-          .in("node_key", obsoleteKeys);
-        if (deactivateError) throw deactivateError;
-      }
+      const { error: insertNodesError } = await supabase
+        .from("academy_lesson_nodes" as any)
+        .insert(nodeRows as any);
+      if (insertNodesError) throw insertNodesError;
     },
     onSuccess: () => {
       if (selectedLessonId) {
@@ -448,6 +465,9 @@ const AdminAccademia = () => {
       if (structuredContent) {
         setStructuredInitialHash(JSON.stringify(structuredContent));
       }
+      if (pendingImagePreview) URL.revokeObjectURL(pendingImagePreview);
+      setPendingImageFile(null);
+      setPendingImagePreview(null);
       setHasDraftLoaded(false);
       refreshAcademyData();
       queryClient.invalidateQueries({ queryKey: ["academy-lesson-node-draft", selectedLessonId] });
@@ -680,11 +700,14 @@ const AdminAccademia = () => {
     const firstNode = getNodeOrder(fromFile)[0] || "concept";
     setActiveNode(firstNode);
     setHasDraftLoaded(false);
+    if (pendingImagePreview) URL.revokeObjectURL(pendingImagePreview);
+    setPendingImageFile(null);
+    setPendingImagePreview(null);
     setActiveTab("structured");
     setEditorVersion((value) => value + 1);
     localStorage.setItem(LAST_SELECTED_LESSON_KEY, lesson.lesson_id);
     localStorage.setItem(LAST_SELECTED_SECTION_KEY, sectionForFilter);
-  }, [sections]);
+  }, [sections, pendingImagePreview]);
 
   const handleSelectLesson = (lesson: AcademyLesson) => {
     selectLesson(lesson);
@@ -789,7 +812,10 @@ const AdminAccademia = () => {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
-    uploadImageMutation.mutate(file);
+    setPendingImageFile(file);
+    const previewUrl = URL.createObjectURL(file);
+    if (pendingImagePreview) URL.revokeObjectURL(pendingImagePreview);
+    setPendingImagePreview(previewUrl);
   };
 
   const updateNodeBlock = (nodeKey: string, blockKind: NodeBlockKind, value: string) => {
@@ -1247,8 +1273,19 @@ const AdminAccademia = () => {
                   <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Top 35%</span>
                 </div>
                 <div className="relative mb-2 aspect-square w-full overflow-hidden rounded-xl border border-border/40 bg-muted/30">
-                  {selectedLesson.card_image_url ? (
-                    <img src={selectedLesson.card_image_url} alt={selectedLesson.titolo} className="h-full w-full object-cover" />
+                  {(pendingImagePreview || selectedLesson.card_image_url) ? (
+                    <>
+                      <img
+                        src={pendingImagePreview || selectedLesson.card_image_url!}
+                        alt={selectedLesson.titolo}
+                        className="h-full w-full object-contain"
+                      />
+                      {pendingImagePreview && (
+                        <span className="absolute left-2 top-2 rounded-full bg-amber-500/90 px-2 py-0.5 text-[9px] font-semibold text-white">
+                          Non salvata
+                        </span>
+                      )}
+                    </>
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-100/50 to-cyan-100/50">
                       <ImagePlus size={24} className="text-emerald-700/20" />
@@ -1320,6 +1357,9 @@ const AdminAccademia = () => {
                     setContent(lessonPlaceholderContent(selectedLesson.lesson_id));
                     setSectionIdForLesson(selectedLessonSectionId);
                     if (selectedLessonId) localStorage.removeItem(`academy-lesson-draft:${selectedLessonId}`);
+                    if (pendingImagePreview) URL.revokeObjectURL(pendingImagePreview);
+                    setPendingImageFile(null);
+                    setPendingImagePreview(null);
                     setHasDraftLoaded(false);
                   }}
                   disabled={!isDirty && !hasDraftLoaded}

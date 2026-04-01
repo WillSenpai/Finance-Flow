@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finance Flow — Patrimonio Redesign</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #e8e0d4; display: flex; flex-direction: column; align-items: center; padding: 20px; gap: 20px; min-height: 100vh; }
+
+  /* Nav between screens */
+  .nav-screens { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .nav-btn { padding: 8px 16px; border: 2px solid #8b7355; border-radius: 20px; background: white; color: #8b7355; cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s; }
+  .nav-btn.active { background: #8b7355; color: white; }
+
+  /* Phone frame */
+  .phone { width: 390px; background: #f4ede3; border-radius: 40px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.25); min-height: 844px; display: flex; flex-direction: column; position: relative; }
+  .phone-content { flex: 1; overflow-y: auto; padding-bottom: 80px; }
+  .phone-content::-webkit-scrollbar { display: none; }
+
+  /* Bottom nav */
+  .bottom-nav { position: absolute; bottom: 0; left: 0; right: 0; height: 80px; background: white; border-top: 1px solid #e5ddd3; display: flex; align-items: center; justify-content: space-around; padding: 0 10px; }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; opacity: .5; }
+  .nav-item.active { opacity: 1; color: #8b7355; }
+  .nav-item svg { width: 22px; height: 22px; }
+  .nav-item span { font-size: 11px; font-weight: 500; }
+
+  /* Screens */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ===== SCREEN 1: PANORAMICA ===== */
+  .hero-card { margin: 16px; background: linear-gradient(145deg, #7a6348, #9e845f); border-radius: 24px; padding: 24px; color: white; }
+  .hero-label { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; opacity: .75; margin-bottom: 6px; }
+  .hero-amount { font-size: 42px; font-weight: 700; letter-spacing: -1px; }
+  .hero-sub { font-size: 13px; opacity: .8; margin-top: 4px; }
+  .hero-divider { margin: 16px 0; height: 1px; background: rgba(255,255,255,.2); }
+  .hero-row { display: flex; gap: 12px; }
+  .hero-kpi { flex: 1; background: rgba(255,255,255,.12); border-radius: 12px; padding: 12px; }
+  .hero-kpi-label { font-size: 10px; opacity: .7; text-transform: uppercase; letter-spacing: .5px; }
+  .hero-kpi-val { font-size: 18px; font-weight: 700; margin-top: 2px; }
+  .hero-kpi-val.red { color: #ff9999; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.15); border-radius: 20px; padding: 6px 12px; font-size: 12px; margin-top: 14px; }
+  .hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: #7fff7f; }
+  .update-btn { margin-top: 12px; background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.3); color: white; padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; width: 100%; text-align: center; }
+
+  /* Trend chart */
+  .section { padding: 0 16px; margin-top: 20px; }
+  .section-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+  .section-title { font-size: 12px; text-transform: uppercase; letter-spacing: .7px; color: #9e8a72; font-weight: 600; }
+  .section-action { font-size: 13px; color: #8b7355; font-weight: 600; }
+  .chart-card { background: white; border-radius: 20px; padding: 20px; }
+  .chart-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  .chart-tab { flex: 1; padding: 7px; border-radius: 10px; font-size: 12px; font-weight: 600; text-align: center; cursor: pointer; color: #9e8a72; }
+  .chart-tab.active { background: #8b7355; color: white; }
+  .chart-area { height: 100px; position: relative; overflow: hidden; }
+  .chart-area svg { width: 100%; height: 100%; }
+  .chart-total { font-size: 11px; color: #9e8a72; text-align: right; margin-top: 8px; }
+
+  /* Category grid */
+  .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .cat-card { background: white; border-radius: 18px; padding: 16px; cursor: pointer; transition: transform .15s; }
+  .cat-card:active { transform: scale(.97); }
+  .cat-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 10px; }
+  .cat-name { font-size: 13px; font-weight: 700; color: #2d2416; }
+  .cat-amount { font-size: 16px; font-weight: 700; color: #2d2416; margin-top: 2px; }
+  .cat-sub { font-size: 11px; color: #9e8a72; margin-top: 2px; }
+  .cat-bar { height: 3px; border-radius: 2px; background: #f0e8dc; margin-top: 10px; }
+  .cat-bar-fill { height: 100%; border-radius: 2px; }
+
+  /* Passività */
+  .passivity-card { background: white; border-radius: 20px; padding: 16px; }
+  .passivity-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0e8dc; }
+  .passivity-row:last-child { border-bottom: none; }
+  .passivity-info { display: flex; align-items: center; gap: 12px; }
+  .passivity-icon { width: 36px; height: 36px; border-radius: 10px; background: #fff0f0; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .passivity-name { font-size: 14px; font-weight: 600; color: #2d2416; }
+  .passivity-sub { font-size: 11px; color: #9e8a72; }
+  .passivity-amount { font-size: 15px; font-weight: 700; color: #c0392b; }
+
+  /* Condiviso summary */
+  .condiviso-card { background: linear-gradient(135deg, #2d5016, #4a7c2a); border-radius: 20px; padding: 16px; color: white; }
+  .condiviso-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .condiviso-badge { background: rgba(255,255,255,.2); padding: 4px 10px; border-radius: 20px; font-size: 11px; }
+  .condiviso-members { display: flex; gap: 6px; margin-top: 12px; }
+  .member-pill { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,.15); padding: 6px 10px; border-radius: 20px; font-size: 12px; }
+  .member-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .condiviso-stats { display: flex; gap: 10px; margin-top: 14px; }
+  .cond-stat { flex: 1; background: rgba(255,255,255,.12); border-radius: 12px; padding: 10px; }
+  .cond-stat-label { font-size: 10px; opacity: .7; }
+  .cond-stat-val { font-size: 16px; font-weight: 700; margin-top: 2px; }
+
+  /* ===== SCREEN 2: AGGIUNGI ASSET ===== */
+  .top-bar { padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
+  .back-btn { width: 36px; height: 36px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .top-title { font-size: 18px; font-weight: 700; color: #2d2416; }
+  .form-section { padding: 0 16px; margin-bottom: 20px; }
+  .form-label { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: #9e8a72; font-weight: 600; margin-bottom: 10px; }
+  .cat-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .cat-pick-item { background: white; border-radius: 14px; padding: 12px 8px; text-align: center; cursor: pointer; border: 2px solid transparent; transition: all .15s; }
+  .cat-pick-item.selected { border-color: #8b7355; background: #fdf5ec; }
+  .cat-pick-icon { font-size: 22px; margin-bottom: 4px; }
+  .cat-pick-name { font-size: 11px; font-weight: 600; color: #5a4a35; }
+  .input-card { background: white; border-radius: 20px; overflow: hidden; }
+  .input-row { display: flex; align-items: center; padding: 14px 16px; border-bottom: 1px solid #f0e8dc; gap: 12px; }
+  .input-row:last-child { border-bottom: none; }
+  .input-row-label { font-size: 14px; color: #5a4a35; flex: 1; }
+  .input-row-value { font-size: 14px; color: #2d2416; font-weight: 600; }
+  .input-row-placeholder { font-size: 14px; color: #c8bfb4; }
+  .input-arrow { color: #c8bfb4; font-size: 16px; }
+  .toggle { width: 44px; height: 26px; background: #e0d8cc; border-radius: 13px; position: relative; cursor: pointer; transition: background .2s; }
+  .toggle.on { background: #8b7355; }
+  .toggle-knob { width: 20px; height: 20px; background: white; border-radius: 50%; position: absolute; top: 3px; left: 3px; transition: left .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+  .toggle.on .toggle-knob { left: 21px; }
+  .coprop-section { background: white; border-radius: 20px; padding: 16px; }
+  .coprop-title { font-size: 14px; font-weight: 700; color: #2d2416; margin-bottom: 12px; }
+  .coprop-person { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+  .coprop-avatar { width: 36px; height: 36px; border-radius: 50%; background: #e8ddd0; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .coprop-name { flex: 1; font-size: 14px; font-weight: 600; color: #2d2416; }
+  .pct-badge { background: #8b7355; color: white; padding: 4px 10px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+  .slider { width: 100%; height: 4px; background: #e0d8cc; border-radius: 2px; margin-top: 12px; position: relative; }
+  .slider-fill { height: 100%; background: #8b7355; border-radius: 2px; width: 60%; }
+  .slider-thumb { width: 20px; height: 20px; background: #8b7355; border-radius: 50%; position: absolute; top: -8px; left: calc(60% - 10px); box-shadow: 0 2px 6px rgba(139,115,85,.4); }
+  .primary-btn { background: #8b7355; color: white; border-radius: 16px; padding: 16px; text-align: center; font-size: 16px; font-weight: 700; cursor: pointer; margin: 16px; }
+
+  /* ===== SCREEN 3: PATRIMONIO CONDIVISO ===== */
+  .condiviso-hero { margin: 16px; background: linear-gradient(145deg, #2d5016, #4a7c2a); border-radius: 24px; padding: 24px; color: white; }
+  .cond-hero-label { font-size: 11px; opacity: .7; text-transform: uppercase; letter-spacing: .7px; }
+  .cond-hero-amount { font-size: 38px; font-weight: 700; margin-top: 4px; }
+  .cond-members-row { display: flex; gap: 8px; margin-top: 14px; align-items: center; }
+  .cond-member { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .cond-avatar { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 2px solid rgba(255,255,255,.4); }
+  .cond-member-name { font-size: 11px; opacity: .8; }
+  .cond-pct-bar { flex: 1; background: rgba(255,255,255,.2); border-radius: 10px; height: 8px; }
+  .cond-pct-fill { height: 100%; background: #7fff7f; border-radius: 10px; width: 60%; }
+  .cond-pct-label { font-size: 13px; font-weight: 700; }
+  .asset-shared-card { background: white; border-radius: 20px; overflow: hidden; }
+  .asset-shared-row { display: flex; align-items: center; padding: 14px 16px; border-bottom: 1px solid #f0e8dc; gap: 12px; }
+  .asset-shared-row:last-child { border-bottom: none; }
+  .shared-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .shared-info { flex: 1; }
+  .shared-name { font-size: 14px; font-weight: 700; color: #2d2416; }
+  .shared-sub { font-size: 11px; color: #9e8a72; }
+  .shared-right { text-align: right; }
+  .shared-total { font-size: 15px; font-weight: 700; color: #2d2416; }
+  .shared-pct { font-size: 11px; color: #9e8a72; margin-top: 2px; }
+  .pct-pills { display: flex; gap: 4px; margin-top: 4px; justify-content: flex-end; }
+  .pct-pill { padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .pct-pill.green { background: #e8f5e2; color: #2d5016; }
+  .pct-pill.brown { background: #fdf0e0; color: #7a5530; }
+  .cond-expense-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #f0e8dc; }
+  .cond-expense-row:last-child { border-bottom: none; }
+  .exp-left { display: flex; align-items: center; gap: 10px; }
+  .exp-tag { background: #f0e8dc; border-radius: 8px; padding: 4px 8px; font-size: 12px; }
+  .exp-name { font-size: 14px; font-weight: 600; color: #2d2416; }
+  .exp-date { font-size: 11px; color: #9e8a72; }
+  .exp-amount { font-size: 14px; font-weight: 700; color: #c0392b; }
+  .exp-user { font-size: 11px; color: #9e8a72; }
+  .balance-card { background: white; border-radius: 20px; padding: 16px; }
+  .balance-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0e8dc; }
+  .balance-row:last-child { border-bottom: none; }
+  .balance-name { font-size: 14px; color: #5a4a35; }
+  .balance-amount { font-size: 14px; font-weight: 700; }
+  .balance-amount.positive { color: #2d7a1e; }
+  .balance-amount.negative { color: #c0392b; }
+  .balance-amount.neutral { color: #9e8a72; }
+
+  /* ===== SCREEN 4: SALVADANAI REDESIGN ===== */
+  .goal-card { background: white; border-radius: 20px; padding: 16px; margin-bottom: 10px; }
+  .goal-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .goal-emoji { font-size: 28px; }
+  .goal-menu { color: #9e8a72; font-size: 20px; cursor: pointer; }
+  .goal-name { font-size: 16px; font-weight: 700; color: #2d2416; }
+  .goal-deadline { font-size: 12px; color: #9e8a72; margin-top: 2px; }
+  .goal-progress-row { display: flex; justify-content: space-between; font-size: 13px; color: #5a4a35; margin-bottom: 6px; }
+  .goal-pct { font-weight: 700; color: #8b7355; }
+  .goal-bar { height: 8px; background: #f0e8dc; border-radius: 4px; overflow: hidden; }
+  .goal-bar-fill { height: 100%; border-radius: 4px; }
+  .goal-footer { display: flex; justify-content: space-between; margin-top: 10px; align-items: center; }
+  .goal-remaining { font-size: 12px; color: #9e8a72; }
+  .goal-add-btn { background: #fdf0e0; color: #8b7355; border-radius: 12px; padding: 6px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .add-goal-btn { background: white; border: 2px dashed #c8bfb4; border-radius: 20px; padding: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; font-size: 14px; color: #9e8a72; font-weight: 600; }
+
+  /* Label + tag combos */
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .tag-blue { background: #e0ecff; color: #1a4a99; }
+  .tag-orange { background: #fff0e0; color: #a05a20; }
+  .tag-purple { background: #f0e0ff; color: #6a2a99; }
+  .tag-green { background: #e0ffe0; color: #1a7a1a; }
+</style>
+</head>
+<body>
+
+<div class="nav-screens">
+  <button class="nav-btn active" onclick="showScreen(0)">① Panoramica</button>
+  <button class="nav-btn" onclick="showScreen(1)">② Aggiungi Asset</button>
+  <button class="nav-btn" onclick="showScreen(2)">③ Patrimonio Condiviso</button>
+  <button class="nav-btn" onclick="showScreen(3)">④ Salvadanai</button>
+</div>
+
+<div class="phone">
+  <div class="phone-content">
+
+    <!-- ========== SCREEN 1: PANORAMICA ========== -->
+    <div class="screen active" id="screen-0">
+
+      <!-- Hero -->
+      <div class="hero-card">
+        <div class="hero-label">Patrimonio Netto</div>
+        <div class="hero-amount">18.240 €</div>
+        <div class="hero-sub">↑ +320 € questo mese · +1,8%</div>
+        <div class="hero-divider"></div>
+        <div class="hero-row">
+          <div class="hero-kpi">
+            <div class="hero-kpi-label">Asset totali</div>
+            <div class="hero-kpi-val">21.560 €</div>
+          </div>
+          <div class="hero-kpi">
+            <div class="hero-kpi-label">Passività</div>
+            <div class="hero-kpi-val red">–3.320 €</div>
+          </div>
+        </div>
+        <div class="hero-badge"><span class="dot"></span> Aggiornato oggi</div>
+        <div class="update-btn" onclick="showScreen(1)">+ Aggiungi o aggiorna asset →</div>
+      </div>
+
+      <!-- Trend -->
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">Andamento</span>
+          <span class="section-action">Storico →</span>
+        </div>
+        <div class="chart-card">
+          <div class="chart-tabs">
+            <div class="chart-tab active">1M</div>
+            <div class="chart-tab">3M</div>
+            <div class="chart-tab">6M</div>
+            <div class="chart-tab">1A</div>
+          </div>
+          <div class="chart-area">
+            <svg viewBox="0 0 340 100" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#8b7355" stop-opacity="0.3"/>
+                  <stop offset="100%" stop-color="#8b7355" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path d="M0 80 C40 75, 70 60, 100 65 C130 70, 150 50, 180 45 C210 40, 240 55, 270 40 C290 30, 310 25, 340 20" fill="none" stroke="#8b7355" stroke-width="2.5"/>
+              <path d="M0 80 C40 75, 70 60, 100 65 C130 70, 150 50, 180 45 C210 40, 240 55, 270 40 C290 30, 310 25, 340 20 L340 100 L0 100 Z" fill="url(#grad)"/>
+              <circle cx="340" cy="20" r="4" fill="#8b7355"/>
+            </svg>
+          </div>
+          <div class="chart-total">Dic 2024: 17.920 € → Apr 2026: 18.240 €</div>
+        </div>
+      </div>
+
+      <!-- Categorie -->
+      <div class="section" style="margin-top:18px">
+        <div class="section-header">
+          <span class="section-title">Le tue categorie</span>
+          <span class="section-action">Gestisci →</span>
+        </div>
+        <div class="cat-grid">
+
+          <div class="cat-card" onclick="showScreen(1)">
+            <div class="cat-icon" style="background:#e8f4e8">💰</div>
+            <div class="cat-name">Liquidità</div>
+            <div class="cat-amount">3.920 €</div>
+            <div class="cat-sub">Contanti · Conto corrente</div>
+            <div class="cat-bar"><div class="cat-bar-fill" style="width:18%;background:#4a9a4a"></div></div>
+          </div>
+
+          <div class="cat-card" onclick="showScreen(1)">
+            <div class="cat-icon" style="background:#e8eef8">📈</div>
+            <div class="cat-name">Investimenti</div>
+            <div class="cat-amount">8.320 €</div>
+            <div class="cat-sub">ETF · Azioni · Obbligazioni</div>
+            <div class="cat-bar"><div class="cat-bar-fill" style="width:39%;background:#4a6aa0"></div></div>
+          </div>
+
+          <div class="cat-card" onclick="showScreen(1)">
+            <div class="cat-icon" style="background:#f8f0e8">🏠</div>
+            <div class="cat-name">Immobili</div>
+            <div class="cat-amount">6.000 €</div>
+            <div class="cat-sub">Quota 30% appartamento</div>
+            <div class="cat-bar"><div class="cat-bar-fill" style="width:28%;background:#c07840"></div></div>
+          </div>
+
+          <div class="cat-card" onclick="showScreen(1)">
+            <div class="cat-icon" style="background:#f0e8f8">₿</div>
+            <div class="cat-name">Crypto</div>
+            <div class="cat-amount">1.200 €</div>
+            <div class="cat-sub">Bitcoin · ETH</div>
+            <div class="cat-bar"><div class="cat-bar-fill" style="width:6%;background:#8040c0"></div></div>
+          </div>
+
+          <div class="cat-card" onclick="showScreen(1)">
+            <div class="cat-icon" style="background:#f8e8e8">🏦</div>
+            <div class="cat-name">Pensione</div>
+            <div class="cat-amount">1.840 €</div>
+            <div class="cat-sub">Fondo pensione · TFR</div>
+            <div class="cat-bar"><div class="cat-bar-fill" style="width:9%;background:#a04040"></div></div>
+          </div>
+
+          <div class="cat-card" onclick="showScreen(1)">
+            <div class="cat-icon" style="background:#f8f8e8">💎</div>
+            <div class="cat-name">Beni</div>
+            <div class="cat-amount">280 €</div>
+            <div class="cat-sub">Oggetti di valore · Auto</div>
+            <div class="cat-bar"><div class="cat-bar-fill" style="width:1%;background:#a0a030"></div></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Passività -->
+      <div class="section" style="margin-top:18px">
+        <div class="section-header">
+          <span class="section-title">Passività</span>
+          <span class="section-action">+ Aggiungi →</span>
+        </div>
+        <div class="passivity-card">
+          <div class="passivity-row">
+            <div class="passivity-info">
+              <div class="passivity-icon">🏠</div>
+              <div>
+                <div class="passivity-name">Mutuo casa</div>
+                <div class="passivity-sub">Scade lug 2031 · –180€/mese</div>
+              </div>
+            </div>
+            <div class="passivity-amount">–2.800 €</div>
+          </div>
+          <div class="passivity-row">
+            <div class="passivity-info">
+              <div class="passivity-icon">💳</div>
+              <div>
+                <div class="passivity-name">Carta di credito</div>
+                <div class="passivity-sub">Scadenza set 2025</div>
+              </div>
+            </div>
+            <div class="passivity-amount">–520 €</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Patrimonio condiviso summary -->
+      <div class="section" style="margin-top:18px; margin-bottom:10px">
+        <div class="section-header">
+          <span class="section-title">Condiviso</span>
+          <span class="section-action">Vai →</span>
+        </div>
+        <div class="condiviso-card" onclick="showScreen(2)">
+          <div class="condiviso-top">
+            <div>
+              <div style="font-size:11px;opacity:.7">Patrimonio di coppia</div>
+              <div style="font-size:28px;font-weight:700;margin-top:4px">9.200 €</div>
+            </div>
+            <div class="condiviso-badge">2 membri</div>
+          </div>
+          <div class="condiviso-members">
+            <div class="member-pill"><div class="member-dot" style="background:#7fff7f"></div> William 60%</div>
+            <div class="member-pill"><div class="member-dot" style="background:#ffcc7f"></div> Partner 40%</div>
+          </div>
+          <div class="condiviso-stats">
+            <div class="cond-stat">
+              <div class="cond-stat-label">Asset condivisi</div>
+              <div class="cond-stat-val">3</div>
+            </div>
+            <div class="cond-stat">
+              <div class="cond-stat-label">Spese mese</div>
+              <div class="cond-stat-val">0 €</div>
+            </div>
+            <div class="cond-stat">
+              <div class="cond-stat-label">Bilancio</div>
+              <div class="cond-stat-val" style="color:#7fff7f">In pari</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========== SCREEN 2: AGGIUNGI ASSET ========== -->
+    <div class="screen" id="screen-1">
+      <div class="top-bar">
+        <div class="back-btn" onclick="showScreen(0)">←</div>
+        <div class="top-title">Aggiungi Asset</div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-label">Categoria</div>
+        <div class="cat-picker">
+          <div class="cat-pick-item selected">
+            <div class="cat-pick-icon">💰</div>
+            <div class="cat-pick-name">Liquidità</div>
+          </div>
+          <div class="cat-pick-item">
+            <div class="cat-pick-icon">📈</div>
+            <div class="cat-pick-name">Investimento</div>
+          </div>
+          <div class="cat-pick-item">
+            <div class="cat-pick-icon">🏠</div>
+            <div class="cat-pick-name">Immobile</div>
+          </div>
+          <div class="cat-pick-item">
+            <div class="cat-pick-icon">₿</div>
+            <div class="cat-pick-name">Crypto</div>
+          </div>
+          <div class="cat-pick-item">
+            <div class="cat-pick-icon">🏦</div>
+            <div class="cat-pick-name">Pensione</div>
+          </div>
+          <div class="cat-pick-item">
+            <div class="cat-pick-icon">💎</div>
+            <div class="cat-pick-name">Bene</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-label">Dettagli</div>
+        <div class="input-card">
+          <div class="input-row">
+            <div class="input-row-label">Nome</div>
+            <div class="input-row-placeholder">es. Conto BancoPosta</div>
+          </div>
+          <div class="input-row">
+            <div class="input-row-label">Valore attuale</div>
+            <div class="input-row-value">2.000 €</div>
+          </div>
+          <div class="input-row">
+            <div class="input-row-label">Istituto / Broker</div>
+            <div class="input-row-placeholder">BancoPosta, Fineco…</div>
+          </div>
+          <div class="input-row">
+            <div class="input-row-label">Data acquisizione</div>
+            <div class="input-row-value">15 mar 2024</div>
+            <div class="input-arrow">›</div>
+          </div>
+          <div class="input-row">
+            <div class="input-row-label">Aggiornamento automatico</div>
+            <div class="toggle on"><div class="toggle-knob"></div></div>
+          </div>
+          <div class="input-row">
+            <div class="input-row-label">Frequenza aggiornamento</div>
+            <div class="input-row-value">Mensile</div>
+            <div class="input-arrow">›</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-label">Collegato a passività?</div>
+        <div class="input-card">
+          <div class="input-row">
+            <div class="input-row-label">Mutuo / Finanziamento</div>
+            <div class="toggle"><div class="toggle-knob"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-label">Co-proprietà</div>
+        <div class="coprop-section">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-size:14px;color:#5a4a35">Condividi con qualcuno?</div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"><div class="toggle-knob"></div></div>
+          </div>
+          <div class="coprop-person">
+            <div class="coprop-avatar">👤</div>
+            <div class="coprop-name">William (tu)</div>
+            <div class="pct-badge">60%</div>
+          </div>
+          <div class="coprop-person">
+            <div class="coprop-avatar">👤</div>
+            <div class="coprop-name">Partner</div>
+            <div class="pct-badge" style="background:#4a7c2a">40%</div>
+          </div>
+          <div class="slider">
+            <div class="slider-fill"></div>
+            <div class="slider-thumb"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#9e8a72;margin-top:8px">
+            <span>Tu: 60%</span><span>Partner: 40%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="primary-btn">Aggiungi asset ✓</div>
+    </div>
+
+    <!-- ========== SCREEN 3: PATRIMONIO CONDIVISO ========== -->
+    <div class="screen" id="screen-2">
+      <div class="top-bar">
+        <div class="back-btn" onclick="showScreen(0)">←</div>
+        <div class="top-title">Condiviso</div>
+      </div>
+
+      <!-- Hero condiviso -->
+      <div class="condiviso-hero">
+        <div class="cond-hero-label">Patrimonio di coppia</div>
+        <div class="cond-hero-amount">9.200 €</div>
+        <div style="font-size:13px;opacity:.8;margin-top:4px">Netto condiviso: 6.700 €</div>
+        <div style="margin-top:14px;display:flex;align-items:center;gap:12px">
+          <div class="cond-member">
+            <div class="cond-avatar">👤</div>
+            <div class="cond-member-name">William</div>
+            <div style="font-size:13px;font-weight:700;margin-top:2px">5.520€</div>
+          </div>
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.7;margin-bottom:4px"><span>60%</span><span>40%</span></div>
+            <div class="cond-pct-bar"><div class="cond-pct-fill"></div></div>
+          </div>
+          <div class="cond-member">
+            <div class="cond-avatar">👤</div>
+            <div class="cond-member-name">Partner</div>
+            <div style="font-size:13px;font-weight:700;margin-top:2px">3.680€</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Asset / Spese -->
+      <div style="padding:0 16px;margin-top:16px">
+        <div style="display:flex;background:white;border-radius:14px;padding:4px;gap:4px">
+          <div style="flex:1;background:#8b7355;color:white;border-radius:10px;padding:10px;text-align:center;font-size:14px;font-weight:700">Asset condivisi</div>
+          <div style="flex:1;padding:10px;text-align:center;font-size:14px;color:#9e8a72;font-weight:600">Spese condivise</div>
+        </div>
+      </div>
+
+      <!-- Asset condivisi -->
+      <div class="section" style="margin-top:14px">
+        <div class="section-header">
+          <span class="section-title">3 asset condivisi</span>
+          <span class="section-action">+ Aggiungi →</span>
+        </div>
+        <div class="asset-shared-card">
+          <div class="asset-shared-row">
+            <div class="shared-icon" style="background:#f8f0e8">🏠</div>
+            <div class="shared-info">
+              <div class="shared-name">Appartamento Milano</div>
+              <div class="shared-sub">Immobile · Acquistato mar 2022</div>
+            </div>
+            <div class="shared-right">
+              <div class="shared-total">180.000 €</div>
+              <div class="pct-pills">
+                <div class="pct-pill brown">WM 60%</div>
+                <div class="pct-pill green">PA 40%</div>
+              </div>
+            </div>
+          </div>
+          <div class="asset-shared-row">
+            <div class="shared-icon" style="background:#e8eef8">📈</div>
+            <div class="shared-info">
+              <div class="shared-name">ETF Mondo</div>
+              <div class="shared-sub">Investimento · Fineco</div>
+            </div>
+            <div class="shared-right">
+              <div class="shared-total">4.200 €</div>
+              <div class="pct-pills">
+                <div class="pct-pill brown">WM 50%</div>
+                <div class="pct-pill green">PA 50%</div>
+              </div>
+            </div>
+          </div>
+          <div class="asset-shared-row">
+            <div class="shared-icon" style="background:#e8f4e8">💰</div>
+            <div class="shared-info">
+              <div class="shared-name">Conto spese comuni</div>
+              <div class="shared-sub">Liquidità · BancoPosta</div>
+            </div>
+            <div class="shared-right">
+              <div class="shared-total">820 €</div>
+              <div class="pct-pills">
+                <div class="pct-pill brown">WM 50%</div>
+                <div class="pct-pill green">PA 50%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bilancio -->
+      <div class="section" style="margin-top:18px">
+        <div class="section-header">
+          <span class="section-title">Bilancio mensile</span>
+        </div>
+        <div class="balance-card">
+          <div class="balance-row">
+            <span class="balance-name">William ha pagato</span>
+            <span class="balance-amount negative">–420 €</span>
+          </div>
+          <div class="balance-row">
+            <span class="balance-name">Partner ha pagato</span>
+            <span class="balance-amount negative">–280 €</span>
+          </div>
+          <div class="balance-row">
+            <span class="balance-name">Totale spese</span>
+            <span class="balance-amount neutral">700 €</span>
+          </div>
+          <div class="balance-row">
+            <span class="balance-name" style="font-weight:700">Partner deve a William</span>
+            <span class="balance-amount positive">+70 €</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:0 16px;margin-top:14px;margin-bottom:10px;display:flex;gap:8px">
+        <div style="flex:1;background:#8b7355;color:white;border-radius:14px;padding:14px;text-align:center;font-size:14px;font-weight:700;cursor:pointer">+ Aggiungi spesa</div>
+        <div style="flex:1;background:white;color:#8b7355;border-radius:14px;padding:14px;text-align:center;font-size:14px;font-weight:700;cursor:pointer;border:2px solid #8b7355">Regole</div>
+      </div>
+    </div>
+
+    <!-- ========== SCREEN 4: SALVADANAI ========== -->
+    <div class="screen" id="screen-3">
+      <div class="top-bar">
+        <div class="back-btn" onclick="showScreen(0)">←</div>
+        <div class="top-title">Salvadanai 🐷</div>
+      </div>
+
+      <div style="padding:0 16px;margin-bottom:16px">
+        <div style="background:white;border-radius:20px;padding:16px;display:flex;justify-content:space-between">
+          <div>
+            <div style="font-size:12px;color:#9e8a72;text-transform:uppercase;letter-spacing:.6px">Totale accantonato</div>
+            <div style="font-size:28px;font-weight:700;color:#2d2416;margin-top:4px">2.460 €</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:12px;color:#9e8a72">3 obiettivi attivi</div>
+            <div style="font-size:14px;font-weight:700;color:#8b7355;margin-top:4px">+160 € questo mese</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:0 16px">
+
+        <div class="goal-card">
+          <div class="goal-top">
+            <div>
+              <div style="font-size:22px">✈️</div>
+              <div class="goal-name">Vacanze Gio</div>
+              <div style="display:flex;gap:6px;align-items:center;margin-top:4px">
+                <span class="tag tag-blue">Viaggi</span>
+                <span style="font-size:11px;color:#9e8a72">Scade 31 lug 2025</span>
+              </div>
+            </div>
+            <div class="goal-menu">⋯</div>
+          </div>
+          <div class="goal-progress-row">
+            <span>160 € di 700 €</span>
+            <span class="goal-pct">23%</span>
+          </div>
+          <div class="goal-bar">
+            <div class="goal-bar-fill" style="width:23%;background:#4a6aa0"></div>
+          </div>
+          <div class="goal-footer">
+            <div class="goal-remaining">Mancano 540 € · 3 mesi rimasti</div>
+            <div class="goal-add-btn">+ Aggiungi</div>
+          </div>
+        </div>
+
+        <div class="goal-card">
+          <div class="goal-top">
+            <div>
+              <div style="font-size:22px">🚗</div>
+              <div class="goal-name">Fondo auto</div>
+              <div style="display:flex;gap:6px;align-items:center;margin-top:4px">
+                <span class="tag tag-orange">Trasporti</span>
+                <span style="font-size:11px;color:#9e8a72">Senza scadenza</span>
+              </div>
+            </div>
+            <div class="goal-menu">⋯</div>
+          </div>
+          <div class="goal-progress-row">
+            <span>1.200 € di 5.000 €</span>
+            <span class="goal-pct">24%</span>
+          </div>
+          <div class="goal-bar">
+            <div class="goal-bar-fill" style="width:24%;background:#c07840"></div>
+          </div>
+          <div class="goal-footer">
+            <div class="goal-remaining">Mancano 3.800 €</div>
+            <div class="goal-add-btn">+ Aggiungi</div>
+          </div>
+        </div>
+
+        <div class="goal-card">
+          <div class="goal-top">
+            <div>
+              <div style="font-size:22px">🏠</div>
+              <div class="goal-name">Anticipo mutuo</div>
+              <div style="display:flex;gap:6px;align-items:center;margin-top:4px">
+                <span class="tag tag-purple">Casa</span>
+                <span style="font-size:11px;color:#9e8a72">Scade dic 2027</span>
+              </div>
+            </div>
+            <div class="goal-menu">⋯</div>
+          </div>
+          <div class="goal-progress-row">
+            <span>1.100 € di 20.000 €</span>
+            <span class="goal-pct">5%</span>
+          </div>
+          <div class="goal-bar">
+            <div class="goal-bar-fill" style="width:5%;background:#8040c0"></div>
+          </div>
+          <div class="goal-footer">
+            <div class="goal-remaining">Mancano 18.900 € · Puntualità: 87%</div>
+            <div class="goal-add-btn">+ Aggiungi</div>
+          </div>
+        </div>
+
+        <div class="add-goal-btn">
+          <span style="font-size:20px">+</span> Nuovo salvadanaio
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- end phone-content -->
+
+  <!-- Bottom nav -->
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="showScreen(-1)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      <span>Home</span>
+    </div>
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      <span>Patrimonio</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-8 10 8-10 8-10-8z"/></svg>
+      <span>Accademia</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      <span>AI Coach</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>Profilo</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function showScreen(n) {
+  document.querySelectorAll('.screen').forEach((s,i) => s.classList.toggle('active', i===n));
+  document.querySelectorAll('.nav-btn').forEach((b,i) => b.classList.toggle('active', i===n));
+}
+// Cat picker interaction
+document.querySelectorAll('.cat-pick-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.cat-pick-item').forEach(i => i.classList.remove('selected'));
+    item.classList.add('selected');
+  });
+});
+// Toggle interaction
+document.querySelectorAll('.toggle').forEach(t => {
+  t.addEventListener('click', () => t.classList.toggle('on'));
+});
+// Chart tab interaction
+document.querySelectorAll('.chart-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
