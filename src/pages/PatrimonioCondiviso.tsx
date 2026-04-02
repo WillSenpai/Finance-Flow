@@ -1,11 +1,13 @@
-import { ArrowLeft, Landmark, PiggyBank, Receipt, TrendingUp, Trash2, Bell, LayoutDashboard } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ArrowLeft, Landmark, PiggyBank, Receipt, TrendingUp, Trash2, Bell, LayoutDashboard, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSharedWorkspace } from "@/hooks/useSharedWorkspace";
+import { useUser } from "@/hooks/useUser";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,14 +21,150 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ActivityFeed } from "@/components/shared-workspace/ActivityFeed";
 import { ApprovalRequests } from "@/components/shared-workspace/ApprovalRequests";
+import { loadAssetMetadata } from "@/lib/assetMetadata";
+import type { Spesa } from "@/contexts/UserContext";
 
 const formatEuro = (n: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 const formatExpenseEuro = (n: number) => (n === 0 ? formatEuro(0) : formatEuro(-Math.abs(n)));
 
+// ---------------------------------------------------------------------------
+// BilancioSection — chi deve quanto a chi nel mese corrente
+// ---------------------------------------------------------------------------
+interface BilancioProps {
+  spese: Spesa[];
+  members: { userId: string; name: string; status: string }[];
+  myUserId: string;
+}
+
+const BilancioSection = ({ spese, members, myUserId }: BilancioProps) => {
+  const now = new Date();
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const monthlySpese = spese.filter((s) => s.data.startsWith(thisMonth));
+  const totalMese = monthlySpese.reduce((acc, s) => acc + s.importo, 0);
+
+  const activeMembers = members.filter((m) => m.status === "active");
+  const memberCount = activeMembers.length;
+  if (memberCount === 0) return null;
+
+  const quota = memberCount > 0 ? totalMese / memberCount : 0;
+  const myName = activeMembers.find((m) => m.userId === myUserId)?.name ?? "Tu";
+
+  return (
+    <div className="mt-4 rounded-[1.5rem] border border-border/60 bg-card p-4">
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Bilancio del mese</p>
+      {totalMese === 0 ? (
+        <p className="text-xs text-muted-foreground">Nessuna spesa condivisa questo mese.</p>
+      ) : (
+        <>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs text-muted-foreground">Totale spese</span>
+            <span className="text-sm font-bold text-destructive">{formatExpenseEuro(totalMese)}</span>
+          </div>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs text-muted-foreground">Quota pro capite</span>
+            <span className="text-sm font-semibold">{formatEuro(quota)}</span>
+          </div>
+          <div className="mt-3 space-y-2">
+            {activeMembers.map((m) => {
+              const isMe = m.userId === myUserId;
+              return (
+                <div key={m.userId} className="flex items-center justify-between rounded-xl bg-muted/40 px-3 py-2">
+                  <span className="text-xs font-medium">{isMe ? `${myName} (tu)` : m.name}</span>
+                  <span className="text-xs font-semibold">{formatEuro(quota)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// AssetCondivisiTab — asset contrassegnati come co-proprietà
+// ---------------------------------------------------------------------------
+interface AssetCondivisiTabProps {
+  categorie: { nome: string; valore: number; emoji: string }[];
+}
+
+const AssetCondivisiTab = ({ categorie }: AssetCondivisiTabProps) => {
+  const metaMap = useMemo(() => loadAssetMetadata(), []);
+
+  const condivisi = categorie
+    .map((cat) => {
+      const meta = metaMap[cat.nome.toLowerCase()];
+      if (!meta?.coProprietà?.attivo) return null;
+      const miaPerc = meta.coProprietà.percentuale;
+      const partnerPerc = 100 - miaPerc;
+      const mioValore = (cat.valore * miaPerc) / 100;
+      const partnerValore = (cat.valore * partnerPerc) / 100;
+      return { ...cat, miaPerc, partnerPerc, mioValore, partnerValore, partnerName: meta.coProprietà.partnerName ?? "Partner" };
+    })
+    .filter(Boolean) as {
+      nome: string; valore: number; emoji: string;
+      miaPerc: number; partnerPerc: number;
+      mioValore: number; partnerValore: number;
+      partnerName: string;
+    }[];
+
+  if (condivisi.length === 0) {
+    return (
+      <div className="mt-6 py-10 text-center">
+        <p className="text-3xl mb-2">🤝</p>
+        <p className="text-sm font-medium">Nessun asset condiviso</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Attiva la co-proprietà in "Gestisci Patrimonio" per vedere qui gli asset condivisi.
+        </p>
+      </div>
+    );
+  }
+
+  const totaleCondiviso = condivisi.reduce((acc, a) => acc + a.valore, 0);
+  const mioTotale = condivisi.reduce((acc, a) => acc + a.mioValore, 0);
+
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="rounded-[1.5rem] border border-border/60 bg-card p-4">
+        <p className="text-xs text-muted-foreground">Totale asset in co-proprietà</p>
+        <p className="text-2xl font-bold mt-0.5">{formatEuro(totaleCondiviso)}</p>
+        <p className="text-xs text-muted-foreground mt-1">La tua quota: <span className="font-semibold text-foreground">{formatEuro(mioTotale)}</span></p>
+      </div>
+
+      {condivisi.map((a) => (
+        <div key={a.nome} className="rounded-[1.5rem] border border-border/60 bg-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xl">{a.emoji}</span>
+            <div>
+              <p className="text-sm font-semibold">{a.nome}</p>
+              <p className="text-xs text-muted-foreground">{formatEuro(a.valore)} totale</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <div className="flex-1 rounded-xl bg-primary/10 px-3 py-2 text-center">
+              <p className="text-[10px] text-muted-foreground mb-0.5">Tu ({a.miaPerc}%)</p>
+              <p className="text-sm font-bold">{formatEuro(a.mioValore)}</p>
+            </div>
+            <div className="flex-1 rounded-xl bg-muted/60 px-3 py-2 text-center">
+              <p className="text-[10px] text-muted-foreground mb-0.5">{a.partnerName} ({a.partnerPerc}%)</p>
+              <p className="text-sm font-bold">{formatEuro(a.partnerValore)}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
 const PatrimonioCondiviso = () => {
   const navigate = useNavigate();
-  const { hasActiveWorkspace, workspaceName, categorie, investimenti, spese, categorieSpese, myRole, deleteWorkspace } =
+  const { user } = useAuth();
+  const { categorie: myCategorie } = useUser();
+  const { hasActiveWorkspace, workspaceName, categorie, investimenti, spese, categorieSpese, members, myRole, deleteWorkspace } =
     useSharedWorkspace();
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -84,15 +222,19 @@ const PatrimonioCondiviso = () => {
       <p className="text-xs text-muted-foreground mt-1">{workspaceName}</p>
 
       <Tabs defaultValue="overview" className="mt-5">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="overview" className="gap-2">
-            <LayoutDashboard size={16} /> Panoramica
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview" className="gap-1.5 text-xs">
+            <LayoutDashboard size={14} /> Panoramica
           </TabsTrigger>
-          <TabsTrigger value="activity" className="gap-2">
-            <Bell size={16} /> Attività
+          <TabsTrigger value="assets" className="gap-1.5 text-xs">
+            <Users size={14} /> Asset
+          </TabsTrigger>
+          <TabsTrigger value="activity" className="gap-1.5 text-xs">
+            <Bell size={14} /> Attività
           </TabsTrigger>
         </TabsList>
 
+        {/* ── Panoramica ─────────────────────────────── */}
         <TabsContent value="overview" className="mt-4">
           <div className="py-4 border-y border-border/40">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Totale condiviso</p>
@@ -114,6 +256,13 @@ const PatrimonioCondiviso = () => {
           <Button variant="outline" className="rounded-xl h-10 mt-2 w-full gap-2" onClick={() => navigate("/patrimonio/condiviso/investimenti")}>
             <TrendingUp size={16} /> Investimenti
           </Button>
+
+          {/* Bilancio automatico */}
+          <BilancioSection
+            spese={spese}
+            members={members}
+            myUserId={user?.id ?? ""}
+          />
 
           <div className="mt-6 pt-4 border-t border-border/40">
             <div className="flex items-center justify-between mb-2">
@@ -145,40 +294,46 @@ const PatrimonioCondiviso = () => {
           </div>
 
           {myRole === "owner" ? (
-        <div className="mt-6 rounded-2xl border border-destructive/25 bg-destructive/5 p-4">
-          <p className="text-sm font-semibold text-foreground">Zona pericolosa</p>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Eliminare il workspace rimuove in modo definitivo membri, inviti e tutti i dati condivisi.
-          </p>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" className="mt-4 h-10 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive">
-                <Trash2 size={15} /> Elimina workspace
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="max-w-sm rounded-[1.5rem] border-border/70 bg-background">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Eliminare il workspace condiviso?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Questa azione è irreversibile. Verranno rimossi workspace, membri, inviti e tutti i dati condivisi collegati.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="rounded-xl">Annulla</AlertDialogCancel>
-                <AlertDialogAction
-                  className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  onClick={() => void handleDeleteWorkspace()}
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? "Eliminazione..." : "Conferma eliminazione"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+            <div className="mt-6 rounded-2xl border border-destructive/25 bg-destructive/5 p-4">
+              <p className="text-sm font-semibold text-foreground">Zona pericolosa</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                Eliminare il workspace rimuove in modo definitivo membri, inviti e tutti i dati condivisi.
+              </p>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="mt-4 h-10 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive">
+                    <Trash2 size={15} /> Elimina workspace
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="max-w-sm rounded-[1.5rem] border-border/70 bg-background">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Eliminare il workspace condiviso?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Questa azione è irreversibile. Verranno rimossi workspace, membri, inviti e tutti i dati condivisi collegati.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="rounded-xl">Annulla</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      onClick={() => void handleDeleteWorkspace()}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? "Eliminazione..." : "Conferma eliminazione"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           ) : null}
         </TabsContent>
 
+        {/* ── Asset condivisi ────────────────────────── */}
+        <TabsContent value="assets" className="mt-4">
+          <AssetCondivisiTab categorie={myCategorie} />
+        </TabsContent>
+
+        {/* ── Attività ───────────────────────────────── */}
         <TabsContent value="activity" className="mt-4 space-y-4">
           <ApprovalRequests onlyPending limit={5} />
           <ActivityFeed limit={20} />

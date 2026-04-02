@@ -47,6 +47,7 @@ import { cn } from "@/lib/utils";
 import { AnalyticsEvents, trackEvent } from "@/lib/posthog";
 import { createPassivita } from "@/lib/passivita";
 import { maybeRecordSnapshot, loadSnapshots } from "@/lib/patrimonioSnapshots";
+import { isAssetStale } from "@/lib/assetMetadata";
 import {
   getPatrimonioSectionPreference,
   setPatrimonioSectionPreference,
@@ -247,7 +248,6 @@ function WealthHero({
                   <span className="opacity-40">|</span>
                   <span>Passività: <span className="font-semibold text-primary-foreground/85">{totalLiabilities > 0 ? `−${formatEuro(totalLiabilities)}` : formatEuro(0)}</span></span>
                 </div>
-                <p className="mt-3 max-w-[20rem] text-sm leading-6 text-primary-foreground/84 sm:text-[15px]">{heroTitle}</p>
               </div>
 
               <div className="flex items-center gap-2 self-start rounded-full border border-white/15 bg-white/10 px-3.5 py-2 backdrop-blur-md">
@@ -1169,22 +1169,24 @@ function AssetCategoriesSection({
         </div>
       </div>
 
-      <div className="mt-4 space-y-2.5">
+      <div className="mt-4 grid grid-cols-2 gap-2">
         {categorie.map((cat) => {
           const share = totalAssets > 0 ? Math.max(0, Math.min(100, Math.round((cat.valore / totalAssets) * 100))) : 0;
+          const stale = isAssetStale(cat.nome);
           return (
-            <div key={cat.nome} className={`${innerSurface} border border-border/60 bg-background/80 px-3.5 py-3`}>
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-lg leading-none">{cat.emoji}</span>
-                  <span className="text-sm font-medium">{cat.nome}</span>
+            <div key={cat.nome} className={`${innerSurface} border border-border/60 bg-background/80 p-3`}>
+              <div className="flex items-center justify-between gap-1 mb-1">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="text-base leading-none">{cat.emoji}</span>
+                  <span className="text-xs font-medium truncate">{cat.nome}</span>
+                  {stale && (
+                    <span className="flex h-2 w-2 shrink-0 rounded-full bg-orange-400" title="Aggiornamento consigliato" />
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-muted-foreground">{share}%</span>
-                  <span className="text-sm font-semibold">{formatEuro(cat.valore)}</span>
-                </div>
+                <span className="text-[10px] text-muted-foreground shrink-0">{share}%</span>
               </div>
-              <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-muted">
+              <p className="text-sm font-semibold mb-1.5">{formatEuro(cat.valore)}</p>
+              <div className="h-1 overflow-hidden rounded-full bg-muted">
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{ width: `${share}%`, backgroundColor: cat.colore }}
@@ -1501,9 +1503,8 @@ const Patrimonio = () => {
   const totalCategories = categorie
     .filter((c) => isAssetCategory(c.nome))
     .reduce((acc, c) => acc + c.valore, 0);
-  const totalCategoriesRaw = categorie.reduce((acc, c) => acc + c.valore, 0);
   const totalInvestments = investimenti.reduce((acc, i) => acc + i.valore, 0);
-  const totalAssets = totalCategoriesRaw + totalInvestments;
+  const totalAssets = totalCategories + totalInvestments;
   const totalLiabilities = passivita.reduce((acc, p) => acc + p.importoResiduo, 0);
   const netWorth = totalAssets - totalLiabilities;
 
@@ -1578,27 +1579,11 @@ const Patrimonio = () => {
         }
       />
 
-      <ActionCluster
-        activeSection={activeSection}
-        onSectionChange={handleSectionChange}
-        onOpenSalvadanai={() => navigate("/patrimonio/salvadanai")}
-        onOpenInvestimenti={() => navigate("/patrimonio/investimenti")}
-        onOpenSpese={() => navigate("/patrimonio/spese")}
-        onOpenPatrimonio={() => navigate("/patrimonio/gestisci")}
-        onOpenWhatIf={() => setSimulatorOpen(true)}
-        hasGoals={salvadanai.length > 0}
-      />
+      <TrendChart snapshots={snapshots} />
 
-      <AssetCategoriesSection categorie={categorie} totalAssets={totalAssets} />
-
-      <AllocationSnapshot
-        total={totalAssets}
-        chartData={chartDataSafe}
-        topCategoryName={topBucket.nome}
-        topCategoryValue={topBucket.valore}
-        isEmpty={chartData.length === 0}
-        hiddenBucketsCount={hiddenBuckets.length}
-        hiddenBucketsValue={hiddenBucketsValue}
+      <AssetCategoriesSection
+        categorie={categorie.filter((c) => isAssetCategory(c.nome))}
+        totalAssets={totalAssets}
       />
 
       <PassivitaSection
@@ -1606,8 +1591,6 @@ const Patrimonio = () => {
         onAdd={handleAddPassivita}
         onDelete={handleDeletePassivita}
       />
-
-      <TrendChart snapshots={snapshots} />
 
       <GuidedInsight isBeginner={isBeginner} onOpenLesson={() => navigate("/lezione/1")} />
 
