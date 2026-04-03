@@ -94,7 +94,7 @@ const GestisciPatrimonio = () => {
         <ArrowLeft size={18} /> Indietro
       </button>
 
-      <h1 className="text-2xl font-semibold tracking-tight mb-1">Gestisci Patrimonio 🏦</h1>
+      <h1 className="text-2xl font-semibold tracking-tight mb-1">Aggiungi Asset 🏦</h1>
       <p className="text-xs text-muted-foreground mb-6">Seleziona una categoria e aggiorna il valore.</p>
 
       {/* 3×2 Category Picker */}
@@ -145,6 +145,17 @@ const GestisciPatrimonio = () => {
                     <AlertCircle size={10} /> Aggiornamento consigliato
                   </span>
                 )}
+              </div>
+
+              {/* Nome asset */}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Nome</label>
+                <Input
+                  placeholder="es. Conto BancoPosta"
+                  value={selectedMeta.nome ?? ""}
+                  onChange={(e) => updateMeta(selectedCat.nome, { nome: e.target.value })}
+                  className="rounded-xl bg-background"
+                />
               </div>
 
               {/* Valore */}
@@ -237,6 +248,24 @@ const GestisciPatrimonio = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* Collegato a passività */}
+              <div className="flex items-center justify-between rounded-xl border border-border/60 bg-background px-3.5 py-3">
+                <div>
+                  <p className="text-sm font-medium">Collegato a passività?</p>
+                  <p className="text-[11px] text-muted-foreground">Mutuo / Finanziamento associato</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => updateMeta(selectedCat.nome, { collegatoPassivita: !selectedMeta.collegatoPassivita })}
+                  className={cn(
+                    "relative h-6 w-11 rounded-full transition-colors",
+                    selectedMeta.collegatoPassivita ? "bg-primary" : "bg-muted",
+                  )}
+                >
+                  <span className={cn("absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all", selectedMeta.collegatoPassivita ? "left-[22px]" : "left-0.5")} />
+                </button>
+              </div>
 
               {/* Co-proprietà toggle */}
               <div className="flex items-center justify-between rounded-xl border border-border/60 bg-background px-3.5 py-3">

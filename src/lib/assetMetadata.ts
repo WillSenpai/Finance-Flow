@@ -1,8 +1,10 @@
 export interface AssetMetadata {
+  nome?: string; // user-provided name for this asset (e.g. "Conto BancoPosta")
   istituto?: string;
   dataAcquisizione?: string; // ISO date
   frequenzaAggiornamento?: "mensile" | "trimestrale" | "annuale" | null;
   autoAggiornamento?: boolean;
+  collegatoPassivita?: boolean;
   coProprietà?: {
     attivo: boolean;
     percentuale: number; // 0-100, share belonging to the owner

@@ -3,12 +3,14 @@ import {
   ArrowRight,
   BookOpen,
   Calculator,
+  Landmark,
   Minus,
+  Receipt,
   Trash2,
 } from "lucide-react";
 import {
   ResponsiveContainer,
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -115,8 +117,8 @@ function WealthHero({
       ? ` · ${monthlyDeltaPct >= 0 ? "+" : ""}${monthlyDeltaPct.toLocaleString("it-IT", { maximumFractionDigits: 1, minimumFractionDigits: 1 })}%`
       : "";
   return (
-    <motion.div variants={item} className="mx-4 mt-4">
-      <div className="relative overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-[#7a6348] to-[#9e845f] text-white p-6 shadow-2xl">
+    <motion.div variants={item} className="-mx-5">
+      <div className="bg-gradient-to-br from-[#7a6348] to-[#9e845f] text-white px-6 pt-5 pb-6 rounded-b-[1.75rem]">
         <p className="text-[11px] uppercase tracking-[0.08em] opacity-75 mb-1.5">Patrimonio Netto</p>
         <p className="text-[42px] font-bold leading-none tracking-tight">{formatEuro(netWorth)}</p>
         {monthlyDelta !== null && (
@@ -147,7 +149,7 @@ function WealthHero({
           onClick={onPrimaryAction}
           className="mt-3 w-full rounded-xl border border-white/30 bg-white/20 py-2.5 text-center text-sm font-semibold text-white"
         >
-          + Aggiungi o aggiorna asset →
+          + Aggiungi o aggiorna →
         </button>
       </div>
     </motion.div>
@@ -446,10 +448,10 @@ function TrendChart({ snapshots }: { snapshots: ReturnType<typeof loadSnapshots>
         </div>
         <div className="h-[100px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+            <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
               <defs>
                 <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#8b7355" stopOpacity={0.3} />
+                  <stop offset="0%" stopColor="#8b7355" stopOpacity={0.25} />
                   <stop offset="100%" stopColor="#8b7355" stopOpacity={0} />
                 </linearGradient>
               </defs>
@@ -457,8 +459,8 @@ function TrendChart({ snapshots }: { snapshots: ReturnType<typeof loadSnapshots>
               <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#9e8a72" }} axisLine={false} tickLine={false} />
               <YAxis domain={[minValue * 0.95, maxValue * 1.05]} tick={{ fontSize: 10, fill: "#9e8a72" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} width={28} />
               <Tooltip formatter={(v: number) => [formatEuro(v), "Patrimonio netto"]} contentStyle={{ borderRadius: "1rem", border: "1px solid #f0e8dc", background: "white", fontSize: 12 }} />
-              <Line type="monotone" dataKey="valore" stroke="#8b7355" strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: "#8b7355" }} />
-            </LineChart>
+              <Area type="monotone" dataKey="valore" stroke="#8b7355" strokeWidth={2.5} fill="url(#trendGrad)" dot={false} activeDot={{ r: 4, fill: "#8b7355" }} />
+            </AreaChart>
           </ResponsiveContainer>
         </div>
         <p className="text-[11px] text-[#9e8a72] text-right mt-2">
@@ -559,6 +561,60 @@ function CondivisoSummary({
   );
 }
 
+function ActionPickerDrawer({
+  open,
+  onClose,
+  onAsset,
+  onSpesa,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onAsset: () => void;
+  onSpesa: () => void;
+}) {
+  return (
+    <Drawer open={open} onOpenChange={(v) => !v && onClose()}>
+      <DrawerContent className="rounded-t-[2rem]">
+        <div className="px-5 pb-10 pt-2">
+          <DrawerHeader className="px-0 pb-5">
+            <DrawerTitle className="text-[17px] font-semibold text-left">Cosa vuoi fare?</DrawerTitle>
+          </DrawerHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              type="button"
+              onClick={onAsset}
+              className="flex flex-col items-center gap-3 rounded-[1.5rem] border border-border/60 bg-card p-5 text-center shadow-sm"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-[1rem] bg-[#f4ede3]">
+                <Landmark size={22} className="text-[#7a6348]" />
+              </div>
+              <div>
+                <p className="text-[14px] font-bold text-[#2d2416]">Aggiorna asset</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">Modifica il valore di un asset patrimoniale</p>
+              </div>
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              type="button"
+              onClick={onSpesa}
+              className="flex flex-col items-center gap-3 rounded-[1.5rem] border border-border/60 bg-card p-5 text-center shadow-sm"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-[1rem] bg-[#f0e8f8]">
+                <Receipt size={22} className="text-[#7a4a9e]" />
+              </div>
+              <div>
+                <p className="text-[14px] font-bold text-[#2d2416]">Aggiungi spesa</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">Registra una nuova uscita economica</p>
+              </div>
+            </motion.button>
+          </div>
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
 // Solo queste categorie contano come asset patrimoniali (evita voci reddito tipo "Stipendio").
 const ASSET_CATEGORY_NAMES = new Set([
   "liquidità", "investimenti", "immobili", "crypto", "pensione", "tfr", "pensione / tfr",
@@ -571,6 +627,7 @@ function isAssetCategory(nome: string): boolean {
 
 const Patrimonio = () => {
   const [simulatorOpen, setSimulatorOpen] = useState(false);
+  const [actionPickerOpen, setActionPickerOpen] = useState(false);
   const { userData, categorie, salvadanai, investimenti, lastPatrimonioUpdate, passivita, setPassivita } =
     useUser();
   const { awardPoints } = usePoints();
@@ -645,7 +702,7 @@ const Patrimonio = () => {
         freshnessLabel={freshnessLabel}
         monthlyDelta={netWorthDelta}
         monthlyDeltaPct={netWorthDeltaPct}
-        onPrimaryAction={() => navigate("/patrimonio/gestisci")}
+        onPrimaryAction={() => setActionPickerOpen(true)}
       />
 
       <TrendChart snapshots={snapshots} />
@@ -686,6 +743,13 @@ const Patrimonio = () => {
           </div>
         </DrawerContent>
       </Drawer>
+
+      <ActionPickerDrawer
+        open={actionPickerOpen}
+        onClose={() => setActionPickerOpen(false)}
+        onAsset={() => { setActionPickerOpen(false); navigate("/patrimonio/gestisci"); }}
+        onSpesa={() => { setActionPickerOpen(false); navigate("/patrimonio/spese"); }}
+      />
     </motion.div>
   );
 };
