@@ -117,37 +117,67 @@ function WealthHero({
       ? ` · ${monthlyDeltaPct >= 0 ? "+" : ""}${monthlyDeltaPct.toLocaleString("it-IT", { maximumFractionDigits: 1, minimumFractionDigits: 1 })}%`
       : "";
   return (
-    <motion.div variants={item} className="-mx-5">
-      <div className="bg-gradient-to-br from-[#7a6348] to-[#9e845f] text-white px-6 pt-5 pb-6 rounded-b-[1.75rem]">
-        <p className="text-[11px] uppercase tracking-[0.08em] opacity-75 mb-1.5">Patrimonio Netto</p>
-        <p className="text-[42px] font-bold leading-none tracking-tight">{formatEuro(netWorth)}</p>
-        {monthlyDelta !== null && (
-          <p className="text-[13px] opacity-80 mt-1">
-            {deltaPositive ? "↑" : "↓"} {deltaPositive ? "+" : ""}{formatEuro(monthlyDelta)} questo mese
-            {pctSuffix}
-          </p>
-        )}
-        <div className="my-4 h-px bg-white/20" />
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl bg-white/10 p-3">
-            <p className="text-[10px] uppercase tracking-[0.05em] opacity-70 mb-1">Asset totali</p>
-            <p className="text-lg font-bold">{formatEuro(totalAssets)}</p>
+    <motion.div variants={item} className="mx-4 mt-4">
+      <div className="relative overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-[#7a6348] to-[#9e845f] text-white p-6 shadow-2xl">
+
+        {/* Decorative depth */}
+        <div className="pointer-events-none absolute -top-10 -right-10 h-36 w-36 rounded-full bg-white/5" />
+        <div className="pointer-events-none absolute -bottom-10 -left-6 h-28 w-28 rounded-full bg-black/10" />
+
+        {/* Row 1: label + freshness badge */}
+        <div className="relative flex items-center justify-between mb-2">
+          <p className="text-[11px] uppercase tracking-[0.1em] opacity-60 font-semibold">Patrimonio Netto</p>
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-green-400" />
+            <span className="text-[10px] font-semibold opacity-90">{freshnessLabel}</span>
           </div>
-          <div className="rounded-xl bg-white/10 p-3">
-            <p className="text-[10px] uppercase tracking-[0.05em] opacity-70 mb-1">Passività</p>
-            <p className="text-lg font-bold" style={{ color: totalLiabilities > 0 ? "#ff9999" : "inherit" }}>
+        </div>
+
+        {/* Row 2: net worth value */}
+        <p className="relative text-[44px] font-bold leading-none tracking-tight">
+          {formatEuro(netWorth)}
+        </p>
+
+        {/* Row 3: monthly delta (optional) */}
+        {monthlyDelta !== null && (
+          <div className="relative mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/12 px-2.5 py-1">
+            <span className={cn("text-[12px] font-semibold", deltaPositive ? "text-green-300" : "text-red-300")}>
+              {deltaPositive ? "↑" : "↓"} {deltaPositive ? "+" : ""}{formatEuro(monthlyDelta)} questo mese{pctSuffix}
+            </span>
+          </div>
+        )}
+
+        {/* Row 4: stat chips */}
+        <div className="relative mt-5 grid grid-cols-2 gap-2.5">
+          <div className="rounded-[1rem] bg-white/10 p-3.5">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-green-300 opacity-80" />
+              <p className="text-[10px] uppercase tracking-[0.06em] opacity-60 font-semibold">Asset totali</p>
+            </div>
+            <p className="text-[18px] font-bold leading-none">{formatEuro(totalAssets)}</p>
+          </div>
+          <div className="rounded-[1rem] bg-white/10 p-3.5">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <span className={cn(
+                "h-1.5 w-1.5 rounded-full opacity-80",
+                totalLiabilities > 0 ? "bg-red-300" : "bg-white/40",
+              )} />
+              <p className="text-[10px] uppercase tracking-[0.06em] opacity-60 font-semibold">Passività</p>
+            </div>
+            <p
+              className="text-[18px] font-bold leading-none"
+              style={{ color: totalLiabilities > 0 ? "#ff9999" : "inherit" }}
+            >
               {totalLiabilities > 0 ? `–${formatEuro(totalLiabilities)}` : formatEuro(0)}
             </p>
           </div>
         </div>
-        <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-green-400" />
-          <span className="text-[12px] font-semibold opacity-85">{freshnessLabel}</span>
-        </div>
+
+        {/* Row 5: CTA */}
         <button
           type="button"
           onClick={onPrimaryAction}
-          className="mt-3 w-full rounded-xl border border-white/30 bg-white/20 py-2.5 text-center text-sm font-semibold text-white"
+          className="relative mt-4 w-full rounded-[0.9rem] border border-white/25 bg-white/20 py-3 text-center text-[13px] font-bold tracking-wide text-white"
         >
           + Aggiungi o aggiorna →
         </button>
@@ -194,30 +224,24 @@ function WhatIfModule({
   hasGoals: boolean;
 }) {
   return (
-    <motion.section variants={item} className="mt-6">
+    <motion.section variants={item} className="mt-5">
       <motion.button
-        whileTap={{ scale: 0.98 }}
+        whileTap={{ scale: 0.97 }}
         onClick={onOpen}
-        className={`w-full rounded-[2.15rem] border border-primary/20 bg-primary/10 p-5 text-left shadow-[0_16px_36px_-30px_hsl(var(--primary)/0.65)]`}
+        className="w-full rounded-[1.5rem] border border-border/50 bg-white p-4 text-left shadow-sm"
       >
-        <div className="flex items-start gap-3">
-          <div className={`flex h-12 w-12 items-center justify-center ${innerSurface} bg-primary text-primary-foreground`}>
-            <Calculator size={22} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-semibold text-foreground">Simulatore What If</p>
-              <span className={`${capsule} bg-background px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-primary`}>
-                {hasGoals ? "Pronto" : "Prima crea un obiettivo"}
-              </span>
-            </div>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">
-              {hasGoals
-                ? "Vedi come cambia il tempo necessario per raggiungere i tuoi obiettivi se sposti ogni mese una quota diversa."
-                : "Attiva almeno un salvadanaio e poi usa il simulatore per confrontare scenari diversi."}
-            </p>
-          </div>
-          <ArrowRight size={16} className="mt-1 text-primary" />
+        <p className="text-[11px] uppercase tracking-[0.07em] text-muted-foreground font-semibold mb-2">
+          Strumenti
+        </p>
+        <p className="text-[15px] font-bold text-[#2d2416] leading-snug">
+          {hasGoals
+            ? "E se mettessi qualcosa in più ogni mese? Scopri quando ci arrivi."
+            : "Hai qualcosa da mettere da parte? Simula il tuo piano."}
+        </p>
+        <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5">
+          <span className="text-[12px] font-bold text-primary">
+            {hasGoals ? "Simula il piano →" : "Crea un obiettivo →"}
+          </span>
         </div>
       </motion.button>
     </motion.section>
@@ -628,7 +652,7 @@ function isAssetCategory(nome: string): boolean {
 const Patrimonio = () => {
   const [simulatorOpen, setSimulatorOpen] = useState(false);
   const [actionPickerOpen, setActionPickerOpen] = useState(false);
-  const { userData, categorie, salvadanai, investimenti, lastPatrimonioUpdate, passivita, setPassivita } =
+  const { userData, categorie, salvadanai, investimenti, lastPatrimonioUpdate, passivita, setPassivita, loadingData } =
     useUser();
   const { awardPoints } = usePoints();
   const navigate = useNavigate();
@@ -684,6 +708,8 @@ const Patrimonio = () => {
 
   const freshnessLabel = formatFreshness(lastPatrimonioUpdate);
   const { delta: netWorthDelta, pct: netWorthDeltaPct } = netWorthDeltaFromSnapshots(snapshots, thisMonth, netWorth);
+
+  if (loadingData) return null;
 
   const handleAddPassivita = (data: Omit<Passivita, "id">) => {
     setPassivita([...passivita, createPassivita(data)]);
